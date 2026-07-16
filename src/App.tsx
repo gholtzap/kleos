@@ -37,7 +37,13 @@ import {
   people,
 } from "./data";
 import { authClient } from "./auth";
-import { initials } from "./lib";
+import { emptyProfile, initials } from "./lib";
+import {
+  getPublicProfile,
+  publicProfileHash,
+  publicProfileIdFromHash,
+  savePublicProfile,
+} from "./public-profile";
 import type {
   Claim,
   Evidence,
@@ -77,6 +83,9 @@ export default function App() {
   const { data: session, isPending: sessionPending, refetch: refetchSession } =
     authClient.useSession();
   const [route, setRoute] = useState<Route>(routeFromHash);
+  const [publicProfileId, setPublicProfileId] = useState(() =>
+    publicProfileIdFromHash(window.location.hash),
+  );
   const [profile, setProfile] = useState<Person>(currentPerson);
   const [dark, setDark] = useState(() => localStorage.getItem("folio-theme") !== "light");
   const [claims, setClaims] = useState<Claim[]>(initialClaims);
@@ -95,6 +104,7 @@ export default function App() {
     const onHashChange = () => {
       setLoading(true);
       setRoute(routeFromHash());
+      setPublicProfileId(publicProfileIdFromHash(window.location.hash));
       window.setTimeout(() => setLoading(false), 280);
     };
     window.addEventListener("hashchange", onHashChange);
@@ -114,12 +124,23 @@ export default function App() {
 
   useEffect(() => {
     if (!session?.user) return;
-    setProfile((person) => ({
-      ...person,
-      id: session.user.id,
-      name: session.user.name,
-      initials: initials(session.user.name),
-    }));
+    let active = true;
+    getPublicProfile(session.user.id)
+      .then((published) => {
+        if (!active) return;
+        setProfile(published.person);
+        setClaims(published.claims);
+        setEvidence([]);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProfile(emptyProfile(session.user.id, session.user.name));
+        setClaims([]);
+        setEvidence([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [session?.user]);
 
   useEffect(() => {
@@ -128,13 +149,37 @@ export default function App() {
   }, [route, session?.user, sessionPending]);
 
   useEffect(() => {
-    if (session?.user && route === "landing") window.location.hash = "/profile";
-  }, [route, session?.user]);
+    if (session?.user && route === "landing" && !publicProfileId) {
+      window.location.hash = "/profile";
+    }
+  }, [publicProfileId, route, session?.user]);
 
   const navigate = (next: Route) => {
     window.location.hash = next === "landing" ? "" : `/${next}`;
     if (next === route) setRoute(next);
   };
+
+  const publishProfile = async (person: Person, nextClaims: Claim[]) => {
+    try {
+      await savePublicProfile(session?.session.token ?? "", {
+        person,
+        claims: nextClaims.filter((claim) => claim.privacy === "Public"),
+      });
+    } catch {
+      setToast("Profile saved here, but the public page could not be updated.");
+    }
+  };
+
+  if (publicProfileId) {
+    return (
+      <PublicProfilePage
+        id={publicProfileId}
+        dark={dark}
+        setDark={setDark}
+        onCreateAccount={() => navigate("landing")}
+      />
+    );
+  }
 
   if (sessionPending) {
     return <AuthLoader />;
@@ -198,6 +243,15 @@ export default function App() {
                 evidence={evidence}
                 onNewClaim={() => setClaimOpen(true)}
                 onEdit={() => setProfileOpen(true)}
+                onShare={async () => {
+                  const url = `${window.location.origin}${window.location.pathname}${publicProfileHash(profile.id)}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setToast("Public profile link copied.");
+                  } catch {
+                    setToast(url);
+                  }
+                }}
               />
             ) : null}
             {route === "vault" ? (
@@ -227,7 +281,9 @@ export default function App() {
         open={claimOpen}
         onOpenChange={setClaimOpen}
         onCreate={(claim) => {
-          setClaims((items) => [claim, ...items]);
+          const nextClaims = [claim, ...claims];
+          setClaims(nextClaims);
+          void publishProfile(profile, nextClaims);
           setClaimOpen(false);
           setToast("Claim saved to your profile.");
         }}
@@ -258,6 +314,7 @@ export default function App() {
         profile={profile}
         onSave={(nextProfile) => {
           setProfile(nextProfile);
+          void publishProfile(nextProfile, claims);
           setProfileOpen(false);
           setToast("Profile details updated.");
         }}
@@ -500,22 +557,32 @@ function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
-        <Logo />
+        <div className="sidebar-brand">
+          <Logo />
+          <span>Professional record / 01</span>
+        </div>
         <Button onClick={onNewClaim} className="sidebar-create">
           <PlusIcon size={16} weight="bold" />
           Add claim
         </Button>
+        <p className="sidebar-nav-label">Workspace</p>
         <nav aria-label="Primary">
-          {routes.map((item) => {
+          {routes.map((item, index) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 className={route === item.id ? "active" : ""}
                 onClick={() => navigate(item.id)}
+                aria-current={route === item.id ? "page" : undefined}
               >
-                <Icon size={19} weight={route === item.id ? "fill" : "regular"} />
-                {item.label}
+                <span className="sidebar-nav-index">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="sidebar-nav-icon">
+                  <Icon size={17} weight={route === item.id ? "fill" : "regular"} />
+                </span>
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -523,22 +590,26 @@ function Sidebar({
       </div>
       <div className="sidebar-bottom">
         <div className="sidebar-privacy">
-          <ShieldCheckIcon size={19} />
+          <span className="sidebar-status-icon">
+            <ShieldCheckIcon size={17} weight="fill" />
+          </span>
           <div>
-            <strong>Privacy controls active</strong>
-            <span>3 private evidence items</span>
+            <strong>Evidence stays controlled</strong>
+            <span>Visibility is set per item</span>
           </div>
         </div>
         <div className="sidebar-account">
           <Avatar initials={person.initials} accent={person.accent} size="sm" />
-          <div>
+          <div className="sidebar-account-copy">
             <strong>{person.name}</strong>
             <span>{email}</span>
           </div>
-          <ThemeButton dark={dark} setDark={setDark} />
-          <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
-            <SignOutIcon size={18} />
-          </Button>
+          <div className="sidebar-account-actions">
+            <ThemeButton dark={dark} setDark={setDark} />
+            <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
+              <SignOutIcon size={17} />
+            </Button>
+          </div>
         </div>
       </div>
     </aside>
@@ -618,12 +689,14 @@ function ProfilePage({
   evidence,
   onNewClaim,
   onEdit,
+  onShare,
 }: {
   person: Person;
   claims: Claim[];
   evidence: Evidence[];
-  onNewClaim: () => void;
-  onEdit: () => void;
+  onNewClaim?: () => void;
+  onEdit?: () => void;
+  onShare?: () => void;
 }) {
   const [selected, setSelected] = useState<Claim | null>(null);
   const featured = claims.filter((claim) => claim.featured);
@@ -642,10 +715,12 @@ function ProfilePage({
           <div className="profile-identity">
             <div className="profile-name-row">
               <h1>{person.name}</h1>
-              <Badge tone="positive">
-                <SealCheckIcon size={13} weight="fill" />
-                Identity verified
-              </Badge>
+              {person.identityVerified ? (
+                <Badge tone="positive">
+                  <SealCheckIcon size={13} weight="fill" />
+                  Identity verified
+                </Badge>
+              ) : null}
               {person.employmentVerified ? (
                 <Badge tone="positive">Employment confirmed</Badge>
               ) : null}
@@ -653,53 +728,60 @@ function ProfilePage({
             <p>{person.role}</p>
             <span>{person.location}</span>
           </div>
-          <div className="profile-actions">
-            <Button variant="outline" onClick={onEdit}>Edit profile</Button>
-            <Button onClick={onNewClaim}>
-              <PlusIcon size={16} />
-              Add claim
-            </Button>
-          </div>
+          {onEdit || onNewClaim || onShare ? (
+            <div className="profile-actions">
+              {onShare ? (
+                <Button variant="outline" onClick={onShare}>
+                  <LinkIcon size={16} />
+                  Share
+                </Button>
+              ) : null}
+              {onEdit ? <Button variant="outline" onClick={onEdit}>Edit profile</Button> : null}
+              {onNewClaim ? (
+                <Button onClick={onNewClaim}>
+                  <PlusIcon size={16} />
+                  Add claim
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <div className="profile-layout">
         <aside className="profile-aside">
-          <section>
-            <p className="aside-label">About</p>
-            <p className="profile-summary">{person.summary}</p>
-          </section>
-          <section>
-            <p className="aside-label">Areas of expertise</p>
-            <div className="tag-list">
-              {person.expertise.map((item) => (
-                <Badge key={item}>{item}</Badge>
-              ))}
-            </div>
-          </section>
-          <section>
-            <p className="aside-label">Professional interests</p>
-            <div className="tag-list">
-              {person.interests.map((item) => (
-                <Badge key={item}>{item}</Badge>
-              ))}
-            </div>
-          </section>
-          <section>
-            <p className="aside-label">Open to</p>
-            <ul className="plain-list positive-list">
-              {person.availability.map((item) => (
-                <li key={item}>
-                  <CheckIcon size={14} weight="bold" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section>
-            <p className="aside-label">Boundaries</p>
-            <p className="muted-copy">Not open to {person.notOpenTo.join(" or ").toLowerCase()}.</p>
-          </section>
+          {person.summary ? (
+            <section>
+              <p className="aside-label">About</p>
+              <p className="profile-summary">{person.summary}</p>
+            </section>
+          ) : null}
+          {person.notOpenTo.length ? (
+            <section>
+              <p className="aside-label">Boundaries</p>
+              <p className="muted-copy">Not open to {person.notOpenTo.join(" or ").toLowerCase()}.</p>
+            </section>
+          ) : null}
+          {person.preferredLocations?.length || person.compensationPreference ? (
+            <section className="work-preferences">
+              <div>
+                <p className="aside-label">Working preferences</p>
+                <span>Standing preferences, not an availability signal.</span>
+              </div>
+              {person.preferredLocations?.length ? (
+                <div className="preference-row">
+                  <span>Location fit</span>
+                  <strong>{person.preferredLocations.join(" · ")}</strong>
+                </div>
+              ) : null}
+              {person.compensationPreference ? (
+                <div className="preference-row">
+                  <span>Compensation context</span>
+                  <strong>{person.compensationPreference}</strong>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
         </aside>
 
         <div className="profile-content">
@@ -765,6 +847,59 @@ function ProfilePage({
         </div>
       </div>
       <ClaimDetail claim={selected} onOpenChange={(open) => !open && setSelected(null)} />
+    </div>
+  );
+}
+
+function PublicProfilePage({
+  id,
+  dark,
+  setDark,
+  onCreateAccount,
+}: {
+  id: string;
+  dark: boolean;
+  setDark: (dark: boolean) => void;
+  onCreateAccount: () => void;
+}) {
+  const [published, setPublished] = useState<Awaited<ReturnType<typeof getPublicProfile>> | null>(
+    null,
+  );
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setPublished(null);
+    setError("");
+    getPublicProfile(id)
+      .then((profile) => active && setPublished(profile))
+      .catch(() => active && setError("This public profile could not be found."));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  return (
+    <div className="public-profile-shell">
+      <header className="public-profile-nav">
+        <Logo />
+        <div>
+          <ThemeButton dark={dark} setDark={setDark} />
+          <Button onClick={onCreateAccount}>Create your Folio</Button>
+        </div>
+      </header>
+      {error ? (
+        <EmptyState
+          icon={<InfoIcon size={28} />}
+          title="Profile unavailable"
+          copy={error}
+          action={<Button onClick={onCreateAccount}>Go to Folio</Button>}
+        />
+      ) : published ? (
+        <ProfilePage person={published.person} claims={published.claims} evidence={[]} />
+      ) : (
+        <PageLoader />
+      )}
     </div>
   );
 }
@@ -1648,6 +1783,12 @@ function ProfileDialog({
   const [interests, setInterests] = useState(profile.interests.join(", "));
   const [availability, setAvailability] = useState(profile.availability.join(", "));
   const [boundaries, setBoundaries] = useState(profile.notOpenTo.join(", "));
+  const [preferredLocations, setPreferredLocations] = useState(
+    profile.preferredLocations?.join(", ") ?? "",
+  );
+  const [compensationPreference, setCompensationPreference] = useState(
+    profile.compensationPreference ?? "",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -1660,6 +1801,8 @@ function ProfileDialog({
     setInterests(profile.interests.join(", "));
     setAvailability(profile.availability.join(", "));
     setBoundaries(profile.notOpenTo.join(", "));
+    setPreferredLocations(profile.preferredLocations?.join(", ") ?? "");
+    setCompensationPreference(profile.compensationPreference ?? "");
     setErrors({});
   }, [open, profile]);
 
@@ -1691,6 +1834,8 @@ function ProfileDialog({
       interests: parseList(interests),
       availability: parseList(availability),
       notOpenTo: parseList(boundaries),
+      preferredLocations: parseList(preferredLocations),
+      compensationPreference: compensationPreference.trim(),
     });
   };
 
@@ -1756,6 +1901,32 @@ function ProfileDialog({
               id="profile-interests"
               value={interests}
               onChange={(event) => setInterests(event.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="form-grid">
+          <Field
+            label="Preferred work locations"
+            htmlFor="profile-work-locations"
+            helper="Cities, regions, or remote arrangements. Separate with commas."
+          >
+            <input
+              id="profile-work-locations"
+              value={preferredLocations}
+              onChange={(event) => setPreferredLocations(event.target.value)}
+              placeholder="New York City, Remote within the United States"
+            />
+          </Field>
+          <Field
+            label="Typical annual salary range"
+            htmlFor="profile-compensation"
+            helper="A standing preference—not a signal that you are looking for work."
+          >
+            <input
+              id="profile-compensation"
+              value={compensationPreference}
+              onChange={(event) => setCompensationPreference(event.target.value)}
+              placeholder="$180k–$220k base salary"
             />
           </Field>
         </div>

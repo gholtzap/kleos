@@ -17,6 +17,8 @@ export const currentPerson: Person = {
   interests: ["Resilient organizations", "Public-interest technology", "Technical leadership"],
   availability: ["Advisory work", "Technical diligence", "Selective collaboration"],
   notOpenTo: ["Agency outreach", "Generic recruiting"],
+  preferredLocations: ["New York City", "Remote within the United States"],
+  compensationPreference: "$180k–$220k base salary",
   identityVerified: true,
   employmentVerified: true,
   relationship: "You",

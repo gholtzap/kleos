@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { initialClaims, initialEvidence } from "./data";
-import { initials } from "./lib";
+import { emptyProfile, initials } from "./lib";
+import { publicProfileHash, publicProfileIdFromHash } from "./public-profile";
 
 describe("Folio domain fixtures", () => {
   it("keeps evidence links and privacy context internally consistent", () => {
     const claimIds = new Set(initialClaims.map((claim) => claim.id));
 
     expect(initials("Mara Voss")).toBe("MV");
+    expect(emptyProfile("user-1", "Ada Lovelace")).toMatchObject({
+      id: "user-1",
+      initials: "AL",
+      name: "Ada Lovelace",
+      preferredLocations: [],
+      compensationPreference: "",
+    });
+    expect(publicProfileHash("user/1")).toBe("#/p/user%2F1");
+    expect(publicProfileIdFromHash("#/p/user%2F1")).toBe("user/1");
     expect(initialEvidence.every((item) => item.claimIds.every((id) => claimIds.has(id)))).toBe(
       true,
     );

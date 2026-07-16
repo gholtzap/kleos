@@ -38,6 +38,8 @@ export interface Person {
   interests: string[];
   availability: string[];
   notOpenTo: string[];
+  preferredLocations?: string[];
+  compensationPreference?: string;
   identityVerified: boolean;
   employmentVerified: boolean;
   relationship: string;

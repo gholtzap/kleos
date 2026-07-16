@@ -860,6 +860,29 @@ a {
   background: var(--paper);
 }
 
+.public-profile-shell {
+  min-height: 100dvh;
+  background: var(--paper);
+}
+
+.public-profile-nav {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1220px, calc(100% - 64px));
+  height: 78px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.public-profile-nav > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -867,62 +890,132 @@ a {
   flex-direction: column;
   justify-content: space-between;
   width: 244px;
-  padding: 28px 18px 20px;
+  padding: 22px 14px 14px;
   color: #dfe2da;
-  background: var(--sidebar);
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px) 0 0 / 100% 48px,
+    radial-gradient(circle at 0 0, rgba(142, 188, 164, 0.1), transparent 190px),
+    var(--sidebar);
 }
 
-.sidebar .logo {
-  margin: 0 10px 28px;
+.sidebar-brand {
+  display: grid;
+  gap: 8px;
+  margin: 0 10px 24px;
+}
+
+.sidebar-brand .logo {
   color: #f2f2eb;
+}
+
+.sidebar-brand > span,
+.sidebar-nav-label {
+  margin: 0;
+  color: #71776f;
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
 }
 
 .sidebar-create {
   width: 100%;
-  margin-bottom: 24px;
+  min-height: 46px;
+  margin-bottom: 30px;
+  border-color: rgba(255, 255, 255, 0.08);
   color: #1f2822;
-  background: #a9cbb8;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 48%),
+    #a9cbb8;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.34),
+    0 10px 24px rgba(0, 0, 0, 0.16);
 }
 
 .sidebar-create:hover {
   background: #bed8c8;
+  transform: translateY(-1px);
+}
+
+.sidebar-nav-label {
+  margin: 0 10px 10px;
 }
 
 .sidebar nav {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .sidebar nav button {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 48px;
+  padding: 0 10px 0 8px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 10px;
   color: #aeb4aa;
   background: transparent;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 11.5px;
+  font-weight: 680;
   cursor: pointer;
-  transition: background 160ms, color 160ms;
+  transition:
+    background 180ms,
+    color 180ms,
+    transform 180ms;
 }
 
-.sidebar nav button:hover,
-.sidebar nav button.active {
+.sidebar nav button:hover {
   color: #f0f1eb;
-  background: var(--sidebar-soft);
+  background: rgba(255, 255, 255, 0.045);
+  transform: translateX(2px);
 }
 
 .sidebar nav button.active {
-  box-shadow: inset 2px 0 #9fc7ae;
+  color: #f5f6f0;
+  background:
+    linear-gradient(90deg, rgba(159, 199, 174, 0.16), transparent 82%),
+    var(--sidebar-soft);
+  box-shadow:
+    inset 2px 0 #9fc7ae,
+    inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.sidebar-nav-index {
+  width: 18px;
+  color: #666d65;
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-nav-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #90978d;
+}
+
+.sidebar nav button.active .sidebar-nav-index,
+.sidebar nav button.active .sidebar-nav-icon {
+  color: #a9cbb8;
+}
+
+.sidebar nav button.active .sidebar-nav-icon {
+  border-color: rgba(169, 203, 184, 0.15);
+  background: rgba(169, 203, 184, 0.08);
 }
 
 .sidebar-bottom {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sidebar-privacy,
@@ -930,17 +1023,29 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
-  border: 1px solid #3c4039;
-  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 11px;
 }
 
 .sidebar-privacy {
+  padding: 11px;
   color: #9fc7ae;
+  background: rgba(159, 199, 174, 0.045);
+}
+
+.sidebar-status-icon {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(159, 199, 174, 0.16);
+  border-radius: 50%;
+  background: rgba(159, 199, 174, 0.08);
 }
 
 .sidebar-privacy div,
-.sidebar-account > div {
+.sidebar-account-copy {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -956,18 +1061,37 @@ a {
 }
 
 .sidebar-privacy span,
-.sidebar-account span {
+.sidebar-account-copy span {
   color: #90968c;
   font-size: 9px;
 }
 
-.sidebar-account .button {
-  margin-left: auto;
+.sidebar-account {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 11px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-account-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.sidebar-account-actions .button {
+  width: 100%;
+  min-height: 31px;
   color: #aeb4aa;
 }
 
-.sidebar-account .button + .button {
-  margin-left: -6px;
+.sidebar-account-actions .button:hover {
+  color: #f0f1eb;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .app-main {
@@ -1158,6 +1282,44 @@ a {
   color: var(--ink-soft);
   font-size: 12.5px;
   line-height: 1.7;
+}
+
+.work-preferences {
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.work-preferences > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.work-preferences > div:first-child > span {
+  color: var(--ink-faint);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.preference-row {
+  display: grid;
+  gap: 5px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.preference-row > span {
+  color: var(--ink-faint);
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preference-row > strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
 }
 
 .tag-list {
@@ -2886,6 +3048,15 @@ a {
 
   .landing-nav {
     width: calc(100% - 32px);
+  }
+
+  .public-profile-nav {
+    width: calc(100% - 32px);
+  }
+
+  .public-profile-nav .button-primary {
+    padding: 0 11px;
+    font-size: 11px;
   }
 
   .landing-nav-actions .button-ghost {
