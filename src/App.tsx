@@ -13,6 +13,7 @@ import {
   LockKeyIcon,
   MagnifyingGlassIcon,
   MoonIcon,
+  SignOutIcon,
   PlusIcon,
   SealCheckIcon,
   ShieldCheckIcon,
@@ -35,11 +36,13 @@ import {
   initialRequests,
   people,
 } from "./data";
+import { authClient } from "./auth";
 import { initials } from "./lib";
 import type {
   Claim,
   Evidence,
   IntroductionDraft,
+  AuthMode,
   Ownership,
   Person,
   Profession,
@@ -71,9 +74,11 @@ function routeFromHash(): Route {
 }
 
 export default function App() {
+  const { data: session, isPending: sessionPending, refetch: refetchSession } =
+    authClient.useSession();
   const [route, setRoute] = useState<Route>(routeFromHash);
   const [profile, setProfile] = useState<Person>(currentPerson);
-  const [dark, setDark] = useState(() => localStorage.getItem("folio-theme") === "dark");
+  const [dark, setDark] = useState(() => localStorage.getItem("folio-theme") !== "light");
   const [claims, setClaims] = useState<Claim[]>(initialClaims);
   const [evidence, setEvidence] = useState<Evidence[]>(initialEvidence);
   const [requests, setRequests] = useState<ProfessionalRequest[]>(initialRequests);
@@ -81,6 +86,7 @@ export default function App() {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode | null>(null);
   const [intro, setIntro] = useState<IntroductionDraft | null>(null);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
@@ -106,22 +112,51 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  useEffect(() => {
+    if (!session?.user) return;
+    setProfile((person) => ({
+      ...person,
+      id: session.user.id,
+      name: session.user.name,
+      initials: initials(session.user.name),
+    }));
+  }, [session?.user]);
+
+  useEffect(() => {
+    if (sessionPending || session?.user || route === "landing") return;
+    setAuthMode("sign-in");
+  }, [route, session?.user, sessionPending]);
+
+  useEffect(() => {
+    if (session?.user && route === "landing") window.location.hash = "/profile";
+  }, [route, session?.user]);
+
   const navigate = (next: Route) => {
     window.location.hash = next === "landing" ? "" : `/${next}`;
     if (next === route) setRoute(next);
   };
 
-  if (route === "landing") {
+  if (sessionPending) {
+    return <AuthLoader />;
+  }
+
+  if (route === "landing" || !session?.user) {
     return (
       <>
-        <Landing onEnter={() => navigate("profile")} dark={dark} setDark={setDark} />
-        <ClaimDialog
-          open={claimOpen}
-          onOpenChange={setClaimOpen}
-          onCreate={(claim) => {
-            setClaims((items) => [claim, ...items]);
-            setClaimOpen(false);
-            setToast("Claim saved to your profile.");
+        <Landing
+          onSignIn={() => setAuthMode("sign-in")}
+          onCreateAccount={() => setAuthMode("sign-up")}
+          dark={dark}
+          setDark={setDark}
+        />
+        <AuthDialog
+          mode={authMode}
+          onOpenChange={(open) => !open && setAuthMode(null)}
+          onModeChange={setAuthMode}
+          onAuthenticated={async () => {
+            await refetchSession();
+            setAuthMode(null);
+            navigate("profile");
           }}
         />
       </>
@@ -132,11 +167,17 @@ export default function App() {
     <div className="app-shell">
       <Sidebar
         person={profile}
+        email={session.user.email}
         route={route}
         navigate={navigate}
         dark={dark}
         setDark={setDark}
         onNewClaim={() => setClaimOpen(true)}
+        onSignOut={async () => {
+          await authClient.signOut();
+          await refetchSession();
+          navigate("landing");
+        }}
       />
       <main className="app-main">
         <MobileBar
@@ -272,11 +313,13 @@ function ThemeButton({
 }
 
 function Landing({
-  onEnter,
+  onSignIn,
+  onCreateAccount,
   dark,
   setDark,
 }: {
-  onEnter: () => void;
+  onSignIn: () => void;
+  onCreateAccount: () => void;
   dark: boolean;
   setDark: (dark: boolean) => void;
 }) {
@@ -286,10 +329,10 @@ function Landing({
         <Logo />
         <div className="landing-nav-actions">
           <ThemeButton dark={dark} setDark={setDark} />
-          <Button variant="ghost" onClick={onEnter}>
+          <Button variant="ghost" onClick={onSignIn}>
             Sign in
           </Button>
-          <Button onClick={onEnter}>View demo</Button>
+          <Button onClick={onCreateAccount}>Create account</Button>
         </div>
       </header>
 
@@ -297,15 +340,18 @@ function Landing({
         <section className="hero">
           <div className="hero-copy">
             <Badge tone="accent">A professional network for evidence of work</Badge>
-            <h1>Your work should speak for itself.</h1>
+            <h1>
+              Your work should
+              <span> speak for itself.</span>
+            </h1>
             <p>
               Folio helps professionals build profiles based on verified projects,
               contributions, and outcomes—not titles, follower counts, or generic
               endorsements.
             </p>
             <div className="hero-actions">
-              <Button onClick={onEnter}>
-                Explore a Folio
+              <Button onClick={onCreateAccount}>
+                Create your Folio
                 <ArrowRightIcon size={17} weight="bold" />
               </Button>
               <a href="#how-it-works" className="text-link">
@@ -324,6 +370,10 @@ function Landing({
             </div>
           </div>
           <div className="hero-composition" aria-label="Example verified professional claim">
+            <div className="hero-ledger-mark" aria-hidden="true">
+              <span>FOLIO</span>
+              <span>PROFESSIONAL RECORD</span>
+            </div>
             <div className="hero-index">CLAIM 01 / 03</div>
             <div className="hero-claim">
               <div className="hero-claim-top">
@@ -413,8 +463,8 @@ function Landing({
             <h2>A profile built for the question that actually matters.</h2>
           </div>
           <blockquote>“What did this person actually do?”</blockquote>
-          <Button onClick={onEnter} variant="secondary">
-            Open the product
+          <Button onClick={onCreateAccount} variant="secondary">
+            Create your account
             <ArrowRightIcon size={17} />
           </Button>
         </section>
@@ -430,18 +480,22 @@ function Landing({
 
 function Sidebar({
   person,
+  email,
   route,
   navigate,
   dark,
   setDark,
   onNewClaim,
+  onSignOut,
 }: {
   person: Person;
+  email: string;
   route: Route;
   navigate: (route: Route) => void;
   dark: boolean;
   setDark: (dark: boolean) => void;
   onNewClaim: () => void;
+  onSignOut: () => void;
 }) {
   return (
     <aside className="sidebar">
@@ -479,9 +533,12 @@ function Sidebar({
           <Avatar initials={person.initials} accent={person.accent} size="sm" />
           <div>
             <strong>{person.name}</strong>
-            <span>View account</span>
+            <span>{email}</span>
           </div>
           <ThemeButton dark={dark} setDark={setDark} />
+          <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
+            <SignOutIcon size={18} />
+          </Button>
         </div>
       </div>
     </aside>
@@ -576,6 +633,10 @@ function ProfilePage({
     <div className="page profile-page">
       <div className="profile-cover">
         <div className="profile-cover-pattern" />
+        <div className="profile-record-mark" aria-hidden="true">
+          <span>PROFESSIONAL RECORD</span>
+          <strong>F / {person.id.slice(0, 6).toUpperCase()}</strong>
+        </div>
         <div className="profile-heading">
           <Avatar initials={person.initials} accent={person.accent} size="xl" />
           <div className="profile-identity">
@@ -1409,6 +1470,165 @@ function RequestsPage({
   );
 }
 
+function AuthDialog({
+  mode,
+  onOpenChange,
+  onModeChange,
+  onAuthenticated,
+}: {
+  mode: AuthMode | null;
+  onOpenChange: (open: boolean) => void;
+  onModeChange: (mode: AuthMode) => void;
+  onAuthenticated: () => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    setError("");
+    setPassword("");
+  }, [mode]);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!mode) return;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Use at least 8 characters for your password.");
+      return;
+    }
+    if (mode === "sign-up" && name.trim().length < 2) {
+      setError("Enter the name you use professionally.");
+      return;
+    }
+
+    setPending(true);
+    setError("");
+    const result =
+      mode === "sign-up"
+        ? await authClient.signUp.email({
+            name: name.trim(),
+            email: normalizedEmail,
+            password,
+          })
+        : await authClient.signIn.email({
+            email: normalizedEmail,
+            password,
+          });
+    setPending(false);
+
+    if (result.error) {
+      setError(result.error.message || "Authentication failed. Please try again.");
+      return;
+    }
+    await onAuthenticated();
+  };
+
+  return (
+    <Dialog
+      open={Boolean(mode)}
+      onOpenChange={onOpenChange}
+      title={mode === "sign-up" ? "Create your Folio account" : "Welcome back"}
+      description={
+        mode === "sign-up"
+          ? "Your account and session are stored securely in the connected Neon database."
+          : "Sign in to manage your professional claims and private evidence."
+      }
+    >
+      <form onSubmit={submit} className="form-section auth-form">
+        <div className="auth-switch" aria-label="Authentication mode">
+          <button
+            type="button"
+            className={mode === "sign-in" ? "active" : ""}
+            onClick={() => onModeChange("sign-in")}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            className={mode === "sign-up" ? "active" : ""}
+            onClick={() => onModeChange("sign-up")}
+          >
+            Create account
+          </button>
+        </div>
+        {mode === "sign-up" ? (
+          <Field label="Professional name" htmlFor="auth-name">
+            <input
+              id="auth-name"
+              autoComplete="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Mara Voss"
+            />
+          </Field>
+        ) : null}
+        <Field label="Email address" htmlFor="auth-email">
+          <input
+            id="auth-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+          />
+        </Field>
+        <Field
+          label="Password"
+          htmlFor="auth-password"
+          helper={mode === "sign-up" ? "Use at least 8 characters." : undefined}
+          error={error}
+        >
+          <input
+            id="auth-password"
+            type="password"
+            autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </Field>
+        <Button type="submit" disabled={pending} className="auth-submit">
+          {pending
+            ? mode === "sign-up"
+              ? "Creating account…"
+              : "Signing in…"
+            : mode === "sign-up"
+              ? "Create account"
+              : "Sign in"}
+        </Button>
+        <div className="privacy-preview compact">
+          <ShieldCheckIcon size={20} />
+          <span>
+            Passwords are handled by Neon Auth. Folio never stores a readable
+            password in application data.
+          </span>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function AuthLoader() {
+  return (
+    <div className="auth-loader" aria-label="Checking your session">
+      <Logo />
+      <div>
+        <Skeleton className="skeleton-kicker" />
+        <Skeleton className="skeleton-title" />
+      </div>
+    </div>
+  );
+}
+
 function ProfileDialog({
   open,
   onOpenChange,
@@ -1623,8 +1843,7 @@ function ClaimDialog({
     if (!Object.keys(nextErrors).length) setStep((value) => Math.min(3, value + 1));
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  const save = () => {
     onCreate({
       id: `claim-${Date.now()}`,
       title: title.trim(),
@@ -1664,7 +1883,7 @@ function ClaimDialog({
       description="Make your contribution distinct from the project’s overall result."
       wide
     >
-      <form onSubmit={submit}>
+      <form onSubmit={(event) => event.preventDefault()}>
         <div className="stepper" aria-label={`Step ${step} of 3`}>
           {["Context", "Contribution", "Privacy"].map((label, index) => (
             <div key={label} className={step >= index + 1 ? "active" : ""}>
@@ -1839,12 +2058,12 @@ function ClaimDialog({
             <span />
           )}
           {step < 3 ? (
-            <Button onClick={next}>
+            <Button key="continue" onClick={next}>
               Continue
               <ArrowRightIcon size={16} />
             </Button>
           ) : (
-            <Button type="submit">Save claim</Button>
+            <Button key="save" onClick={save}>Save claim</Button>
           )}
         </div>
       </form>

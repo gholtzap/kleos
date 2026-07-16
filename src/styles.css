@@ -1,11 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Folio Sans";
-  src: local("Avenir Next"), local("Avenir"), local("Helvetica Neue");
-  font-display: swap;
-}
-
 :root {
   color-scheme: light;
   --paper: #f3f0e8;
@@ -26,11 +20,12 @@
   --sidebar: #252823;
   --sidebar-soft: #333730;
   --white: #fffefa;
-  --shadow: 0 18px 50px rgba(43, 45, 38, 0.09);
-  --radius-sm: 7px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  font-family: "Folio Sans", "Helvetica Neue", sans-serif;
+  --shadow: 0 24px 70px rgba(43, 45, 38, 0.11);
+  --shadow-soft: 0 8px 28px rgba(43, 45, 38, 0.07);
+  --radius-sm: 9px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  font-family: "Manrope Variable", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -56,6 +51,7 @@
   --sidebar-soft: #242721;
   --white: #292c27;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  --shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.16);
 }
 
 * {
@@ -73,6 +69,17 @@ body {
   min-height: 100dvh;
   background: var(--paper);
   color: var(--ink);
+  font-feature-settings: "ss01" 1, "ss02" 1;
+}
+
+body::before {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.26'/%3E%3C/svg%3E");
+  content: "";
+  opacity: 0.025;
 }
 
 button,
@@ -118,15 +125,17 @@ a {
   font-weight: 700;
   letter-spacing: -0.01em;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition:
     transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms,
     background 180ms,
     color 180ms,
     border-color 180ms;
 }
 
 .button:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.985);
 }
 
 .button:disabled {
@@ -141,6 +150,9 @@ a {
 
 .button-primary:hover {
   background: var(--accent-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .button-secondary {
@@ -201,7 +213,8 @@ a {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink-soft);
-  background: color-mix(in srgb, var(--paper-raised) 76%, transparent);
+  background: color-mix(in srgb, var(--paper-raised) 86%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--white) 60%, transparent);
   font-size: 10.5px;
   font-weight: 700;
   line-height: 1.1;
@@ -305,7 +318,7 @@ a {
   gap: 10px;
   color: inherit;
   font-size: 20px;
-  font-weight: 750;
+  font-weight: 760;
   letter-spacing: -0.06em;
 }
 
@@ -354,10 +367,13 @@ a {
   overflow: hidden;
   background:
     linear-gradient(90deg, transparent 49.94%, color-mix(in srgb, var(--line) 40%, transparent) 50%, transparent 50.06%),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 23%),
     var(--paper);
 }
 
 .landing-nav {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -395,17 +411,26 @@ a {
 .hero-copy h1 {
   max-width: 600px;
   margin: 24px 0;
-  font-size: clamp(52px, 6.2vw, 92px);
-  font-weight: 580;
-  letter-spacing: -0.07em;
-  line-height: 0.91;
+  font-family: "Newsreader Variable", serif;
+  font-size: clamp(59px, 6.8vw, 102px);
+  font-weight: 430;
+  letter-spacing: -0.062em;
+  line-height: 0.84;
+}
+
+.hero-copy h1 span {
+  display: block;
+  color: var(--accent);
+  font-style: italic;
+  font-variation-settings: "opsz" 72;
+  letter-spacing: -0.055em;
 }
 
 .hero-copy > p {
   max-width: 600px;
   margin: 0;
   color: var(--ink-soft);
-  font-size: 18px;
+  font-size: 17px;
   letter-spacing: -0.02em;
   line-height: 1.65;
 }
@@ -420,6 +445,12 @@ a {
   font-size: 13px;
   font-weight: 700;
   text-underline-offset: 4px;
+  transition: color 160ms, transform 160ms;
+}
+
+.text-link:hover {
+  color: var(--accent);
+  transform: translateX(3px);
 }
 
 .hero-proof {
@@ -444,6 +475,26 @@ a {
   padding: 72px 7% 40px 11%;
   border-left: 1px solid var(--line);
   animation: rise-in 700ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-ledger-mark {
+  position: absolute;
+  top: 72px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.hero-ledger-mark span:first-child {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .hero-composition::before {
@@ -474,6 +525,14 @@ a {
   border-radius: 2px 32px 2px 32px;
   background: color-mix(in srgb, var(--paper-raised) 94%, transparent);
   box-shadow: var(--shadow);
+  transition:
+    transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-composition:hover .hero-claim {
+  box-shadow: 0 34px 90px rgba(43, 45, 38, 0.15);
+  transform: translateY(-5px) rotate(-0.35deg);
 }
 
 .hero-claim::after {
@@ -506,7 +565,7 @@ a {
   max-width: 660px;
   margin: 12px 0 32px;
   font-size: clamp(29px, 3.3vw, 49px);
-  font-weight: 580;
+  font-weight: 520;
   letter-spacing: -0.055em;
   line-height: 1.06;
 }
@@ -575,7 +634,7 @@ a {
   padding: 16px 18px;
   border: 1px solid var(--line);
   background: var(--paper-deep);
-  box-shadow: 0 10px 30px rgba(43, 45, 38, 0.07);
+  box-shadow: var(--shadow-soft);
   transform: translateX(7%);
 }
 
@@ -639,10 +698,11 @@ a {
 .section-intro h2 {
   max-width: 750px;
   margin: 0;
-  font-size: clamp(38px, 5vw, 68px);
-  font-weight: 560;
-  letter-spacing: -0.06em;
-  line-height: 1;
+  font-family: "Newsreader Variable", serif;
+  font-size: clamp(46px, 5.4vw, 76px);
+  font-weight: 450;
+  letter-spacing: -0.052em;
+  line-height: 0.96;
 }
 
 .how-grid {
@@ -658,6 +718,13 @@ a {
   min-height: 310px;
   padding: 42px;
   background: var(--paper-raised);
+  transition: background 240ms, transform 240ms;
+}
+
+.how-step:hover {
+  z-index: 1;
+  background: var(--white);
+  transform: translateY(-3px);
 }
 
 .how-step-large {
@@ -742,10 +809,11 @@ a {
 .positioning h2 {
   max-width: 520px;
   margin: 14px 0 0;
-  font-size: clamp(38px, 4vw, 58px);
-  font-weight: 560;
-  letter-spacing: -0.055em;
-  line-height: 1.02;
+  font-family: "Newsreader Variable", serif;
+  font-size: clamp(44px, 4.6vw, 66px);
+  font-weight: 440;
+  letter-spacing: -0.05em;
+  line-height: 0.96;
 }
 
 .positioning .eyebrow {
@@ -755,7 +823,9 @@ a {
 .positioning blockquote {
   margin: 0;
   color: #aeb4ad;
-  font-size: 20px;
+  font-family: "Newsreader Variable", serif;
+  font-size: 24px;
+  font-style: italic;
   line-height: 1.5;
 }
 
@@ -896,9 +966,16 @@ a {
   color: #aeb4aa;
 }
 
+.sidebar-account .button + .button {
+  margin-left: -6px;
+}
+
 .app-main {
   min-height: 100dvh;
   margin-left: 244px;
+  background:
+    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 22rem),
+    var(--paper);
 }
 
 .mobile-topbar,
@@ -982,6 +1059,25 @@ a {
   mask-image: linear-gradient(to left, #000, transparent 65%);
 }
 
+.profile-record-mark {
+  position: absolute;
+  top: 30px;
+  right: max(40px, calc((100% - 1120px) / 2));
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  color: var(--ink-faint);
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+
+.profile-record-mark strong {
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .profile-heading {
   position: absolute;
   right: max(40px, calc((100% - 1120px) / 2));
@@ -1045,7 +1141,10 @@ a {
 .profile-aside {
   display: grid;
   align-content: start;
+  align-self: start;
   gap: 34px;
+  position: sticky;
+  top: 34px;
 }
 
 .profile-aside section {
@@ -1167,6 +1266,20 @@ a {
   border-radius: var(--radius-md);
   background: var(--paper-raised);
   animation: rise-in 500ms calc(var(--item-index) * 80ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms,
+    box-shadow 220ms;
+}
+
+.claim-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-3px);
+}
+
+.claim-card:hover .claim-card-index {
+  color: var(--accent);
 }
 
 .claim-card-index {
@@ -1207,6 +1320,14 @@ a {
   font-weight: 610;
   letter-spacing: -0.04em;
   line-height: 1.22;
+}
+
+.claim-card .button svg {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.claim-card:hover .button svg {
+  transform: translateX(3px);
 }
 
 .claim-contribution,
@@ -1778,6 +1899,57 @@ a {
 .form-section {
   display: grid;
   gap: 20px;
+}
+
+.auth-switch {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-deep);
+}
+
+.auth-switch button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--ink-soft);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.auth-switch button.active {
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: 0 2px 5px rgba(20, 22, 18, 0.08);
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.auth-loader {
+  display: grid;
+  place-content: center;
+  gap: 30px;
+  min-height: 100dvh;
+  padding: 32px;
+  background: var(--paper);
+}
+
+.auth-loader > div {
+  display: grid;
+  gap: 12px;
+  width: min(360px, calc(100vw - 64px));
+}
+
+.auth-loader .skeleton-title {
+  width: 100%;
+  min-height: 42px;
 }
 
 .evidence-detail-head {
@@ -2667,6 +2839,7 @@ a {
 
   .profile-aside {
     grid-template-columns: repeat(2, 1fr);
+    position: static;
   }
 
   .discovery-search {
@@ -2740,6 +2913,11 @@ a {
   .hero-composition {
     margin-top: 56px;
     padding: 60px 0 20px;
+  }
+
+  .hero-ledger-mark,
+  .profile-record-mark {
+    display: none;
   }
 
   .hero-composition::before {

@@ -1,5 +1,7 @@
 export type Route = "landing" | "profile" | "vault" | "discover" | "requests";
 
+export type AuthMode = "sign-in" | "sign-up";
+
 export type Ownership =
   | "Contributor"
   | "Major contributor"
