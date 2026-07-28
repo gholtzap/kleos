@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { initialClaims, initialEvidence } from "./data";
-import { emptyProfile, initials } from "./lib";
+import { emptyProfile, initials, parseCommaSeparatedList } from "./lib";
 import { publicProfileHash, publicProfileIdFromHash } from "./public-profile";
 
 describe("Folio domain fixtures", () => {
@@ -26,5 +26,13 @@ describe("Folio domain fixtures", () => {
         .filter((claim) => claim.organizationHidden)
         .every((claim) => claim.privacy !== "Public"),
     ).toBe(true);
+  });
+
+  it("parses comma-separated form values", () => {
+    expect(parseCommaSeparatedList("Accessibility, , Cloud cost,")).toEqual([
+      "Accessibility",
+      "Cloud cost",
+    ]);
+    expect(parseCommaSeparatedList("")).toEqual([]);
   });
 });

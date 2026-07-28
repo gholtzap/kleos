@@ -37,7 +37,7 @@ import {
   people,
 } from "./data";
 import { authClient } from "./auth";
-import { emptyProfile, initials } from "./lib";
+import { emptyProfile, initials, parseCommaSeparatedList } from "./lib";
 import {
   getPublicProfile,
   publicProfileHash,
@@ -1806,12 +1806,6 @@ function ProfileDialog({
     setErrors({});
   }, [open, profile]);
 
-  const parseList = (value: string) =>
-    value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
@@ -1819,7 +1813,8 @@ function ProfileDialog({
     if (!role.trim()) nextErrors.role = "Add your current professional role.";
     if (summary.trim().length < 40)
       nextErrors.summary = "Write at least 40 characters about the work you do.";
-    if (!parseList(expertise).length) nextErrors.expertise = "Add at least one area of expertise.";
+    if (!parseCommaSeparatedList(expertise).length)
+      nextErrors.expertise = "Add at least one area of expertise.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
@@ -1830,11 +1825,11 @@ function ProfileDialog({
       role: role.trim(),
       location: location.trim(),
       summary: summary.trim(),
-      expertise: parseList(expertise),
-      interests: parseList(interests),
-      availability: parseList(availability),
-      notOpenTo: parseList(boundaries),
-      preferredLocations: parseList(preferredLocations),
+      expertise: parseCommaSeparatedList(expertise),
+      interests: parseCommaSeparatedList(interests),
+      availability: parseCommaSeparatedList(availability),
+      notOpenTo: parseCommaSeparatedList(boundaries),
+      preferredLocations: parseCommaSeparatedList(preferredLocations),
       compensationPreference: compensationPreference.trim(),
     });
   };
@@ -2401,10 +2396,7 @@ function RequestDialog({
       kind,
       title: title.trim(),
       need: need.trim(),
-      experience: experience
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      experience: parseCommaSeparatedList(experience),
       commitment: commitment.trim(),
       compensation: compensation.trim(),
       constraints: constraints.trim() || "No additional constraints",

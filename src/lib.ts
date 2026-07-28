@@ -16,6 +16,13 @@ export function initials(name: string) {
     .toUpperCase();
 }
 
+export function parseCommaSeparatedList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function emptyProfile(id: string, name: string): Person {
   return {
     id,
