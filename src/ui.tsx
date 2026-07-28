@@ -1,15 +1,19 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Slot } from "@radix-ui/react-slot";
 import { XIcon } from "@phosphor-icons/react";
+import { BorderBeam } from "border-beam";
 import {
   forwardRef,
+  useState,
   type ButtonHTMLAttributes,
+  type FocusEventHandler,
   type HTMLAttributes,
+  type MouseEventHandler,
   type ReactNode,
 } from "react";
 import { cn } from "./lib";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
   variant?: "primary" | "secondary" | "ghost" | "outline" | "danger";
   size?: "sm" | "md" | "icon";
@@ -39,6 +43,63 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 Button.displayName = "Button";
+
+export const PulseButton = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      disabled,
+      onBlur,
+      onFocus,
+      onMouseEnter,
+      onMouseLeave,
+      variant = "primary",
+      ...props
+    },
+    ref,
+  ) => {
+    const [hovered, setHovered] = useState(false);
+    const [focused, setFocused] = useState(false);
+    const activate: MouseEventHandler<HTMLButtonElement> = (event) => {
+      onMouseEnter?.(event);
+      if (!disabled) setHovered(true);
+    };
+    const deactivate: MouseEventHandler<HTMLButtonElement> = (event) => {
+      onMouseLeave?.(event);
+      setHovered(false);
+    };
+    const focus: FocusEventHandler<HTMLButtonElement> = (event) => {
+      onFocus?.(event);
+      if (!disabled) setFocused(true);
+    };
+    const blur: FocusEventHandler<HTMLButtonElement> = (event) => {
+      onBlur?.(event);
+      setFocused(false);
+    };
+
+    return (
+      <BorderBeam
+        active={hovered || focused}
+        brightness={1.8}
+        className="button-pulse"
+        colorVariant="mono"
+        size={variant === "primary" ? "pulse-outside" : "pulse-inner"}
+        theme="dark"
+      >
+        <Button
+          {...props}
+          ref={ref}
+          disabled={disabled}
+          onBlur={blur}
+          onFocus={focus}
+          onMouseEnter={activate}
+          onMouseLeave={deactivate}
+          variant={variant}
+        />
+      </BorderBeam>
+    );
+  },
+);
+PulseButton.displayName = "PulseButton";
 
 export function Badge({
   children,

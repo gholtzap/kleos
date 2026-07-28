@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { initialClaims, initialEvidence } from "./data";
-import { emptyProfile, initials, parseCommaSeparatedList } from "./lib";
+import {
+  emptyProfile,
+  heapUsageIsUnsafe,
+  initials,
+  parseCommaSeparatedList,
+} from "./lib";
 import { publicProfileHash, publicProfileIdFromHash } from "./public-profile";
 
 describe("Folio domain fixtures", () => {
@@ -26,6 +31,17 @@ describe("Folio domain fixtures", () => {
         .filter((claim) => claim.organizationHidden)
         .every((claim) => claim.privacy !== "Public"),
     ).toBe(true);
+  });
+
+  it("trips the heap guard before tab memory gets unbounded", () => {
+    expect(heapUsageIsUnsafe({ usedJSHeapSize: 536_870_912 })).toBe(true);
+    expect(
+      heapUsageIsUnsafe({
+        usedJSHeapSize: 86,
+        jsHeapSizeLimit: 100,
+      }),
+    ).toBe(true);
+    expect(heapUsageIsUnsafe({ usedJSHeapSize: 100 })).toBe(false);
   });
 
   it("parses comma-separated form values", () => {

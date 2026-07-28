@@ -4,7 +4,6 @@ import {
   CheckIcon,
   CompassIcon,
   FileTextIcon,
-  FingerprintIcon,
   FolderLockIcon,
   HandshakeIcon,
   HouseIcon,
@@ -13,7 +12,6 @@ import {
   LockKeyIcon,
   MagnifyingGlassIcon,
   MoonIcon,
-  SignOutIcon,
   PlusIcon,
   SealCheckIcon,
   ShieldCheckIcon,
@@ -21,6 +19,7 @@ import {
   SunIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
+import { UserButton, useAuth, useClerk, useUser } from "@clerk/react";
 import {
   useEffect,
   useMemo,
@@ -36,7 +35,6 @@ import {
   initialRequests,
   people,
 } from "./data";
-import { authClient } from "./auth";
 import { emptyProfile, initials, parseCommaSeparatedList } from "./lib";
 import {
   getPublicProfile,
@@ -48,14 +46,22 @@ import type {
   Claim,
   Evidence,
   IntroductionDraft,
-  AuthMode,
   Ownership,
   Person,
   Profession,
   ProfessionalRequest,
   Route,
 } from "./types";
-import { Avatar, Badge, Button, Dialog, DividerLabel, Field, Skeleton } from "./ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Dialog,
+  DividerLabel,
+  Field,
+  PulseButton,
+  Skeleton,
+} from "./ui";
 
 const routes: { id: Route; label: string; icon: typeof HouseIcon }[] = [
   { id: "profile", label: "Profile", icon: HouseIcon },
@@ -80,8 +86,27 @@ function routeFromHash(): Route {
 }
 
 export default function App() {
-  const { data: session, isPending: sessionPending, refetch: refetchSession } =
-    authClient.useSession();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { openSignIn, openSignUp } = useClerk();
+  const { isLoaded: userLoaded, user } = useUser();
+  const sessionPending = !authLoaded || !userLoaded;
+  const sessionUser =
+    isSignedIn && user
+      ? {
+          id: user.id,
+          name:
+            user.fullName ??
+            user.username ??
+            user.primaryEmailAddress?.emailAddress ??
+            user.primaryPhoneNumber?.phoneNumber ??
+            "Folio member",
+          contact:
+            user.primaryEmailAddress?.emailAddress ??
+            user.primaryPhoneNumber?.phoneNumber ??
+            user.username ??
+            "",
+        }
+      : null;
   const [route, setRoute] = useState<Route>(routeFromHash);
   const [publicProfileId, setPublicProfileId] = useState(() =>
     publicProfileIdFromHash(window.location.hash),
@@ -95,20 +120,24 @@ export default function App() {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode | null>(null);
   const [intro, setIntro] = useState<IntroductionDraft | null>(null);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let timeout = 0;
     const onHashChange = () => {
+      window.clearTimeout(timeout);
       setLoading(true);
       setRoute(routeFromHash());
       setPublicProfileId(publicProfileIdFromHash(window.location.hash));
-      window.setTimeout(() => setLoading(false), 280);
+      timeout = window.setTimeout(() => setLoading(false), 280);
     };
     window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("hashchange", onHashChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -117,15 +146,24 @@ export default function App() {
   }, [dark]);
 
   useEffect(() => {
+    const surface = isSignedIn && route !== "landing" && !publicProfileId ? "workspace" : "public";
+    document.documentElement.dataset.surface = surface;
+    return () => {
+      delete document.documentElement.dataset.surface;
+    };
+  }, [isSignedIn, publicProfileId, route]);
+
+  useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(""), 3200);
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!sessionUser) return;
     let active = true;
-    getPublicProfile(session.user.id)
+    const controller = new AbortController();
+    getPublicProfile(sessionUser.id, controller.signal)
       .then((published) => {
         if (!active) return;
         setProfile(published.person);
@@ -134,25 +172,21 @@ export default function App() {
       })
       .catch(() => {
         if (!active) return;
-        setProfile(emptyProfile(session.user.id, session.user.name));
+        setProfile(emptyProfile(sessionUser.id, sessionUser.name));
         setClaims([]);
         setEvidence([]);
       });
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [session?.user]);
+  }, [sessionUser?.id, sessionUser?.name]);
 
   useEffect(() => {
-    if (sessionPending || session?.user || route === "landing") return;
-    setAuthMode("sign-in");
-  }, [route, session?.user, sessionPending]);
-
-  useEffect(() => {
-    if (session?.user && route === "landing" && !publicProfileId) {
+    if (sessionUser && route === "landing" && !publicProfileId) {
       window.location.hash = "/profile";
     }
-  }, [publicProfileId, route, session?.user]);
+  }, [publicProfileId, route, sessionUser]);
 
   const navigate = (next: Route) => {
     window.location.hash = next === "landing" ? "" : `/${next}`;
@@ -161,7 +195,9 @@ export default function App() {
 
   const publishProfile = async (person: Person, nextClaims: Claim[]) => {
     try {
-      await savePublicProfile(session?.session.token ?? "", {
+      const token = await getToken();
+      if (!token) throw new Error("Missing Clerk session token.");
+      await savePublicProfile(token, {
         person,
         claims: nextClaims.filter((claim) => claim.privacy === "Public"),
       });
@@ -176,7 +212,7 @@ export default function App() {
         id={publicProfileId}
         dark={dark}
         setDark={setDark}
-        onCreateAccount={() => navigate("landing")}
+        onCreateAccount={() => openSignUp()}
       />
     );
   }
@@ -185,26 +221,12 @@ export default function App() {
     return <AuthLoader />;
   }
 
-  if (route === "landing" || !session?.user) {
+  if (route === "landing" || !sessionUser) {
     return (
-      <>
-        <Landing
-          onSignIn={() => setAuthMode("sign-in")}
-          onCreateAccount={() => setAuthMode("sign-up")}
-          dark={dark}
-          setDark={setDark}
-        />
-        <AuthDialog
-          mode={authMode}
-          onOpenChange={(open) => !open && setAuthMode(null)}
-          onModeChange={setAuthMode}
-          onAuthenticated={async () => {
-            await refetchSession();
-            setAuthMode(null);
-            navigate("profile");
-          }}
-        />
-      </>
+      <Landing
+        onSignIn={() => openSignIn()}
+        onCreateAccount={() => openSignUp()}
+      />
     );
   }
 
@@ -212,24 +234,15 @@ export default function App() {
     <div className="app-shell">
       <Sidebar
         person={profile}
-        email={session.user.email}
+        contact={sessionUser.contact}
         route={route}
         navigate={navigate}
-        dark={dark}
-        setDark={setDark}
         onNewClaim={() => setClaimOpen(true)}
-        onSignOut={async () => {
-          await authClient.signOut();
-          await refetchSession();
-          navigate("landing");
-        }}
       />
       <main className="app-main">
         <MobileBar
           route={route}
           navigate={navigate}
-          dark={dark}
-          setDark={setDark}
           onNewClaim={() => setClaimOpen(true)}
         />
         {loading ? (
@@ -369,197 +382,80 @@ function ThemeButton({
   );
 }
 
+function WorkspaceUserButton() {
+  return (
+    <UserButton
+      appearance={{
+        elements: {
+          userButtonAvatarBox: {
+            border: "1px solid rgba(255, 255, 255, 0.24)",
+            filter: "grayscale(1)",
+          },
+        },
+      }}
+    />
+  );
+}
+
 function Landing({
   onSignIn,
   onCreateAccount,
-  dark,
-  setDark,
 }: {
   onSignIn: () => void;
   onCreateAccount: () => void;
-  dark: boolean;
-  setDark: (dark: boolean) => void;
 }) {
   return (
     <div className="landing">
-      <header className="landing-nav">
-        <Logo />
-        <div className="landing-nav-actions">
-          <ThemeButton dark={dark} setDark={setDark} />
-          <Button variant="ghost" onClick={onSignIn}>
-            Sign in
-          </Button>
-          <Button onClick={onCreateAccount}>Create account</Button>
+      <section className="landing-visual" aria-label="A project folio being assembled">
+        <div className="landing-visual-header">
+          <Logo />
         </div>
-      </header>
+        <footer className="landing-copyright">© 2026 Folio</footer>
+      </section>
 
-      <main>
-        <section className="hero">
-          <div className="hero-copy">
-            <Badge tone="accent">A professional network for evidence of work</Badge>
-            <h1>
-              Your work should
-              <span> speak for itself.</span>
-            </h1>
-            <p>
-              Folio helps professionals build profiles based on verified projects,
-              contributions, and outcomes—not titles, follower counts, or generic
-              endorsements.
-            </p>
-            <div className="hero-actions">
-              <Button onClick={onCreateAccount}>
-                Create your Folio
-                <ArrowRightIcon size={17} weight="bold" />
-              </Button>
-              <a href="#how-it-works" className="text-link">
-                See how evidence works
-              </a>
-            </div>
-            <div className="hero-proof">
-              <span>
-                <ShieldCheckIcon size={18} />
-                Private evidence, public credibility
-              </span>
-              <span>
-                <UsersThreeIcon size={18} />
-                Credit that reflects the team
-              </span>
-            </div>
-          </div>
-          <div className="hero-composition" aria-label="Example verified professional claim">
-            <div className="hero-ledger-mark" aria-hidden="true">
-              <span>FOLIO</span>
-              <span>PROFESSIONAL RECORD</span>
-            </div>
-            <div className="hero-index">CLAIM 01 / 03</div>
-            <div className="hero-claim">
-              <div className="hero-claim-top">
-                <Badge tone="positive">
-                  <SealCheckIcon size={13} weight="fill" />
-                  Evidence supported
-                </Badge>
-                <span>Accountable owner</span>
-              </div>
-              <p className="eyebrow">Production systems · 2023</p>
-              <h2>Rebuilt a critical claims platform without interrupting operations.</h2>
-              <div className="hero-outcome">
-                <span className="outcome-number">38–44%</span>
-                <span>reduction in median processing time across 1.7M annual claims</span>
-              </div>
-              <div className="hero-evidence-line">
-                <span className="mini-stack">
-                  <i>SV</i>
-                  <i>PN</i>
-                  <i>EM</i>
-                </span>
-                <span>Confirmed by 2 collaborators · System records connected</span>
-              </div>
-            </div>
-            <div className="private-note">
-              <LockKeyIcon size={19} />
-              <div>
-                <strong>Evidence stays controlled</strong>
-                <span>Reviewers can confirm this claim without exposing source files.</span>
-              </div>
-            </div>
-          </div>
-        </section>
+      <main className="landing-panel">
+        <header className="landing-panel-header">
+          <Logo />
+        </header>
 
-        <section className="trust-strip" aria-label="Folio principles">
-          <span>Proof, not promotion</span>
-          <i />
-          <span>Contribution, not association</span>
-          <i />
-          <span>Context, not a universal score</span>
-        </section>
+        <div className="signup-prompt">
+          <h1>Professional profiles built on evidence.</h1>
 
-        <section className="how" id="how-it-works">
-          <div className="section-intro">
-            <p className="eyebrow">A clearer professional record</p>
-            <h2>Show the work. Name your part. Support the outcome.</h2>
+          <div className="signup-card">
+            <h2>Join Folio today.</h2>
+            <PulseButton onClick={onCreateAccount}>Create your account</PulseButton>
           </div>
-          <div className="how-grid">
-            <div className="how-step how-step-large">
-              <span className="step-number">01</span>
-              <FingerprintIcon size={26} />
-              <h3>Make the contribution specific</h3>
-              <p>
-                Separate what the project achieved from what you personally owned,
-                decided, designed, built, or changed.
-              </p>
-              <div className="contribution-demo">
-                <span>Project</span>
-                <strong>Claims infrastructure migration</strong>
-                <span>My contribution</span>
-                <strong>Migration path, compatibility layer, production cutover</strong>
-              </div>
-            </div>
-            <div className="how-step">
-              <span className="step-number">02</span>
-              <FolderLockIcon size={26} />
-              <h3>Support it privately</h3>
-              <p>
-                Add artifacts, system records, outcomes, or attestations. You decide
-                who can see each source.
-              </p>
-            </div>
-            <div className="how-step">
-              <span className="step-number">03</span>
-              <CompassIcon size={26} />
-              <h3>Be found for relevant work</h3>
-              <p>
-                Discovery explains the evidence and experience behind every result.
-              </p>
-            </div>
-          </div>
-        </section>
 
-        <section className="positioning">
-          <div>
-            <p className="eyebrow">Professional context, without the performance</p>
-            <h2>A profile built for the question that actually matters.</h2>
+          <div className="signin-prompt">
+            <span>Already have an account?</span>
+            <PulseButton variant="outline" onClick={onSignIn}>
+              Sign in
+            </PulseButton>
           </div>
-          <blockquote>“What did this person actually do?”</blockquote>
-          <Button onClick={onCreateAccount} variant="secondary">
-            Create your account
-            <ArrowRightIcon size={17} />
-          </Button>
-        </section>
+        </div>
       </main>
-      <footer className="landing-footer">
-        <Logo />
-        <span>Structured evidence for professional identity.</span>
-        <span>© 2026 Folio</span>
-      </footer>
     </div>
   );
 }
 
 function Sidebar({
   person,
-  email,
+  contact,
   route,
   navigate,
-  dark,
-  setDark,
   onNewClaim,
-  onSignOut,
 }: {
   person: Person;
-  email: string;
+  contact: string;
   route: Route;
   navigate: (route: Route) => void;
-  dark: boolean;
-  setDark: (dark: boolean) => void;
   onNewClaim: () => void;
-  onSignOut: () => void;
 }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
         <div className="sidebar-brand">
           <Logo />
-          <span>Professional record / 01</span>
         </div>
         <Button onClick={onNewClaim} className="sidebar-create">
           <PlusIcon size={16} weight="bold" />
@@ -567,7 +463,7 @@ function Sidebar({
         </Button>
         <p className="sidebar-nav-label">Workspace</p>
         <nav aria-label="Primary">
-          {routes.map((item, index) => {
+          {routes.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -576,9 +472,6 @@ function Sidebar({
                 onClick={() => navigate(item.id)}
                 aria-current={route === item.id ? "page" : undefined}
               >
-                <span className="sidebar-nav-index">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
                 <span className="sidebar-nav-icon">
                   <Icon size={17} weight={route === item.id ? "fill" : "regular"} />
                 </span>
@@ -589,26 +482,11 @@ function Sidebar({
         </nav>
       </div>
       <div className="sidebar-bottom">
-        <div className="sidebar-privacy">
-          <span className="sidebar-status-icon">
-            <ShieldCheckIcon size={17} weight="fill" />
-          </span>
-          <div>
-            <strong>Evidence stays controlled</strong>
-            <span>Visibility is set per item</span>
-          </div>
-        </div>
         <div className="sidebar-account">
-          <Avatar initials={person.initials} accent={person.accent} size="sm" />
+          <WorkspaceUserButton />
           <div className="sidebar-account-copy">
             <strong>{person.name}</strong>
-            <span>{email}</span>
-          </div>
-          <div className="sidebar-account-actions">
-            <ThemeButton dark={dark} setDark={setDark} />
-            <Button variant="ghost" size="icon" onClick={onSignOut} aria-label="Sign out">
-              <SignOutIcon size={17} />
-            </Button>
+            <span>{contact}</span>
           </div>
         </div>
       </div>
@@ -619,14 +497,10 @@ function Sidebar({
 function MobileBar({
   route,
   navigate,
-  dark,
-  setDark,
   onNewClaim,
 }: {
   route: Route;
   navigate: (route: Route) => void;
-  dark: boolean;
-  setDark: (dark: boolean) => void;
   onNewClaim: () => void;
 }) {
   return (
@@ -634,7 +508,7 @@ function MobileBar({
       <header className="mobile-topbar">
         <Logo />
         <div>
-          <ThemeButton dark={dark} setDark={setDark} />
+          <WorkspaceUserButton />
           <Button size="sm" onClick={onNewClaim}>
             <PlusIcon size={15} />
             Claim
@@ -701,15 +575,16 @@ function ProfilePage({
   const [selected, setSelected] = useState<Claim | null>(null);
   const featured = claims.filter((claim) => claim.featured);
   const evidenceCount = evidence.filter((item) => item.status === "Current").length;
+  const hasProfileAside = Boolean(
+    person.summary ||
+      person.notOpenTo.length ||
+      person.preferredLocations?.length ||
+      person.compensationPreference,
+  );
 
   return (
     <div className="page profile-page">
       <div className="profile-cover">
-        <div className="profile-cover-pattern" />
-        <div className="profile-record-mark" aria-hidden="true">
-          <span>PROFESSIONAL RECORD</span>
-          <strong>F / {person.id.slice(0, 6).toUpperCase()}</strong>
-        </div>
         <div className="profile-heading">
           <Avatar initials={person.initials} accent={person.accent} size="xl" />
           <div className="profile-identity">
@@ -748,41 +623,45 @@ function ProfilePage({
         </div>
       </div>
 
-      <div className="profile-layout">
-        <aside className="profile-aside">
-          {person.summary ? (
-            <section>
-              <p className="aside-label">About</p>
-              <p className="profile-summary">{person.summary}</p>
-            </section>
-          ) : null}
-          {person.notOpenTo.length ? (
-            <section>
-              <p className="aside-label">Boundaries</p>
-              <p className="muted-copy">Not open to {person.notOpenTo.join(" or ").toLowerCase()}.</p>
-            </section>
-          ) : null}
-          {person.preferredLocations?.length || person.compensationPreference ? (
-            <section className="work-preferences">
-              <div>
-                <p className="aside-label">Working preferences</p>
-                <span>Standing preferences, not an availability signal.</span>
-              </div>
-              {person.preferredLocations?.length ? (
-                <div className="preference-row">
-                  <span>Location fit</span>
-                  <strong>{person.preferredLocations.join(" · ")}</strong>
+      <div className={`profile-layout${hasProfileAside ? "" : " profile-layout-wide"}`}>
+        {hasProfileAside ? (
+          <aside className="profile-aside">
+            {person.summary ? (
+              <section>
+                <p className="aside-label">About</p>
+                <p className="profile-summary">{person.summary}</p>
+              </section>
+            ) : null}
+            {person.notOpenTo.length ? (
+              <section>
+                <p className="aside-label">Boundaries</p>
+                <p className="muted-copy">
+                  Not open to {person.notOpenTo.join(" or ").toLowerCase()}.
+                </p>
+              </section>
+            ) : null}
+            {person.preferredLocations?.length || person.compensationPreference ? (
+              <section className="work-preferences">
+                <div>
+                  <p className="aside-label">Working preferences</p>
+                  <span>Standing preferences, not an availability signal.</span>
                 </div>
-              ) : null}
-              {person.compensationPreference ? (
-                <div className="preference-row">
-                  <span>Compensation context</span>
-                  <strong>{person.compensationPreference}</strong>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-        </aside>
+                {person.preferredLocations?.length ? (
+                  <div className="preference-row">
+                    <span>Location fit</span>
+                    <strong>{person.preferredLocations.join(" · ")}</strong>
+                  </div>
+                ) : null}
+                {person.compensationPreference ? (
+                  <div className="preference-row">
+                    <span>Compensation context</span>
+                    <strong>{person.compensationPreference}</strong>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </aside>
+        ) : null}
 
         <div className="profile-content">
           <div className="profile-stats">
@@ -869,13 +748,15 @@ function PublicProfilePage({
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setPublished(null);
     setError("");
-    getPublicProfile(id)
+    getPublicProfile(id, controller.signal)
       .then((profile) => active && setPublished(profile))
       .catch(() => active && setError("This public profile could not be found."));
     return () => {
       active = false;
+      controller.abort();
     };
   }, [id]);
 
@@ -1602,153 +1483,6 @@ function RequestsPage({
         </div>
       </div>
     </div>
-  );
-}
-
-function AuthDialog({
-  mode,
-  onOpenChange,
-  onModeChange,
-  onAuthenticated,
-}: {
-  mode: AuthMode | null;
-  onOpenChange: (open: boolean) => void;
-  onModeChange: (mode: AuthMode) => void;
-  onAuthenticated: () => Promise<void>;
-}) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    setError("");
-    setPassword("");
-  }, [mode]);
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!mode) return;
-
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes("@")) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Use at least 8 characters for your password.");
-      return;
-    }
-    if (mode === "sign-up" && name.trim().length < 2) {
-      setError("Enter the name you use professionally.");
-      return;
-    }
-
-    setPending(true);
-    setError("");
-    const result =
-      mode === "sign-up"
-        ? await authClient.signUp.email({
-            name: name.trim(),
-            email: normalizedEmail,
-            password,
-          })
-        : await authClient.signIn.email({
-            email: normalizedEmail,
-            password,
-          });
-    setPending(false);
-
-    if (result.error) {
-      setError(result.error.message || "Authentication failed. Please try again.");
-      return;
-    }
-    await onAuthenticated();
-  };
-
-  return (
-    <Dialog
-      open={Boolean(mode)}
-      onOpenChange={onOpenChange}
-      title={mode === "sign-up" ? "Create your Folio account" : "Welcome back"}
-      description={
-        mode === "sign-up"
-          ? "Your account and session are stored securely in the connected Neon database."
-          : "Sign in to manage your professional claims and private evidence."
-      }
-    >
-      <form onSubmit={submit} className="form-section auth-form">
-        <div className="auth-switch" aria-label="Authentication mode">
-          <button
-            type="button"
-            className={mode === "sign-in" ? "active" : ""}
-            onClick={() => onModeChange("sign-in")}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className={mode === "sign-up" ? "active" : ""}
-            onClick={() => onModeChange("sign-up")}
-          >
-            Create account
-          </button>
-        </div>
-        {mode === "sign-up" ? (
-          <Field label="Professional name" htmlFor="auth-name">
-            <input
-              id="auth-name"
-              autoComplete="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Mara Voss"
-            />
-          </Field>
-        ) : null}
-        <Field label="Email address" htmlFor="auth-email">
-          <input
-            id="auth-email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-          />
-        </Field>
-        <Field
-          label="Password"
-          htmlFor="auth-password"
-          helper={mode === "sign-up" ? "Use at least 8 characters." : undefined}
-          error={error}
-        >
-          <input
-            id="auth-password"
-            type="password"
-            autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </Field>
-        <Button type="submit" disabled={pending} className="auth-submit">
-          {pending
-            ? mode === "sign-up"
-              ? "Creating account…"
-              : "Signing in…"
-            : mode === "sign-up"
-              ? "Create account"
-              : "Sign in"}
-        </Button>
-        <div className="privacy-preview compact">
-          <ShieldCheckIcon size={20} />
-          <span>
-            Passwords are handled by Neon Auth. Folio never stores a readable
-            password in application data.
-          </span>
-        </div>
-      </form>
-    </Dialog>
   );
 }
 

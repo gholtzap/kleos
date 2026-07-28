@@ -14,8 +14,8 @@ export function publicProfileIdFromHash(hash: string) {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
-export async function getPublicProfile(id: string) {
-  const response = await fetch(`/api/profiles?id=${encodeURIComponent(id)}`);
+export async function getPublicProfile(id: string, signal?: AbortSignal) {
+  const response = await fetch(`/api/profiles?id=${encodeURIComponent(id)}`, { signal });
   if (!response.ok) throw new Error("Profile not found.");
   return response.json() as Promise<PublicProfile>;
 }
