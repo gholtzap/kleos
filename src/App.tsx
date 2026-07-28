@@ -19,11 +19,12 @@ import {
   SunIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
-import { UserButton, useAuth, useClerk, useUser } from "@clerk/react";
+import { SignIn, SignUp, UserButton, useAuth, useUser } from "@clerk/react";
 import {
   useEffect,
   useMemo,
   useState,
+  type ComponentProps,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -35,7 +36,13 @@ import {
   initialRequests,
   people,
 } from "./data";
-import { emptyProfile, initials, parseCommaSeparatedList } from "./lib";
+import {
+  authPageFromPath,
+  emptyProfile,
+  initials,
+  parseCommaSeparatedList,
+  type AuthPage,
+} from "./lib";
 import {
   getPublicProfile,
   publicProfileHash,
@@ -70,6 +77,122 @@ const routes: { id: Route; label: string; icon: typeof HouseIcon }[] = [
   { id: "requests", label: "Requests", icon: HandshakeIcon },
 ];
 
+const clerkAuthAppearance = {
+  theme: "simple",
+  options: {
+    logoPlacement: "none",
+    socialButtonsPlacement: "bottom",
+    socialButtonsVariant: "blockButton",
+  },
+  variables: {
+    colorPrimary: "#f2f2ee",
+    colorNeutral: "#f2f2ee",
+    colorForeground: "#f2f2ee",
+    colorMuted: "#151615",
+    colorMutedForeground: "#9a9c97",
+    colorBackground: "transparent",
+    colorInput: "#111211",
+    colorInputForeground: "#f2f2ee",
+    colorRing: "#f2f2ee",
+    colorBorder: "#383a38",
+    colorDanger: "#f2f2ee",
+    colorSuccess: "#f2f2ee",
+    colorWarning: "#f2f2ee",
+    fontFamily: '"Manrope Variable", sans-serif',
+    fontFamilyButtons: '"Manrope Variable", sans-serif',
+    borderRadius: "12px",
+    fontSize: "0.8125rem",
+    spacing: "1rem",
+  },
+  elements: {
+    rootBox: {
+      width: "100%",
+    },
+    cardBox: {
+      width: "100%",
+      boxShadow: "none",
+    },
+    card: {
+      width: "100%",
+      maxWidth: "420px",
+      padding: "0",
+      backgroundColor: "transparent",
+      boxShadow: "none",
+    },
+    header: {
+      alignItems: "flex-start",
+      textAlign: "left",
+    },
+    headerTitle: {
+      fontSize: "1.5rem",
+      fontWeight: 680,
+      letterSpacing: "-0.04em",
+    },
+    headerSubtitle: {
+      color: "#9a9c97",
+      fontSize: "0.8125rem",
+    },
+    formFieldLabel: {
+      color: "#c8cac5",
+      fontSize: "0.75rem",
+      fontWeight: 650,
+    },
+    formFieldInput: {
+      minHeight: "46px",
+      border: "1px solid #383a38",
+      backgroundColor: "#111211",
+      boxShadow: "none",
+    },
+    formButtonPrimary: {
+      minHeight: "48px",
+      borderRadius: "999px",
+      color: "#0b0c0b",
+      backgroundColor: "#f2f2ee",
+      boxShadow: "none",
+      fontSize: "0.8125rem",
+      fontWeight: 750,
+      "&:hover": {
+        backgroundColor: "#ffffff",
+        boxShadow: "0 0 24px rgba(255, 255, 255, 0.18)",
+      },
+    },
+    socialButtonsBlockButton: {
+      minHeight: "46px",
+      border: "1px solid #383a38",
+      borderRadius: "999px",
+      color: "#f2f2ee",
+      backgroundColor: "transparent",
+      boxShadow: "none",
+      "&:hover": {
+        borderColor: "#686a66",
+        backgroundColor: "#181918",
+      },
+    },
+    dividerLine: {
+      backgroundColor: "#303230",
+    },
+    dividerText: {
+      color: "#777a75",
+      fontSize: "0.6875rem",
+    },
+    footerActionText: {
+      color: "#9a9c97",
+    },
+    footerActionLink: {
+      color: "#f2f2ee",
+      fontWeight: 700,
+    },
+    formFieldAction: {
+      color: "#f2f2ee",
+    },
+    identityPreview: {
+      border: "1px solid #383a38",
+      backgroundColor: "#111211",
+      boxShadow: "none",
+    },
+  },
+} satisfies NonNullable<ComponentProps<typeof SignIn>["appearance"]>;
+
 const professionPrompts: Record<Profession, string> = {
   Engineering: "Name the system, your technical ownership, production scale, and reliability, performance, cost, or security outcome.",
   Product: "Name the problem you owned, decisions you made, what shipped, and the adoption or business outcome.",
@@ -87,8 +210,8 @@ function routeFromHash(): Route {
 
 export default function App() {
   const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
-  const { openSignIn, openSignUp } = useClerk();
   const { isLoaded: userLoaded, user } = useUser();
+  const authPage = authPageFromPath(window.location.pathname);
   const sessionPending = !authLoaded || !userLoaded;
   const sessionUser =
     isSignedIn && user
@@ -212,7 +335,7 @@ export default function App() {
         id={publicProfileId}
         dark={dark}
         setDark={setDark}
-        onCreateAccount={() => openSignUp()}
+        onCreateAccount={() => window.location.assign("/sign-up")}
       />
     );
   }
@@ -221,11 +344,15 @@ export default function App() {
     return <AuthLoader />;
   }
 
+  if (authPage) {
+    return <AuthenticationPage page={authPage} />;
+  }
+
   if (route === "landing" || !sessionUser) {
     return (
       <Landing
-        onSignIn={() => openSignIn()}
-        onCreateAccount={() => openSignUp()}
+        onSignIn={() => window.location.assign("/sign-in")}
+        onCreateAccount={() => window.location.assign("/sign-up")}
       />
     );
   }
@@ -394,6 +521,55 @@ function WorkspaceUserButton() {
         },
       }}
     />
+  );
+}
+
+function AuthenticationPage({ page }: { page: AuthPage }) {
+  const signingIn = page === "sign-in";
+
+  return (
+    <main className="auth-page">
+      <section className="auth-page-context">
+        <a className="auth-page-logo" href="/" aria-label="Folio home">
+          <Logo />
+        </a>
+        <div className="auth-page-message">
+          <h1>Professional profiles built on evidence.</h1>
+          <p>
+            {signingIn
+              ? "Sign in to continue to your Folio."
+              : "Create your account to start your Folio."}
+          </p>
+        </div>
+        <footer>© 2026 Folio</footer>
+      </section>
+
+      <section
+        className="auth-page-form-panel"
+        aria-label={signingIn ? "Sign in" : "Create an account"}
+      >
+        <a className="auth-page-back" href="/">
+          Back to Folio
+        </a>
+        <div className="auth-page-form">
+          {signingIn ? (
+            <SignIn
+              appearance={clerkAuthAppearance}
+              routing="hash"
+              signUpUrl="/sign-up"
+              fallbackRedirectUrl="/#/profile"
+            />
+          ) : (
+            <SignUp
+              appearance={clerkAuthAppearance}
+              routing="hash"
+              signInUrl="/sign-in"
+              fallbackRedirectUrl="/#/profile"
+            />
+          )}
+        </div>
+      </section>
+    </main>
   );
 }
 

@@ -5,9 +5,18 @@ import type { Person } from "./types";
 const DEFAULT_HEAP_CEILING_BYTES = 512 * 1024 * 1024;
 const HEAP_LIMIT_RATIO = 0.85;
 
+export type AuthPage = "sign-in" | "sign-up";
+
 export interface HeapSnapshot {
   usedJSHeapSize: number;
   jsHeapSizeLimit?: number;
+}
+
+export function authPageFromPath(pathname: string): AuthPage | null {
+  const path = pathname.replace(/\/+$/, "");
+  if (path === "/sign-in") return "sign-in";
+  if (path === "/sign-up") return "sign-up";
+  return null;
 }
 
 export function cn(...inputs: ClassValue[]) {
