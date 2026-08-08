@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "db:migrate": "node scripts/migrate.mjs",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:db": "npm run db:migrate && RUN_FOLIO_DB_TESTS=1 vitest run api/storage.integration.test.ts",
+    "test:load": "node scripts/load-test.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^3.13.2",

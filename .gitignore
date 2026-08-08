@@ -8,3 +8,4 @@ dist/
 
 .vercel
 .neon
+.DS_Store

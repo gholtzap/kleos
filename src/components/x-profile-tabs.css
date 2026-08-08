@@ -1,0 +1,62 @@
+.x-profile-tabs {
+  box-sizing: border-box;
+  width: 100%;
+  height: 54px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid #2f3336;
+  scrollbar-width: none;
+}
+
+.x-profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.x-profile-tabs__list {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  height: 53px;
+}
+
+.x-profile-tabs__tab {
+  position: relative;
+  flex: 1 0 auto;
+  height: 53px;
+  padding: 0 16px;
+  color: #71767b;
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.x-profile-tabs__tab[aria-selected="true"] {
+  color: #e7e9ea;
+  font-weight: 700;
+}
+
+.x-profile-tabs__tab:hover {
+  background: rgba(231, 233, 234, 0.1);
+}
+
+.x-profile-tabs__tab:focus-visible {
+  z-index: 1;
+  outline: 2px solid #1d9bf0;
+  outline-offset: -2px;
+}
+
+.x-profile-tabs__underline {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 56px;
+  max-width: calc(100% - 16px);
+  height: 4px;
+  background: #1d9bf0;
+  border-radius: 9999px;
+  transform: translateX(-50%);
+}

@@ -2424,6 +2424,7 @@ a {
 .field input,
 .field textarea,
 .field select,
+.discovery-search > input,
 .discovery-search select,
 .search-input {
   width: 100%;
@@ -2436,6 +2437,7 @@ a {
 
 .field input,
 .field select,
+.discovery-search > input,
 .discovery-search select {
   height: 42px;
   padding: 0 12px;
@@ -2450,6 +2452,7 @@ a {
 
 .field input::placeholder,
 .field textarea::placeholder,
+.discovery-search > input::placeholder,
 .search-input input::placeholder {
   color: var(--ink-faint);
 }
@@ -2457,6 +2460,7 @@ a {
 .field input:focus,
 .field textarea:focus,
 .field select:focus,
+.discovery-search > input:focus,
 .discovery-search select:focus,
 .search-input:focus-within {
   border-color: var(--accent);
@@ -3749,6 +3753,346 @@ a {
   }
 }
 
+.claim-evidence-list {
+  display: grid;
+  gap: 10px;
+}
+
+.claim-evidence-item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-soft);
+}
+
+.claim-evidence-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.claim-evidence-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.claim-evidence-heading span,
+.claim-evidence-item small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.claim-evidence-item p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.claim-evidence-item a,
+.evidence-source-link,
+.review-decision-context a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  width: fit-content;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.evidence-editor {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-soft);
+}
+
+.evidence-editor-heading,
+.share-section-heading {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.evidence-review-control {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.evidence-review-control .check-row {
+  min-height: 46px;
+}
+
+.share-review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+  gap: 24px;
+}
+
+.share-selection,
+.review-link-list {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.share-section-heading div {
+  display: grid;
+  gap: 3px;
+}
+
+.share-section-heading span,
+.created-review-link span,
+.review-link-list article span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.share-claim-list {
+  display: grid;
+  gap: 10px;
+}
+
+.share-claim {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-soft);
+}
+
+.share-claim.selected {
+  border-color: var(--line-strong);
+}
+
+.share-claim-toggle,
+.share-evidence-list label {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  cursor: pointer;
+}
+
+.share-claim-toggle {
+  padding: 14px;
+}
+
+.share-claim-toggle span,
+.share-evidence-list span {
+  display: grid;
+  gap: 3px;
+}
+
+.share-claim-toggle small,
+.share-evidence-list small {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.share-evidence-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px 38px;
+}
+
+.share-evidence-list label {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.share-create-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.share-create-row .button {
+  min-height: 42px;
+}
+
+.created-review-link {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  border: 1px solid var(--positive);
+  border-radius: var(--radius-sm);
+  background: var(--positive-soft);
+}
+
+.created-review-link div {
+  display: grid;
+  gap: 3px;
+}
+
+.review-link-list {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper-soft);
+}
+
+.review-link-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.review-link-list article:last-child {
+  border-bottom: 0;
+}
+
+.review-link-list article > div {
+  display: grid;
+  gap: 2px;
+}
+
+.review-link-list article .button {
+  grid-column: 1 / -1;
+  width: fit-content;
+}
+
+.review-link-banner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 24px auto 0;
+  padding: 10px 14px;
+  width: min(1180px, calc(100% - 40px));
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  font-size: 12px;
+}
+
+.review-queue {
+  display: grid;
+  gap: 10px;
+  padding: 24px clamp(20px, 4vw, 56px);
+}
+
+.review-queue article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-soft);
+}
+
+.review-queue article div {
+  display: grid;
+  gap: 4px;
+}
+
+.review-queue h2,
+.review-queue p {
+  margin: 0;
+}
+
+.review-queue span,
+.review-queue p {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.review-queue h2 {
+  font-size: 15px;
+}
+
+.review-decision,
+.review-decision-context {
+  display: grid;
+  gap: 16px;
+}
+
+.review-decision-context {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-soft);
+}
+
+.review-decision-context h2,
+.review-decision-context p {
+  margin: 0;
+}
+
+.review-decision-context span,
+.review-decision-context p {
+  color: var(--ink-muted);
+}
+
+.review-claim-context {
+  display: grid;
+  gap: 6px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.review-claim-context span {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.review-claim-context small {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .share-review-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .review-link-list {
+    order: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .claim-evidence-heading,
+  .review-queue article {
+    grid-template-columns: 1fr;
+  }
+
+  .claim-evidence-heading .evidence-icon {
+    display: none;
+  }
+
+  .share-create-row {
+    grid-template-columns: 1fr;
+  }
+
+  .share-evidence-list {
+    padding-left: 14px;
+  }
+
+  .created-review-link {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 900px) {
   .auth-page {
     grid-template-columns: 1fr;
@@ -4303,6 +4647,7 @@ a {
 :root[data-surface="workspace"] .field input,
 :root[data-surface="workspace"] .field textarea,
 :root[data-surface="workspace"] .field select,
+:root[data-surface="workspace"] .discovery-search > input,
 :root[data-surface="workspace"] .discovery-search select,
 :root[data-surface="workspace"] .search-input {
   color: var(--ink);
@@ -4313,6 +4658,7 @@ a {
 :root[data-surface="workspace"] .field input:focus,
 :root[data-surface="workspace"] .field textarea:focus,
 :root[data-surface="workspace"] .field select:focus,
+:root[data-surface="workspace"] .discovery-search > input:focus,
 :root[data-surface="workspace"] .discovery-search select:focus,
 :root[data-surface="workspace"] .search-input:focus-within {
   border-color: rgba(255, 255, 255, 0.7);

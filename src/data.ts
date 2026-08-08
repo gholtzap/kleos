@@ -1,4 +1,4 @@
-import type { Claim, Evidence, Person, ProfessionalRequest } from "./types";
+import type { Claim, Person, ProfessionalRequest } from "./types";
 
 export const currentPerson: Person = {
   id: "mara-voss",
@@ -112,34 +112,31 @@ export const initialClaims: Claim[] = [
     outcomeContext:
       "Measured across 1.7M annual claims during the first 90 days after full cutover. A range is shown under the organization’s disclosure policy.",
     period: "Jan 2023 — Nov 2023",
-    verification: [
-      "Supported by evidence",
-      "Confirmed by collaborator",
-      "System verified",
-    ],
     privacy: "Public",
-    evidenceIds: ["migration-plan", "deploy-record", "ops-attestation"],
-    collaborators: ["Soren Vale", "Priya Nwosu", "Elio March"],
-    attestations: [
+    evidence: [
       {
-        id: "attest-soren",
-        name: "Soren Vale",
-        initials: "SV",
-        relationship: "Engineering director; directly managed the program",
-        observed: "Technical direction, cross-team coordination, and production cutover",
-        confirmsOutcome: true,
-        quote:
-          "Mara owned the hard middle of this program: translating the target architecture into a migration the business could actually absorb.",
+        id: "migration-plan",
+        title: "Migration architecture and staged cutover plan",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-06-18T12:00:00.000Z",
+        updatedAt: "2026-06-18T12:00:00.000Z",
+        detail:
+          "Private technical plan showing authorship, decision log, migration stages, and production acceptance criteria.",
       },
       {
-        id: "attest-priya",
-        name: "Priya Nwosu",
-        initials: "PN",
-        relationship: "Operations lead; cross-functional collaborator",
-        observed: "Operational planning and the staged rollout",
-        confirmsOutcome: true,
-        quote:
-          "The migration landed without the service interruption our operations teams had expected.",
+        id: "deploy-record",
+        title: "Deployment and service ownership records",
+        type: "System record",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-06-14T12:00:00.000Z",
+        updatedAt: "2026-06-14T12:00:00.000Z",
+        detail:
+          "Selected metadata confirms sustained participation and ownership during the migration period.",
       },
     ],
     featured: true,
@@ -159,11 +156,31 @@ export const initialClaims: Claim[] = [
     outcomeContext:
       "Median across 47 severity-one and severity-two incidents over two quarters. Exact operational logs are privately verified.",
     period: "Feb 2022 — Oct 2022",
-    verification: ["Supported by evidence", "Organization verified"],
     privacy: "Public",
-    evidenceIds: ["research-synthesis", "incident-metrics"],
-    collaborators: ["Ames Rourke", "Jo Bae"],
-    attestations: [],
+    evidence: [
+      {
+        id: "research-synthesis",
+        title: "Incident commander research synthesis",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Not submitted",
+        updatedAt: "2026-05-27T12:00:00.000Z",
+        detail:
+          "Interview themes, workflow maps, and scope decisions from discovery.",
+      },
+      {
+        id: "incident-metrics",
+        title: "Incident assignment metrics",
+        type: "Outcome",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-04-04T12:00:00.000Z",
+        updatedAt: "2026-04-04T12:00:00.000Z",
+        detail:
+          "Private metric export confirms the before-and-after assignment time and measurement period.",
+      },
+    ],
     featured: true,
   },
   {
@@ -181,87 +198,20 @@ export const initialClaims: Claim[] = [
     outcomeContext:
       "Outcome verified privately by the engagement partner. Commercial terms and exact figures remain confidential.",
     period: "May 2024",
-    verification: ["Confirmed by collaborator", "Independently reviewed"],
     privacy: "Restricted",
-    evidenceIds: ["diligence-summary"],
-    collaborators: ["Verifier identity not public"],
-    attestations: [],
+    evidence: [
+      {
+        id: "diligence-summary",
+        title: "Redacted diligence finding",
+        type: "Organization",
+        access: "Private",
+        reviewStatus: "Pending",
+        updatedAt: "2026-07-02T12:00:00.000Z",
+        detail:
+          "Redacted summary. Exact company, architecture, and financial impact remain hidden.",
+      },
+    ],
     featured: false,
-  },
-];
-
-export const initialEvidence: Evidence[] = [
-  {
-    id: "migration-plan",
-    title: "Migration architecture and staged cutover plan",
-    type: "Artifact",
-    claimIds: ["claims-platform"],
-    access: "Reviewers",
-    status: "Current",
-    reviewedBy: "Folio independent review",
-    updated: "Jun 18, 2026",
-    detail:
-      "Private technical plan showing authorship, decision log, migration stages, and production acceptance criteria.",
-  },
-  {
-    id: "deploy-record",
-    title: "Deployment and service ownership records",
-    type: "System record",
-    claimIds: ["claims-platform"],
-    access: "Reviewers",
-    status: "Current",
-    reviewedBy: "Connected workplace system",
-    updated: "Jun 14, 2026",
-    detail:
-      "Selected metadata confirms sustained participation and ownership during the migration period. Source content is not copied into Folio.",
-  },
-  {
-    id: "ops-attestation",
-    title: "Operations cutover confirmation",
-    type: "Attestation",
-    claimIds: ["claims-platform"],
-    access: "Public",
-    status: "Current",
-    reviewedBy: "Priya Nwosu",
-    updated: "Jun 12, 2026",
-    detail:
-      "Direct collaborator confirms the rollout approach and lack of customer-facing interruption.",
-  },
-  {
-    id: "research-synthesis",
-    title: "Incident commander research synthesis",
-    type: "Artifact",
-    claimIds: ["incident-console"],
-    access: "Only me",
-    status: "Current",
-    reviewedBy: "Not reviewed",
-    updated: "May 27, 2026",
-    detail:
-      "Interview themes, workflow maps, and scope decisions from discovery. Contains internal operational details.",
-  },
-  {
-    id: "incident-metrics",
-    title: "Incident assignment metrics",
-    type: "Outcome",
-    claimIds: ["incident-console"],
-    access: "Reviewers",
-    status: "Current",
-    reviewedBy: "Northstar Mutual",
-    updated: "Apr 04, 2026",
-    detail:
-      "Private metric export confirms the before-and-after assignment time and measurement period.",
-  },
-  {
-    id: "diligence-summary",
-    title: "Redacted diligence finding",
-    type: "Organization",
-    claimIds: ["confidential-diligence"],
-    access: "Reviewers",
-    status: "Review pending",
-    reviewedBy: "Engagement partner",
-    updated: "Jul 02, 2026",
-    detail:
-      "Redacted summary and client-side confirmation. Exact company, architecture, and financial impact remain hidden.",
   },
 ];
 
@@ -281,11 +231,21 @@ export const discoveryClaims: Record<string, Claim> = {
     outcomeContext:
       "Adoption confirmed through repository and service records; accessibility audits are public.",
     period: "2023 — 2025",
-    verification: ["System verified", "Organization verified"],
     privacy: "Public",
-    evidenceIds: [],
-    collaborators: ["5 confirmed collaborators"],
-    attestations: [],
+    evidence: [
+      {
+        id: "civic-system-record",
+        title: "Private evidence",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-06-01T12:00:00.000Z",
+        updatedAt: "2026-06-01T12:00:00.000Z",
+        detail: "",
+        redacted: true,
+      },
+    ],
     featured: true,
   },
   "devin-morales": {
@@ -303,11 +263,21 @@ export const discoveryClaims: Record<string, Claim> = {
     outcomeContext:
       "Cloud billing and reliability data verified privately for a 12-month period.",
     period: "2022 — 2024",
-    verification: ["Supported by evidence", "Confirmed by collaborator"],
     privacy: "Public",
-    evidenceIds: [],
-    collaborators: ["3 confirmed collaborators"],
-    attestations: [],
+    evidence: [
+      {
+        id: "infra-cost-record",
+        title: "Private evidence",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-06-01T12:00:00.000Z",
+        updatedAt: "2026-06-01T12:00:00.000Z",
+        detail: "",
+        redacted: true,
+      },
+    ],
     featured: true,
   },
   "alina-petrescu": {
@@ -325,11 +295,21 @@ export const discoveryClaims: Record<string, Claim> = {
     outcomeContext:
       "Cohort and account definition confirmed by product operations.",
     period: "2024 — 2025",
-    verification: ["Organization verified", "Confirmed by collaborator"],
     privacy: "Public",
-    evidenceIds: [],
-    collaborators: ["6 design partners"],
-    attestations: [],
+    evidence: [
+      {
+        id: "procurement-product-record",
+        title: "Private evidence",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Confirmed",
+        reviewedBy: "Folio review team",
+        reviewedAt: "2026-06-01T12:00:00.000Z",
+        updatedAt: "2026-06-01T12:00:00.000Z",
+        detail: "",
+        redacted: true,
+      },
+    ],
     featured: true,
   },
   "noah-kimura": {
@@ -347,11 +327,19 @@ export const discoveryClaims: Record<string, Claim> = {
     outcomeContext:
       "Privately supported by CRM snapshots across three quarters.",
     period: "2025",
-    verification: ["Supported by evidence"],
     privacy: "Restricted",
-    evidenceIds: [],
-    collaborators: ["Verifier identity private"],
-    attestations: [],
+    evidence: [
+      {
+        id: "forecast-rebuild-record",
+        title: "Private evidence",
+        type: "Artifact",
+        access: "Private",
+        reviewStatus: "Not submitted",
+        updatedAt: "2026-06-01T12:00:00.000Z",
+        detail: "",
+        redacted: true,
+      },
+    ],
     featured: true,
   },
 };
@@ -370,7 +358,7 @@ export const initialRequests: ProfessionalRequest[] = [
     constraints: "No confidential company details required",
     preferredEvidence:
       "A supported claim showing direct ownership of a workflow redesign",
-    posted: "2 days ago",
+    postedAt: "2026-07-26T12:00:00.000Z",
   },
   {
     id: "req-2",
@@ -385,7 +373,7 @@ export const initialRequests: ProfessionalRequest[] = [
     constraints: "United States; four hours overlap with Central Time",
     preferredEvidence:
       "System or organization-verified migration and reliability outcomes",
-    posted: "5 days ago",
+    postedAt: "2026-07-23T12:00:00.000Z",
   },
   {
     id: "req-3",
@@ -400,6 +388,6 @@ export const initialRequests: ProfessionalRequest[] = [
     constraints: "Work can be completed asynchronously across time zones",
     preferredEvidence:
       "Public artifact or confirmed contribution to an accessible data product",
-    posted: "1 week ago",
+    postedAt: "2026-07-21T12:00:00.000Z",
   },
 ];

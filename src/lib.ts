@@ -6,6 +6,7 @@ const DEFAULT_HEAP_CEILING_BYTES = 512 * 1024 * 1024;
 const HEAP_LIMIT_RATIO = 0.85;
 
 export type AuthPage = "sign-in" | "sign-up";
+export type SignedInPage = "home" | "profile";
 
 export interface HeapSnapshot {
   usedJSHeapSize: number;
@@ -19,6 +20,23 @@ export function authPageFromPath(pathname: string): AuthPage | null {
   return null;
 }
 
+export function signedInPageFromPath(pathname: string): SignedInPage {
+  return /^\/p\/[^/]+\/?$/.test(pathname) ? "profile" : "home";
+}
+
+export function profilePath(handle: string): string {
+  return `/p/${encodeURIComponent(handle.replace(/^@+/, ""))}`;
+}
+
+export function accountHandle(
+  username: string | null | undefined,
+  email: string | null | undefined,
+  userId: string,
+): string {
+  const emailName = email?.split("@")[0];
+  const identifier = username?.trim() || emailName?.trim() || userId;
+  return `@${identifier.replace(/^@+/, "")}`;
+}
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

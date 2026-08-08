@@ -1,7 +1,6 @@
 import {
   ArrowRightIcon,
   CheckCircleIcon,
-  CheckIcon,
   CompassIcon,
   FileTextIcon,
   FolderLockIcon,
@@ -15,27 +14,24 @@ import {
   PlusIcon,
   SealCheckIcon,
   ShieldCheckIcon,
-  SparkleIcon,
   SunIcon,
-  UsersThreeIcon,
 } from "@phosphor-icons/react";
 import { SignIn, SignUp, UserButton, useAuth, useUser } from "@clerk/react";
 import {
+  lazy,
+  Suspense,
   useEffect,
-  useMemo,
+  useDeferredValue,
   useState,
   type ComponentProps,
   type FormEvent,
   type ReactNode,
 } from "react";
+import { discoverProfessionals } from "./discovery";
 import {
-  currentPerson,
-  discoveryClaims,
-  initialClaims,
-  initialEvidence,
-  initialRequests,
-  people,
-} from "./data";
+  claimState,
+  evidenceForClaims,
+} from "./folio";
 import {
   authPageFromPath,
   emptyProfile,
@@ -44,19 +40,34 @@ import {
   type AuthPage,
 } from "./lib";
 import {
+  getFolioRecord,
   getPublicProfile,
-  publicProfileHash,
   publicProfileIdFromHash,
-  savePublicProfile,
+  publicProfileRevisionFromHash,
+  saveFolioRecord,
 } from "./public-profile";
+import {
+  getReviewBundle,
+  reviewTokenFromHash,
+} from "./review-links";
+import { decideEvidenceReview, getEvidenceReviews } from "./reviews";
+import {
+  closeProfessionalRequest,
+  createProfessionalRequest,
+  formatRequestDate,
+  getProfessionalRequests,
+  requestKinds,
+} from "./requests";
 import type {
   Claim,
+  DiscoveryResult,
   Evidence,
+  EvidenceReviewItem,
   IntroductionDraft,
-  Ownership,
+  NewProfessionalRequest,
   Person,
-  Profession,
   ProfessionalRequest,
+  RequestKind,
   Route,
 } from "./types";
 import {
@@ -70,12 +81,28 @@ import {
   Skeleton,
 } from "./ui";
 
+const ProveClaimDialog = lazy(() =>
+  import("./prove-claim-dialog").then((module) => ({
+    default: module.ProveClaimDialog,
+  })),
+);
+const ShareReviewDialog = lazy(() =>
+  import("./share-review-dialog").then((module) => ({
+    default: module.ShareReviewDialog,
+  })),
+);
+
 const routes: { id: Route; label: string; icon: typeof HouseIcon }[] = [
   { id: "profile", label: "Profile", icon: HouseIcon },
   { id: "vault", label: "Evidence vault", icon: FolderLockIcon },
   { id: "discover", label: "Discover", icon: CompassIcon },
   { id: "requests", label: "Requests", icon: HandshakeIcon },
 ];
+const reviewRoute = {
+  id: "reviews",
+  label: "Evidence reviews",
+  icon: SealCheckIcon,
+} satisfies { id: Route; label: string; icon: typeof HouseIcon };
 
 const clerkAuthAppearance = {
   theme: "simple",
@@ -193,19 +220,11 @@ const clerkAuthAppearance = {
   },
 } satisfies NonNullable<ComponentProps<typeof SignIn>["appearance"]>;
 
-const professionPrompts: Record<Profession, string> = {
-  Engineering: "Name the system, your technical ownership, production scale, and reliability, performance, cost, or security outcome.",
-  Product: "Name the problem you owned, decisions you made, what shipped, and the adoption or business outcome.",
-  Design: "Name the research and design ownership, what shipped, and the usability, accessibility, or customer outcome.",
-  Sales: "Name the customer segment, your sales-cycle ownership, deal complexity, and verified commercial outcome.",
-  Recruiting: "Name the roles, search difficulty, process ownership, time-to-hire, acceptance, or quality outcome.",
-  Operations: "Name the process you owned, the operating problem, and the efficiency, cost, quality, or risk outcome.",
-  Management: "Name the team context, organizational challenge, and delivery, hiring, retention, or development outcome.",
-};
-
 function routeFromHash(): Route {
   const value = window.location.hash.replace("#/", "");
-  return routes.some((route) => route.id === value) ? (value as Route) : "landing";
+  return [...routes, reviewRoute].some((route) => route.id === value)
+    ? (value as Route)
+    : "landing";
 }
 
 export default function App() {
@@ -234,16 +253,26 @@ export default function App() {
   const [publicProfileId, setPublicProfileId] = useState(() =>
     publicProfileIdFromHash(window.location.hash),
   );
-  const [profile, setProfile] = useState<Person>(currentPerson);
+  const [publicProfileRevision, setPublicProfileRevision] = useState(() =>
+    publicProfileRevisionFromHash(window.location.hash),
+  );
+  const [reviewToken, setReviewToken] = useState(() =>
+    reviewTokenFromHash(window.location.hash),
+  );
+  const [profile, setProfile] = useState<Person>(() =>
+    emptyProfile("", "Folio member"),
+  );
   const [dark, setDark] = useState(() => localStorage.getItem("folio-theme") !== "light");
-  const [claims, setClaims] = useState<Claim[]>(initialClaims);
-  const [evidence, setEvidence] = useState<Evidence[]>(initialEvidence);
-  const [requests, setRequests] = useState<ProfessionalRequest[]>(initialRequests);
+  const [claims, setClaims] = useState<Claim[]>([]);
   const [claimOpen, setClaimOpen] = useState(false);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
+  const [claimToEdit, setClaimToEdit] = useState<Claim | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [intro, setIntro] = useState<IntroductionDraft | null>(null);
+  const [reviewQueue, setReviewQueue] = useState<EvidenceReviewItem[] | null>(null);
+  const [recordRevision, setRecordRevision] = useState(0);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+  const [recordError, setRecordError] = useState("");
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -254,6 +283,10 @@ export default function App() {
       setLoading(true);
       setRoute(routeFromHash());
       setPublicProfileId(publicProfileIdFromHash(window.location.hash));
+      setPublicProfileRevision(
+        publicProfileRevisionFromHash(window.location.hash),
+      );
+      setReviewToken(reviewTokenFromHash(window.location.hash));
       timeout = window.setTimeout(() => setLoading(false), 280);
     };
     window.addEventListener("hashchange", onHashChange);
@@ -269,12 +302,15 @@ export default function App() {
   }, [dark]);
 
   useEffect(() => {
-    const surface = isSignedIn && route !== "landing" && !publicProfileId ? "workspace" : "public";
+    const surface =
+      isSignedIn && route !== "landing" && !publicProfileId && !reviewToken
+        ? "workspace"
+        : "public";
     document.documentElement.dataset.surface = surface;
     return () => {
       delete document.documentElement.dataset.surface;
     };
-  }, [isSignedIn, publicProfileId, route]);
+  }, [isSignedIn, publicProfileId, reviewToken, route]);
 
   useEffect(() => {
     if (!toast) return;
@@ -283,56 +319,107 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
-    if (!sessionUser) return;
+    if (!sessionUser) {
+      setRecordLoaded(false);
+      return;
+    }
+    setRecordLoaded(false);
+    setRecordError("");
     let active = true;
     const controller = new AbortController();
-    getPublicProfile(sessionUser.id, controller.signal)
-      .then((published) => {
+    getToken()
+      .then((token) => {
+        if (!token) throw new Error("Missing Clerk session token.");
+        const recordPromise = getFolioRecord(token, controller.signal).then(
+          async (record) => {
+            if (record) return record;
+            const empty = {
+              version: 1 as const,
+              revision: 0,
+              person: emptyProfile(sessionUser.id, sessionUser.name),
+              claims: [],
+            };
+            try {
+              return await saveFolioRecord(token, empty);
+            } catch {
+              const created = await getFolioRecord(token, controller.signal);
+              if (!created) throw new Error("Folio could not be created.");
+              return created;
+            }
+          },
+        );
+        return Promise.all([
+          recordPromise,
+          getEvidenceReviews(token).catch(() => null),
+        ]);
+      })
+      .then(([record, reviews]) => {
         if (!active) return;
-        setProfile(published.person);
-        setClaims(published.claims);
-        setEvidence([]);
+        setProfile(record?.person ?? emptyProfile(sessionUser.id, sessionUser.name));
+        setClaims(record?.claims ?? []);
+        setRecordRevision(record?.revision ?? 0);
+        setReviewQueue(reviews);
+        setRecordLoaded(true);
       })
       .catch(() => {
         if (!active) return;
-        setProfile(emptyProfile(sessionUser.id, sessionUser.name));
-        setClaims([]);
-        setEvidence([]);
+        setRecordError(
+          "Your Folio could not be loaded. Reload before you make changes.",
+        );
+        setRecordLoaded(true);
       });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [sessionUser?.id, sessionUser?.name]);
+  }, [getToken, sessionUser?.id, sessionUser?.name]);
 
   useEffect(() => {
-    if (sessionUser && route === "landing" && !publicProfileId) {
+    if (sessionUser && route === "landing" && !publicProfileId && !reviewToken) {
       window.location.hash = "/profile";
     }
-  }, [publicProfileId, route, sessionUser]);
+  }, [publicProfileId, reviewToken, route, sessionUser]);
 
   const navigate = (next: Route) => {
     window.location.hash = next === "landing" ? "" : `/${next}`;
     if (next === route) setRoute(next);
   };
 
-  const publishProfile = async (person: Person, nextClaims: Claim[]) => {
+  const persistFolio = async (person: Person, nextClaims: Claim[]) => {
     try {
       const token = await getToken();
       if (!token) throw new Error("Missing Clerk session token.");
-      await savePublicProfile(token, {
+      const saved = await saveFolioRecord(token, {
+        version: 1,
+        revision: recordRevision,
         person,
-        claims: nextClaims.filter((claim) => claim.privacy === "Public"),
+        claims: nextClaims,
       });
+      setProfile(saved.person);
+      setClaims(saved.claims);
+      setRecordRevision(saved.revision);
+      return saved;
     } catch {
-      setToast("Profile saved here, but the public page could not be updated.");
+      setToast("Folio could not save these changes. Reload before you try again.");
+      return null;
     }
   };
+
+  if (reviewToken) {
+    return (
+      <ReviewLinkPage
+        token={reviewToken}
+        dark={dark}
+        setDark={setDark}
+      />
+    );
+  }
 
   if (publicProfileId) {
     return (
       <PublicProfilePage
         id={publicProfileId}
+        revision={publicProfileRevision}
         dark={dark}
         setDark={setDark}
         onCreateAccount={() => window.location.assign("/sign-up")}
@@ -340,7 +427,7 @@ export default function App() {
     );
   }
 
-  if (sessionPending) {
+  if (sessionPending || (sessionUser && !recordLoaded)) {
     return <AuthLoader />;
   }
 
@@ -348,6 +435,22 @@ export default function App() {
     return <AuthenticationPage page={authPage} />;
   }
 
+  if (sessionUser && recordError) {
+    return (
+      <div className="public-profile-shell">
+        <header className="public-profile-nav">
+          <Logo />
+          <WorkspaceUserButton />
+        </header>
+        <EmptyState
+          icon={<InfoIcon size={28} />}
+          title="Folio unavailable"
+          copy={recordError}
+          action={<Button onClick={() => window.location.reload()}>Reload</Button>}
+        />
+      </div>
+    );
+  }
   if (route === "landing" || !sessionUser) {
     return (
       <Landing
@@ -365,12 +468,14 @@ export default function App() {
         route={route}
         navigate={navigate}
         onNewClaim={() => setClaimOpen(true)}
+        showReviews={reviewQueue !== null}
       />
       <main className="app-main">
         <MobileBar
           route={route}
           navigate={navigate}
           onNewClaim={() => setClaimOpen(true)}
+          showReviews={reviewQueue !== null}
         />
         {loading ? (
           <PageLoader />
@@ -380,36 +485,81 @@ export default function App() {
               <ProfilePage
                 person={profile}
                 claims={claims}
-                evidence={evidence}
                 onNewClaim={() => setClaimOpen(true)}
+                onEditClaim={setClaimToEdit}
                 onEdit={() => setProfileOpen(true)}
-                onShare={async () => {
-                  const url = `${window.location.origin}${window.location.pathname}${publicProfileHash(profile.id)}`;
-                  try {
-                    await navigator.clipboard.writeText(url);
-                    setToast("Public profile link copied.");
-                  } catch {
-                    setToast(url);
-                  }
-                }}
+                onShare={() => setShareOpen(true)}
               />
             ) : null}
             {route === "vault" ? (
               <VaultPage
                 claims={claims}
-                evidence={evidence}
-                setEvidence={setEvidence}
-                onAdd={() => setEvidenceOpen(true)}
+                onEditClaim={setClaimToEdit}
+                onUpdateClaim={async (claim) => {
+                  const nextClaims = claims.map((item) =>
+                    item.id === claim.id ? claim : item,
+                  );
+                  return Boolean(await persistFolio(profile, nextClaims));
+                }}
                 onToast={setToast}
               />
             ) : null}
             {route === "discover" ? <DiscoverPage onIntro={setIntro} /> : null}
             {route === "requests" ? (
               <RequestsPage
-                requests={requests}
-                onCreate={() => setRequestOpen(true)}
+                getToken={getToken}
+                ownerId={profile.id}
                 onRespond={(request) =>
                   setToast(`Response started for “${request.title}”.`)
+                }
+                onToast={setToast}
+              />
+            ) : null}
+            {route === "reviews" && reviewQueue !== null ? (
+              <ReviewQueuePage
+                items={reviewQueue}
+                onDecision={async (item, decision, note) => {
+                  const token = await getToken();
+                  if (!token) {
+                    setToast("Your session expired. Sign in again.");
+                    return false;
+                  }
+                  try {
+                    await decideEvidenceReview(token, {
+                      ownerId: item.ownerId,
+                      claimId: item.claimId,
+                      evidenceId: item.evidence.id,
+                      decision,
+                      note,
+                    });
+                    setReviewQueue((queue) =>
+                      queue?.filter(
+                        (queued) =>
+                          !(
+                            queued.ownerId === item.ownerId &&
+                            queued.claimId === item.claimId &&
+                            queued.evidence.id === item.evidence.id
+                          ),
+                      ) ?? null,
+                    );
+                    setToast(`Evidence ${decision.toLowerCase()}.`);
+                    return true;
+                  } catch {
+                    setToast("The review decision could not be saved.");
+                    return false;
+                  }
+                }}
+              />
+            ) : null}
+            {route === "reviews" && reviewQueue === null ? (
+              <EmptyState
+                icon={<FolderLockIcon size={28} />}
+                title="Reviewer access required"
+                copy="This queue is available only to allowlisted in-house reviewers."
+                action={
+                  <Button onClick={() => navigate("profile")}>
+                    Return to profile
+                  </Button>
                 }
               />
             ) : null}
@@ -417,44 +567,55 @@ export default function App() {
         )}
       </main>
 
-      <ClaimDialog
-        open={claimOpen}
-        onOpenChange={setClaimOpen}
-        onCreate={(claim) => {
-          const nextClaims = [claim, ...claims];
-          setClaims(nextClaims);
-          void publishProfile(profile, nextClaims);
-          setClaimOpen(false);
-          setToast("Claim saved to your profile.");
-        }}
-      />
-      <EvidenceDialog
-        open={evidenceOpen}
-        onOpenChange={setEvidenceOpen}
-        claims={claims}
-        onAdd={(item) => {
-          setEvidence((items) => [item, ...items]);
-          setEvidenceOpen(false);
-          setToast("Evidence added privately.");
-        }}
-      />
-      <RequestDialog
-        open={requestOpen}
-        onOpenChange={setRequestOpen}
-        author={profile}
-        onCreate={(request) => {
-          setRequests((items) => [request, ...items]);
-          setRequestOpen(false);
-          setToast("Professional request published.");
-        }}
-      />
+      {claimOpen || claimToEdit ? (
+        <Suspense fallback={null}>
+          <ProveClaimDialog
+            open={claimOpen || Boolean(claimToEdit)}
+            claim={claimToEdit}
+            onOpenChange={(open) => {
+              if (open) return;
+              setClaimOpen(false);
+              setClaimToEdit(null);
+            }}
+            onSave={async (claim) => {
+              const nextClaims = claimToEdit
+                ? claims.map((item) => (item.id === claim.id ? claim : item))
+                : [claim, ...claims];
+              const saved = await persistFolio(profile, nextClaims);
+              if (!saved) return false;
+              setClaimOpen(false);
+              setClaimToEdit(null);
+              const savedClaim = saved.claims.find(
+                (item) => item.id === claim.id,
+              );
+              setToast(
+                `Claim saved as ${savedClaim ? claimState(savedClaim).toLowerCase() : "draft"}.`,
+              );
+              return true;
+            }}
+          />
+        </Suspense>
+      ) : null}
+      {shareOpen ? (
+        <Suspense fallback={null}>
+          <ShareReviewDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            person={profile}
+            claims={claims}
+            revision={recordRevision}
+            getToken={getToken}
+            onToast={setToast}
+          />
+        </Suspense>
+      ) : null}
       <ProfileDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
         profile={profile}
-        onSave={(nextProfile) => {
-          setProfile(nextProfile);
-          void publishProfile(nextProfile, claims);
+        onSave={async (nextProfile) => {
+          const saved = await persistFolio(nextProfile, claims);
+          if (!saved) return;
           setProfileOpen(false);
           setToast("Profile details updated.");
         }}
@@ -557,14 +718,14 @@ function AuthenticationPage({ page }: { page: AuthPage }) {
               appearance={clerkAuthAppearance}
               routing="hash"
               signUpUrl="/sign-up"
-              fallbackRedirectUrl="/#/profile"
+              fallbackRedirectUrl="/home"
             />
           ) : (
             <SignUp
               appearance={clerkAuthAppearance}
               routing="hash"
               signInUrl="/sign-in"
-              fallbackRedirectUrl="/#/profile"
+              fallbackRedirectUrl="/home"
             />
           )}
         </div>
@@ -620,13 +781,16 @@ function Sidebar({
   route,
   navigate,
   onNewClaim,
+  showReviews,
 }: {
   person: Person;
   contact: string;
   route: Route;
   navigate: (route: Route) => void;
   onNewClaim: () => void;
+  showReviews: boolean;
 }) {
+  const visibleRoutes = showReviews ? [...routes, reviewRoute] : routes;
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
@@ -635,11 +799,11 @@ function Sidebar({
         </div>
         <Button onClick={onNewClaim} className="sidebar-create">
           <PlusIcon size={16} weight="bold" />
-          Add claim
+          Prove a claim
         </Button>
         <p className="sidebar-nav-label">Workspace</p>
         <nav aria-label="Primary">
-          {routes.map((item) => {
+          {visibleRoutes.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -674,11 +838,14 @@ function MobileBar({
   route,
   navigate,
   onNewClaim,
+  showReviews,
 }: {
   route: Route;
   navigate: (route: Route) => void;
   onNewClaim: () => void;
+  showReviews: boolean;
 }) {
+  const visibleRoutes = showReviews ? [...routes, reviewRoute] : routes;
   return (
     <>
       <header className="mobile-topbar">
@@ -692,7 +859,7 @@ function MobileBar({
         </div>
       </header>
       <nav className="mobile-nav" aria-label="Mobile primary">
-        {routes.map((item) => {
+        {visibleRoutes.map((item) => {
           const Icon = item.icon;
           return (
             <button
@@ -716,7 +883,7 @@ function PageHeader({
   description,
   actions,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
@@ -724,7 +891,7 @@ function PageHeader({
   return (
     <header className="page-header">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
+        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
@@ -736,21 +903,21 @@ function PageHeader({
 function ProfilePage({
   person,
   claims,
-  evidence,
   onNewClaim,
+  onEditClaim,
   onEdit,
   onShare,
 }: {
   person: Person;
   claims: Claim[];
-  evidence: Evidence[];
   onNewClaim?: () => void;
+  onEditClaim?: (claim: Claim) => void;
   onEdit?: () => void;
   onShare?: () => void;
 }) {
   const [selected, setSelected] = useState<Claim | null>(null);
   const featured = claims.filter((claim) => claim.featured);
-  const evidenceCount = evidence.filter((item) => item.status === "Current").length;
+  const evidenceCount = evidenceForClaims(claims).length;
   const hasProfileAside = Boolean(
     person.summary ||
       person.notOpenTo.length ||
@@ -791,7 +958,7 @@ function ProfilePage({
               {onNewClaim ? (
                 <Button onClick={onNewClaim}>
                   <PlusIcon size={16} />
-                  Add claim
+                  Prove a claim
                 </Button>
               ) : null}
             </div>
@@ -850,8 +1017,10 @@ function ProfilePage({
               <span>current evidence items</span>
             </div>
             <div>
-              <strong>{claims.reduce((sum, claim) => sum + claim.attestations.length, 0)}</strong>
-              <span>collaborator confirmations</span>
+              <strong>
+                {claims.filter((claim) => claimState(claim) === "Confirmed").length}
+              </strong>
+              <span>confirmed claims</span>
             </div>
           </div>
 
@@ -901,18 +1070,31 @@ function ProfilePage({
           </section>
         </div>
       </div>
-      <ClaimDetail claim={selected} onOpenChange={(open) => !open && setSelected(null)} />
+      <ClaimDetail
+        claim={selected}
+        onEdit={
+          selected && onEditClaim
+            ? () => {
+                onEditClaim(selected);
+                setSelected(null);
+              }
+            : undefined
+        }
+        onOpenChange={(open) => !open && setSelected(null)}
+      />
     </div>
   );
 }
 
 function PublicProfilePage({
   id,
+  revision,
   dark,
   setDark,
   onCreateAccount,
 }: {
   id: string;
+  revision?: number;
   dark: boolean;
   setDark: (dark: boolean) => void;
   onCreateAccount: () => void;
@@ -927,14 +1109,14 @@ function PublicProfilePage({
     const controller = new AbortController();
     setPublished(null);
     setError("");
-    getPublicProfile(id, controller.signal)
+    getPublicProfile(id, revision, controller.signal)
       .then((profile) => active && setPublished(profile))
       .catch(() => active && setError("This public profile could not be found."));
     return () => {
       active = false;
       controller.abort();
     };
-  }, [id]);
+  }, [id, revision]);
 
   return (
     <div className="public-profile-shell">
@@ -953,7 +1135,7 @@ function PublicProfilePage({
           action={<Button onClick={onCreateAccount}>Go to Folio</Button>}
         />
       ) : published ? (
-        <ProfilePage person={published.person} claims={published.claims} evidence={[]} />
+        <ProfilePage person={published.person} claims={published.claims} />
       ) : (
         <PageLoader />
       )}
@@ -970,6 +1152,7 @@ function ClaimCard({
   index: number;
   onOpen: () => void;
 }) {
+  const state = claimState(claim);
   return (
     <article className="claim-card" style={{ "--item-index": index } as React.CSSProperties}>
       <div className="claim-card-index">{String(index + 1).padStart(2, "0")}</div>
@@ -996,15 +1179,24 @@ function ClaimCard({
         </div>
         <div className="claim-footer">
           <div className="verification-row">
-            {claim.verification.slice(0, 2).map((status) => (
-              <Badge key={status} tone="positive">
+            <Badge
+              tone={
+                state === "Confirmed"
+                  ? "positive"
+                  : state === "Supported"
+                    ? "warning"
+                    : "neutral"
+              }
+            >
+              {state === "Confirmed" ? (
                 <SealCheckIcon size={12} weight="fill" />
-                {status}
-              </Badge>
-            ))}
-            {claim.verification.length > 2 ? (
-              <span>+{claim.verification.length - 2} more</span>
-            ) : null}
+              ) : null}
+              {state}
+            </Badge>
+            <span>
+              {claim.evidence.length} evidence{" "}
+              {claim.evidence.length === 1 ? "item" : "items"}
+            </span>
           </div>
           <Button variant="ghost" size="sm" onClick={onOpen}>
             View claim
@@ -1018,11 +1210,14 @@ function ClaimCard({
 
 function ClaimDetail({
   claim,
+  onEdit,
   onOpenChange,
 }: {
   claim: Claim | null;
+  onEdit?: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const state = claim ? claimState(claim) : "Draft";
   return (
     <Dialog
       open={Boolean(claim)}
@@ -1062,73 +1257,92 @@ function ClaimDetail({
             </section>
           </div>
           <DividerLabel>Trust context</DividerLabel>
-          <div className="trust-detail-grid">
-            {claim.verification.map((status) => (
-              <div key={status} className="trust-item">
-                <SealCheckIcon size={21} weight="fill" />
-                <div>
-                  <strong>{status}</strong>
-                  <span>
-                    {status === "System verified"
-                      ? "Selected participation and ownership facts confirmed through a connected system."
-                      : status === "Organization verified"
-                        ? "The organization confirmed selected facts without exposing internal material."
-                        : status === "Confirmed by collaborator"
-                          ? "A direct collaborator confirmed the part of the work they observed."
-                          : "Supporting material exists; visibility remains controlled by the profile owner."}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="trust-item">
+            <SealCheckIcon size={21} weight={state === "Confirmed" ? "fill" : "regular"} />
+            <div>
+              <strong>{state}</strong>
+              <span>
+                {state === "Confirmed"
+                  ? "The Folio review team confirmed at least one supporting evidence item."
+                  : state === "Supported"
+                    ? "Supporting evidence is attached. It is not yet confirmed."
+                    : "No usable supporting evidence is attached."}
+              </span>
+            </div>
           </div>
-          {claim.collaborators.length ? (
-            <>
-              <DividerLabel>Shared credit</DividerLabel>
-              <div className="collaborator-row">
-                <UsersThreeIcon size={21} />
-                <div>
-                  <strong>Collaborators connected to this work</strong>
-                  <span>{claim.collaborators.join(" · ")}</span>
-                </div>
-              </div>
-            </>
-          ) : null}
-          {claim.attestations.length ? (
-            <>
-              <DividerLabel>Collaborator attestations</DividerLabel>
-              <div className="attestation-list">
-                {claim.attestations.map((attestation) => (
-                  <blockquote key={attestation.id}>
-                    <p>“{attestation.quote}”</p>
-                    <footer>
-                      <Avatar initials={attestation.initials} size="sm" accent="sage" />
-                      <span>
-                        <strong>{attestation.name}</strong>
-                        <small>{attestation.relationship}</small>
-                      </span>
-                      {attestation.confirmsOutcome ? (
-                        <Badge tone="positive">Outcome confirmed</Badge>
-                      ) : null}
-                    </footer>
-                  </blockquote>
-                ))}
-              </div>
-            </>
-          ) : null}
+          <DividerLabel>Evidence</DividerLabel>
+          {claim.evidence.length ? (
+            <div className="claim-evidence-list">
+              {claim.evidence.map((evidence) => (
+                <article key={evidence.id} className="claim-evidence-item">
+                  <div className="claim-evidence-heading">
+                    <span className="evidence-icon">
+                      {evidence.type === "System record" ? (
+                        <LinkIcon size={18} />
+                      ) : (
+                        <FileTextIcon size={18} />
+                      )}
+                    </span>
+                    <div>
+                      <strong>{evidence.title}</strong>
+                      <span>{evidence.type}</span>
+                    </div>
+                    <Badge
+                      tone={
+                        evidence.reviewStatus === "Confirmed"
+                          ? "positive"
+                          : evidence.reviewStatus === "Pending"
+                            ? "warning"
+                            : evidence.reviewStatus === "Rejected"
+                              ? "private"
+                              : "neutral"
+                      }
+                    >
+                      {evidence.reviewStatus}
+                    </Badge>
+                  </div>
+                  {evidence.detail ? <p>{evidence.detail}</p> : null}
+                  {evidence.sourceUrl ? (
+                    <a
+                      href={evidence.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open source
+                      <ArrowRightIcon size={14} />
+                    </a>
+                  ) : null}
+                  {evidence.reviewNote ? (
+                    <small>Review note: {evidence.reviewNote}</small>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="muted-copy">
+              Add evidence to move this claim from Draft to Supported.
+            </p>
+          )}
           <div className="privacy-explainer">
             <LockKeyIcon size={20} />
             <div>
               <strong>
                 {claim.privacy === "Public"
-                  ? "The claim is public; source evidence may not be."
+                  ? "The claim is public; private evidence remains hidden."
                   : "This claim has restricted visibility."}
               </strong>
               <span>
-                Verification language confirms limited facts and does not imply absolute
-                certainty.
+                A controlled review link can disclose only the evidence that its
+                owner selects.
               </span>
             </div>
           </div>
+          {onEdit ? (
+            <div className="dialog-actions">
+              <span />
+              <Button onClick={onEdit}>Edit claim and evidence</Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </Dialog>
@@ -1137,40 +1351,46 @@ function ClaimDetail({
 
 function VaultPage({
   claims,
-  evidence,
-  setEvidence,
-  onAdd,
+  onEditClaim,
+  onUpdateClaim,
   onToast,
 }: {
   claims: Claim[];
-  evidence: Evidence[];
-  setEvidence: React.Dispatch<React.SetStateAction<Evidence[]>>;
-  onAdd: () => void;
+  onEditClaim: (claim: Claim) => void;
+  onUpdateClaim: (claim: Claim) => Promise<boolean>;
   onToast: (message: string) => void;
 }) {
   const [filter, setFilter] = useState<"All" | Evidence["access"]>("All");
-  const [selected, setSelected] = useState<Evidence | null>(null);
-  const visible = evidence.filter((item) => filter === "All" || item.access === filter);
+  const [selected, setSelected] = useState<{
+    claim: Claim;
+    evidence: Evidence;
+  } | null>(null);
+  const evidence = claims.flatMap((claim) =>
+    claim.evidence.map((item) => ({ claim, evidence: item })),
+  );
+  const visible = evidence.filter(
+    (item) => filter === "All" || item.evidence.access === filter,
+  );
 
-  const updateItem = (id: string, patch: Partial<Evidence>) => {
-    setEvidence((items) =>
-      items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-    );
-    setSelected((item) => (item?.id === id ? { ...item, ...patch } : item));
+  const updateAccess = async (access: Evidence["access"]) => {
+    if (!selected) return;
+    const updatedEvidence = { ...selected.evidence, access };
+    const updatedClaim = {
+      ...selected.claim,
+      evidence: selected.claim.evidence.map((item) =>
+        item.id === updatedEvidence.id ? updatedEvidence : item,
+      ),
+    };
+    if (!(await onUpdateClaim(updatedClaim))) return;
+    setSelected({ claim: updatedClaim, evidence: updatedEvidence });
+    onToast("Evidence access updated.");
   };
 
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Private workspace"
         title="Evidence vault"
-        description="Manage what supports your claims, who can access it, and whether its verification is current."
-        actions={
-          <Button onClick={onAdd}>
-            <PlusIcon size={16} />
-            Add evidence
-          </Button>
-        }
+        description="Review evidence across your claims. Add or change evidence through its claim."
       />
 
       <div className="privacy-banner">
@@ -1178,11 +1398,11 @@ function VaultPage({
         <div>
           <strong>Your vault is private by default.</strong>
           <span>
-            Public claims can be supported by evidence that remains visible only to
-            approved reviewers.
+            Evidence appears in a public profile only when you mark it Public. A
+            review link includes only the items you select.
           </span>
         </div>
-        <Badge tone="private">Encrypted at rest</Badge>
+        <Badge tone="private">Controlled access</Badge>
       </div>
 
       <div className="vault-summary">
@@ -1191,22 +1411,32 @@ function VaultPage({
           <strong>{evidence.length}</strong>
         </div>
         <div>
-          <span>Reviewer access</span>
-          <strong>{evidence.filter((item) => item.access === "Reviewers").length}</strong>
+          <span>Public items</span>
+          <strong>
+            {evidence.filter((item) => item.evidence.access === "Public").length}
+          </strong>
         </div>
         <div>
           <span>Pending review</span>
-          <strong>{evidence.filter((item) => item.status === "Review pending").length}</strong>
+          <strong>
+            {
+              evidence.filter(
+                (item) => item.evidence.reviewStatus === "Pending",
+              ).length
+            }
+          </strong>
         </div>
         <div>
           <span>Claims supported</span>
-          <strong>{new Set(evidence.flatMap((item) => item.claimIds)).size}</strong>
+          <strong>
+            {claims.filter((claim) => claimState(claim) !== "Draft").length}
+          </strong>
         </div>
       </div>
 
       <div className="toolbar">
         <div className="segmented" aria-label="Filter evidence">
-          {(["All", "Only me", "Reviewers", "Public"] as const).map((item) => (
+          {(["All", "Private", "Public"] as const).map((item) => (
             <button
               key={item}
               className={filter === item ? "active" : ""}
@@ -1233,10 +1463,13 @@ function VaultPage({
               </tr>
             </thead>
             <tbody>
-              {visible.map((item) => (
+              {visible.map(({ claim, evidence: item }) => (
                 <tr key={item.id}>
                   <td>
-                    <button className="evidence-name" onClick={() => setSelected(item)}>
+                    <button
+                      className="evidence-name"
+                      onClick={() => setSelected({ claim, evidence: item })}
+                    >
                       <span className="evidence-icon">
                         {item.type === "System record" ? (
                           <LinkIcon size={18} />
@@ -1250,12 +1483,7 @@ function VaultPage({
                       </span>
                     </button>
                   </td>
-                  <td>
-                    {item.claimIds
-                      .map((id) => claims.find((claim) => claim.id === id)?.project)
-                      .filter(Boolean)
-                      .join(", ")}
-                  </td>
+                  <td>{claim.project}</td>
                   <td>
                     <Badge tone={item.access === "Public" ? "positive" : "private"}>
                       {item.access !== "Public" ? <LockKeyIcon size={12} /> : null}
@@ -1265,19 +1493,25 @@ function VaultPage({
                   <td>
                     <Badge
                       tone={
-                        item.status === "Current"
+                        item.reviewStatus === "Confirmed"
                           ? "positive"
-                          : item.status === "Withdrawn"
-                            ? "neutral"
-                            : "warning"
+                          : item.reviewStatus === "Pending"
+                            ? "warning"
+                            : item.reviewStatus === "Rejected"
+                              ? "private"
+                              : "neutral"
                       }
                     >
-                      {item.status}
+                      {item.reviewStatus}
                     </Badge>
                   </td>
-                  <td>{item.updated}</td>
+                  <td>{new Date(item.updatedAt).toLocaleDateString()}</td>
                   <td>
-                    <Button variant="ghost" size="sm" onClick={() => setSelected(item)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelected({ claim, evidence: item })}
+                    >
                       Manage
                     </Button>
                   </td>
@@ -1290,8 +1524,24 @@ function VaultPage({
         <EmptyState
           icon={<FolderLockIcon size={28} />}
           title="No evidence matches this access level"
-          copy="Choose another filter or add a new item to your private vault."
-          action={<Button onClick={() => setFilter("All")}>Show all evidence</Button>}
+          copy={
+            claims.length
+              ? "Choose another filter or add evidence through a claim."
+              : "Prove your first claim to add evidence."
+          }
+          action={
+            visible.length === 0 && filter !== "All" ? (
+              <Button onClick={() => setFilter("All")}>Show all evidence</Button>
+            ) : claims[0] ? (
+              <Button onClick={() => onEditClaim(claims[0]!)}>
+                Edit first claim
+              </Button>
+            ) : (
+              <Button onClick={() => window.location.assign("/#/profile")}>
+                Go to profile
+              </Button>
+            )
+          }
         />
       )}
 
@@ -1308,51 +1558,58 @@ function VaultPage({
                 <FileTextIcon size={20} />
               </span>
               <div>
-                <strong>{selected.title}</strong>
-                <span>{selected.detail}</span>
+                <strong>{selected.evidence.title}</strong>
+                <span>{selected.evidence.detail}</span>
               </div>
             </div>
             <div className="meta-grid">
               <div>
                 <span>Type</span>
-                <strong>{selected.type}</strong>
+                <strong>{selected.evidence.type}</strong>
               </div>
               <div>
-                <span>Reviewed by</span>
-                <strong>{selected.reviewedBy}</strong>
+                <span>Review state</span>
+                <strong>{selected.evidence.reviewStatus}</strong>
               </div>
             </div>
+            {selected.evidence.sourceUrl ? (
+              <a
+                className="evidence-source-link"
+                href={selected.evidence.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open source
+                <ArrowRightIcon size={14} />
+              </a>
+            ) : null}
             <Field
               label="Who can access this evidence?"
               htmlFor="evidence-access"
-              helper="Changing this does not change the public visibility of linked claims."
+              helper="Private evidence can still be selected for a controlled review link."
             >
               <select
                 id="evidence-access"
-                value={selected.access}
-                onChange={(event) =>
-                  updateItem(selected.id, {
-                    access: event.target.value as Evidence["access"],
-                  })
-                }
+                value={selected.evidence.access}
+                onChange={(event) => {
+                  void updateAccess(event.target.value as Evidence["access"]);
+                }}
               >
-                <option>Only me</option>
-                <option>Reviewers</option>
+                <option>Private</option>
                 <option>Public</option>
               </select>
             </Field>
-            <div className="dialog-actions split-actions">
+            <div className="dialog-actions">
               <Button
-                variant="danger"
+                variant="ghost"
                 onClick={() => {
-                  updateItem(selected.id, { status: "Withdrawn" });
-                  onToast("Evidence withdrawn. Linked claims now show updated support.");
+                  onEditClaim(selected.claim);
+                  setSelected(null);
                 }}
-                disabled={selected.status === "Withdrawn"}
               >
-                Withdraw evidence
+                Edit claim and evidence
               </Button>
-              <Button onClick={() => setSelected(null)}>Save access</Button>
+              <Button onClick={() => setSelected(null)}>Done</Button>
             </div>
           </div>
         ) : null}
@@ -1361,30 +1618,79 @@ function VaultPage({
   );
 }
 
-function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void }) {
+function DiscoverPage({
+  onIntro,
+}: {
+  onIntro: (draft: IntroductionDraft) => void;
+}) {
   const [query, setQuery] = useState("");
-  const [expertise, setExpertise] = useState("All expertise");
+  const deferredQuery = useDeferredValue(query);
+  const [expertise, setExpertise] = useState("");
   const [ownership, setOwnership] = useState("Any ownership");
-  const [selected, setSelected] = useState<Person | null>(null);
+  const [results, setResults] = useState<DiscoveryResult[]>([]);
+  const [nextCursor, setNextCursor] = useState<string>();
+  const [selected, setSelected] = useState<DiscoveryResult | null>(null);
+  const [loadingResults, setLoadingResults] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState("");
 
-  const results = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return people.filter((person) => {
-      const claim = discoveryClaims[person.id];
-      const matchesText =
-        !normalized ||
-        [person.name, person.role, person.summary, ...person.expertise, claim?.title ?? ""]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalized);
-      const matchesExpertise =
-        expertise === "All expertise" ||
-        person.expertise.some((item) => item.includes(expertise));
-      const matchesOwnership =
-        ownership === "Any ownership" || claim?.ownership === ownership;
-      return matchesText && matchesExpertise && matchesOwnership;
-    });
-  }, [query, expertise, ownership]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      setLoadingResults(true);
+      setError("");
+      void discoverProfessionals(
+        {
+          query: deferredQuery.trim(),
+          expertise: expertise.trim(),
+          ownership: ownership === "Any ownership" ? "" : ownership,
+        },
+        controller.signal,
+      )
+        .then((page) => {
+          setResults(page.items);
+          setNextCursor(page.nextCursor);
+        })
+        .catch((requestError: unknown) => {
+          if (
+            requestError instanceof DOMException &&
+            requestError.name === "AbortError"
+          ) {
+            return;
+          }
+          setResults([]);
+          setNextCursor(undefined);
+          setError("Professional discovery could not be loaded.");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoadingResults(false);
+        });
+    }, 250);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [deferredQuery, expertise, ownership]);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const page = await discoverProfessionals({
+        query: deferredQuery.trim(),
+        expertise: expertise.trim(),
+        ownership: ownership === "Any ownership" ? "" : ownership,
+        cursor: nextCursor,
+      });
+      setResults((items) => [...items, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch {
+      setError("More professionals could not be loaded.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="page">
@@ -1403,17 +1709,12 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
             aria-label="Search professionals"
           />
         </div>
-        <select
+        <input
           value={expertise}
           onChange={(event) => setExpertise(event.target.value)}
           aria-label="Filter by expertise"
-        >
-          <option>All expertise</option>
-          <option>Accessibility</option>
-          <option>Cloud cost</option>
-          <option>Enterprise product</option>
-          <option>Revenue operations</option>
-        </select>
+          placeholder="Filter by expertise"
+        />
         <select
           value={ownership}
           onChange={(event) => setOwnership(event.target.value)}
@@ -1427,13 +1728,19 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
       </div>
 
       <div className="results-heading">
-        <span>{results.length} relevant professionals</span>
-        <span>Ordered by claim relevance and evidence context</span>
+        <span>
+          {results.length}
+          {nextCursor ? "+" : ""} relevant professionals
+        </span>
+        <span>Public profiles with matching claims</span>
       </div>
-      {results.length ? (
+      {error ? <p className="field-error">{error}</p> : null}
+      {loadingResults ? (
+        <PageLoader />
+      ) : results.length ? (
         <div className="discovery-list">
-          {results.map((person, index) => {
-            const claim = discoveryClaims[person.id]!;
+          {results.map((result, index) => {
+            const { person, claim } = result;
             return (
               <article key={person.id} className="person-result">
                 <div className="person-rank">{String(index + 1).padStart(2, "0")}</div>
@@ -1462,18 +1769,20 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
                   <div className="verification-row">
                     <Badge tone="positive">
                       <SealCheckIcon size={12} weight="fill" />
-                      {claim.verification[0]}
+                      {claimState(claim)}
                     </Badge>
                     <Badge>{claim.ownership}</Badge>
                   </div>
                 </div>
                 <div className="person-connect">
                   <span>{person.relationship}</span>
-                  <span className="availability-dot">
-                    <i />
-                    Open to {person.availability[0]?.toLowerCase()}
-                  </span>
-                  <Button variant="outline" onClick={() => setSelected(person)}>
+                  {person.availability[0] ? (
+                    <span className="availability-dot">
+                      <i />
+                      Open to {person.availability[0].toLowerCase()}
+                    </span>
+                  ) : null}
+                  <Button variant="outline" onClick={() => setSelected(result)}>
                     View profile
                   </Button>
                   <Button onClick={() => onIntro({ person, reason: "", outcome: "" })}>
@@ -1483,6 +1792,15 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
               </article>
             );
           })}
+          {nextCursor ? (
+            <Button
+              variant="outline"
+              disabled={loadingMore}
+              onClick={() => void loadMore()}
+            >
+              {loadingMore ? "Loading…" : "Load more"}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <EmptyState
@@ -1493,7 +1811,7 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
             <Button
               onClick={() => {
                 setQuery("");
-                setExpertise("All expertise");
+                setExpertise("");
                 setOwnership("Any ownership");
               }}
             >
@@ -1506,30 +1824,38 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
       <Dialog
         open={Boolean(selected)}
         onOpenChange={(open) => !open && setSelected(null)}
-        title={selected?.name ?? "Professional profile"}
-        description={selected?.role}
+        title={selected?.person.name ?? "Professional profile"}
+        description={selected?.person.role}
         wide
       >
         {selected ? (
           <div className="discovery-profile">
             <div className="discovery-profile-head">
-              <Avatar initials={selected.initials} accent={selected.accent} size="xl" />
+              <Avatar
+                initials={selected.person.initials}
+                accent={selected.person.accent}
+                size="xl"
+              />
               <div>
-                <h2>{selected.name}</h2>
-                <p>{selected.summary}</p>
+                <h2>{selected.person.name}</h2>
+                <p>{selected.person.summary}</p>
                 <div className="tag-list">
-                  {selected.expertise.map((item) => (
+                  {selected.person.expertise.map((item) => (
                     <Badge key={item}>{item}</Badge>
                   ))}
                 </div>
               </div>
             </div>
             <DividerLabel>Relevant supported claim</DividerLabel>
-            <ClaimCard claim={discoveryClaims[selected.id]!} index={0} onOpen={() => {}} />
+            <ClaimCard claim={selected.claim} index={0} onOpen={() => {}} />
             <div className="dialog-actions">
               <Button
                 onClick={() => {
-                  onIntro({ person: selected, reason: "", outcome: "" });
+                  onIntro({
+                    person: selected.person,
+                    reason: "",
+                    outcome: "",
+                  });
                   setSelected(null);
                 }}
               >
@@ -1544,16 +1870,113 @@ function DiscoverPage({ onIntro }: { onIntro: (draft: IntroductionDraft) => void
 }
 
 function RequestsPage({
-  requests,
-  onCreate,
+  getToken,
+  ownerId,
   onRespond,
+  onToast,
 }: {
-  requests: ProfessionalRequest[];
-  onCreate: () => void;
+  getToken: () => Promise<string | null>;
+  ownerId: string;
   onRespond: (request: ProfessionalRequest) => void;
+  onToast: (message: string) => void;
 }) {
-  const [kind, setKind] = useState("All");
-  const visible = requests.filter((request) => kind === "All" || request.kind === kind);
+  const [kind, setKind] = useState<"All" | RequestKind>("All");
+  const [requests, setRequests] = useState<ProfessionalRequest[]>([]);
+  const [nextCursor, setNextCursor] = useState<string>();
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    setLoadingRequests(true);
+    setError("");
+    void getToken()
+      .then((token) => {
+        if (!token) throw new Error("Missing session.");
+        return getProfessionalRequests(
+          token,
+          kind === "All" ? null : kind,
+          undefined,
+          controller.signal,
+        );
+      })
+      .then((page) => {
+        if (!active) return;
+        setRequests(page.items);
+        setNextCursor(page.nextCursor);
+      })
+      .catch((requestError: unknown) => {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+        if (!active) return;
+        setRequests([]);
+        setNextCursor(undefined);
+        setError("Professional requests could not be loaded.");
+      })
+      .finally(() => {
+        if (active) setLoadingRequests(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [getToken, kind]);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Missing session.");
+      const page = await getProfessionalRequests(
+        token,
+        kind === "All" ? null : kind,
+        nextCursor,
+      );
+      setRequests((items) => [...items, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch {
+      setError("More professional requests could not be loaded.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const create = async (input: NewProfessionalRequest): Promise<boolean> => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Missing session.");
+      const created = await createProfessionalRequest(token, input);
+      if (kind === "All" || created.kind === kind) {
+        setRequests((items) => [created, ...items]);
+      }
+      onToast("Professional request published.");
+      return true;
+    } catch {
+      setError("The professional request could not be published.");
+      return false;
+    }
+  };
+
+  const close = async (request: ProfessionalRequest) => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Missing session.");
+      await closeProfessionalRequest(token, request.id);
+      setRequests((items) => items.filter((item) => item.id !== request.id));
+      onToast("Professional request closed.");
+    } catch {
+      setError("The professional request could not be closed.");
+    }
+  };
 
   return (
     <div className="page">
@@ -1562,7 +1985,7 @@ function RequestsPage({
         title="Professional requests"
         description="Ask for specific help, experience, or collaboration without posting into a general content feed."
         actions={
-          <Button onClick={onCreate}>
+          <Button onClick={() => setRequestOpen(true)}>
             <PlusIcon size={16} />
             Publish request
           </Button>
@@ -1571,22 +1994,15 @@ function RequestsPage({
       <div className="request-layout">
         <aside className="request-filter">
           <p className="aside-label">Request type</p>
-          {["All", "Hiring", "Advice", "Contract", "Collaboration", "Research"].map(
-            (item) => (
-              <button
-                key={item}
-                className={kind === item ? "active" : ""}
-                onClick={() => setKind(item)}
-              >
-                {item}
-                <span>
-                  {item === "All"
-                    ? requests.length
-                    : requests.filter((request) => request.kind === item).length}
-                </span>
-              </button>
-            ),
-          )}
+          {(["All", ...requestKinds] as const).map((item) => (
+            <button
+              key={item}
+              className={kind === item ? "active" : ""}
+              onClick={() => setKind(item)}
+            >
+              {item}
+            </button>
+          ))}
           <div className="request-note">
             <InfoIcon size={18} />
             Requests must include intent, commitment, constraints, and compensation when
@@ -1594,12 +2010,16 @@ function RequestsPage({
           </div>
         </aside>
         <div className="request-list">
-          {visible.length ? (
-            visible.map((request) => (
-              <article key={request.id} className="request-card">
+          {error ? <p className="field-error">{error}</p> : null}
+          {loadingRequests ? (
+            <PageLoader />
+          ) : requests.length ? (
+            <>
+              {requests.map((request) => (
+                <article key={request.id} className="request-card">
                 <div className="request-card-top">
                   <Badge tone="accent">{request.kind}</Badge>
-                  <span>{request.posted}</span>
+                  <span>{formatRequestDate(request.postedAt)}</span>
                 </div>
                 <h2>{request.title}</h2>
                 <p>{request.need}</p>
@@ -1644,20 +2064,50 @@ function RequestsPage({
                       <SealCheckIcon size={16} weight="fill" />
                     ) : null}
                   </div>
-                  <Button onClick={() => onRespond(request)}>Respond with context</Button>
+                  {request.author.id === ownerId ? (
+                    <Button
+                      variant="ghost"
+                      onClick={() => void close(request)}
+                    >
+                      Close request
+                    </Button>
+                  ) : (
+                    <Button onClick={() => onRespond(request)}>
+                      Respond with context
+                    </Button>
+                  )}
                 </footer>
-              </article>
-            ))
+                </article>
+              ))}
+              {nextCursor ? (
+                <Button
+                  variant="outline"
+                  disabled={loadingMore}
+                  onClick={() => void loadMore()}
+                >
+                  {loadingMore ? "Loading…" : "Load more"}
+                </Button>
+              ) : null}
+            </>
           ) : (
             <EmptyState
               icon={<HandshakeIcon size={28} />}
               title={`No ${kind.toLowerCase()} requests right now`}
               copy="Choose another request type or publish a clear professional need."
-              action={<Button onClick={onCreate}>Publish request</Button>}
+              action={
+                <Button onClick={() => setRequestOpen(true)}>
+                  Publish request
+                </Button>
+              }
             />
           )}
         </div>
       </div>
+      <RequestDialog
+        open={requestOpen}
+        onOpenChange={setRequestOpen}
+        onCreate={create}
+      />
     </div>
   );
 }
@@ -1875,413 +2325,220 @@ function ProfileDialog({
   );
 }
 
-function ClaimDialog({
-  open,
-  onOpenChange,
-  onCreate,
+function ReviewLinkPage({
+  token,
+  dark,
+  setDark,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreate: (claim: Claim) => void;
+  token: string;
+  dark: boolean;
+  setDark: (dark: boolean) => void;
 }) {
-  const [step, setStep] = useState(1);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [profession, setProfession] = useState<Profession>("Engineering");
-  const [ownership, setOwnership] = useState<Ownership>("Lead");
-  const [title, setTitle] = useState("");
-  const [project, setProject] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [contribution, setContribution] = useState("");
-  const [outcome, setOutcome] = useState("");
-  const [context, setContext] = useState("");
-  const [privacy, setPrivacy] = useState<Claim["privacy"]>("Public");
-  const [hideOrganization, setHideOrganization] = useState(false);
+  const [bundle, setBundle] = useState<Awaited<
+    ReturnType<typeof getReviewBundle>
+  > | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (open) return;
-    setStep(1);
-    setErrors({});
-  }, [open]);
-
-  const next = () => {
-    const nextErrors: Record<string, string> = {};
-    if (step === 1) {
-      if (!title.trim()) nextErrors.title = "Name the specific contribution.";
-      if (!project.trim()) nextErrors.project = "Add the project or body of work.";
-    }
-    if (step === 2) {
-      if (contribution.trim().length < 30)
-        nextErrors.contribution = "Describe your personal contribution in at least 30 characters.";
-      if (outcome.trim().length < 15)
-        nextErrors.outcome = "Add a concrete outcome with enough context to understand it.";
-    }
-    setErrors(nextErrors);
-    if (!Object.keys(nextErrors).length) setStep((value) => Math.min(3, value + 1));
-  };
-
-  const save = () => {
-    onCreate({
-      id: `claim-${Date.now()}`,
-      title: title.trim(),
-      project: project.trim(),
-      organization: organization.trim() || "Independent work",
-      organizationHidden: hideOrganization,
-      profession,
-      ownership,
-      contribution: contribution.trim(),
-      outcome: outcome.trim(),
-      outcomeContext:
-        context.trim() ||
-        "Self-declared outcome; add supporting evidence to strengthen this claim.",
-      period: "2026",
-      verification: ["Self-declared"],
-      privacy,
-      evidenceIds: [],
-      collaborators: [],
-      attestations: [],
-      featured: true,
-    });
-    setTitle("");
-    setProject("");
-    setOrganization("");
-    setContribution("");
-    setOutcome("");
-    setContext("");
-    setHideOrganization(false);
-    setPrivacy("Public");
-  };
+    let active = true;
+    const controller = new AbortController();
+    setBundle(null);
+    setError("");
+    getReviewBundle(token, controller.signal)
+      .then((value) => active && setBundle(value))
+      .catch(
+        () =>
+          active &&
+          setError("This review link is invalid, expired, or revoked."),
+      );
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [token]);
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Add a professional claim"
-      description="Make your contribution distinct from the project’s overall result."
-      wide
-    >
-      <form onSubmit={(event) => event.preventDefault()}>
-        <div className="stepper" aria-label={`Step ${step} of 3`}>
-          {["Context", "Contribution", "Privacy"].map((label, index) => (
-            <div key={label} className={step >= index + 1 ? "active" : ""}>
-              <span>{step > index + 1 ? <CheckIcon size={13} /> : index + 1}</span>
-              {label}
-            </div>
-          ))}
+    <div className="public-profile-shell">
+      <header className="public-profile-nav">
+        <Logo />
+        <div>
+          <ThemeButton dark={dark} setDark={setDark} />
+          <Button onClick={() => window.location.assign("/")}>Go to Folio</Button>
         </div>
-
-        {step === 1 ? (
-          <div className="form-section">
-            <Field label="Professional lens" htmlFor="claim-profession" helper={professionPrompts[profession]}>
-              <select
-                id="claim-profession"
-                value={profession}
-                onChange={(event) => setProfession(event.target.value as Profession)}
-              >
-                {Object.keys(professionPrompts).map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Claim title" htmlFor="claim-title" error={errors.title}>
-              <input
-                id="claim-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Led the migration of a critical production system"
-              />
-            </Field>
-            <div className="form-grid">
-              <Field label="Project or body of work" htmlFor="claim-project" error={errors.project}>
-                <input
-                  id="claim-project"
-                  value={project}
-                  onChange={(event) => setProject(event.target.value)}
-                  placeholder="Payments platform migration"
-                />
-              </Field>
-              <Field label="Organization" htmlFor="claim-organization" helper="You can hide this publicly in step 3.">
-                <input
-                  id="claim-organization"
-                  value={organization}
-                  onChange={(event) => setOrganization(event.target.value)}
-                  placeholder="Organization name"
-                />
-              </Field>
-            </div>
-            <Field label="Ownership level" htmlFor="claim-ownership">
-              <select
-                id="claim-ownership"
-                value={ownership}
-                onChange={(event) => setOwnership(event.target.value as Ownership)}
-              >
-                <option>Contributor</option>
-                <option>Major contributor</option>
-                <option>Lead</option>
-                <option>Accountable owner</option>
-              </select>
-            </Field>
+      </header>
+      {error ? (
+        <EmptyState
+          icon={<InfoIcon size={28} />}
+          title="Review unavailable"
+          copy={error}
+          action={<Button onClick={() => window.location.assign("/")}>Go to Folio</Button>}
+        />
+      ) : bundle ? (
+        <>
+          <div className="review-link-banner">
+            <ShieldCheckIcon size={20} />
+            <span>
+              This controlled view expires{" "}
+              {new Date(bundle.expiresAt).toLocaleString()}.
+            </span>
           </div>
-        ) : null}
-
-        {step === 2 ? (
-          <div className="form-section">
-            <div className="form-guidance">
-              <SparkleIcon size={20} />
-              <div>
-                <strong>Separate your work from the team’s work.</strong>
-                <span>{professionPrompts[profession]}</span>
-              </div>
-            </div>
-            <Field
-              label="What did you personally contribute?"
-              htmlFor="claim-contribution"
-              helper="Use first-person ownership: decisions, systems, processes, research, or coordination you directly handled."
-              error={errors.contribution}
-            >
-              <textarea
-                id="claim-contribution"
-                rows={5}
-                value={contribution}
-                onChange={(event) => setContribution(event.target.value)}
-                placeholder="I defined the migration path, built the compatibility layer, and coordinated..."
-              />
-            </Field>
-            <Field
-              label="What outcome followed?"
-              htmlFor="claim-outcome"
-              error={errors.outcome}
-            >
-              <textarea
-                id="claim-outcome"
-                rows={3}
-                value={outcome}
-                onChange={(event) => setOutcome(event.target.value)}
-                placeholder="Reduced median processing time by 38–44%..."
-              />
-            </Field>
-            <Field
-              label="Measurement context"
-              htmlFor="claim-context"
-              helper="Include scale, time period, method, and whether the result is exact or shown as a range."
-            >
-              <textarea
-                id="claim-context"
-                rows={3}
-                value={context}
-                onChange={(event) => setContext(event.target.value)}
-                placeholder="Measured across 1.7M annual transactions during the first 90 days..."
-              />
-            </Field>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
-          <div className="form-section">
-            <div className="privacy-choice-group">
-              <span className="field-label">Claim visibility</span>
-              {(["Public", "Restricted", "Private"] as const).map((option) => (
-                <label key={option} className={privacy === option ? "selected" : ""}>
-                  <input
-                    type="radio"
-                    name="privacy"
-                    value={option}
-                    checked={privacy === option}
-                    onChange={() => setPrivacy(option)}
-                  />
-                  <span>
-                    <strong>{option}</strong>
-                    <small>
-                      {option === "Public"
-                        ? "Anyone can view the claim. Evidence can remain private."
-                        : option === "Restricted"
-                          ? "Only approved people can view full claim details."
-                          : "Visible only to you until you choose to publish."}
-                    </small>
-                  </span>
-                </label>
-              ))}
-            </div>
-            <label className="check-row">
-              <input
-                type="checkbox"
-                checked={hideOrganization}
-                onChange={(event) => setHideOrganization(event.target.checked)}
-              />
-              <span>
-                <strong>Hide the organization name</strong>
-                <small>Show “Organization confidential” on the claim.</small>
-              </span>
-            </label>
-            <div className="privacy-preview">
-              <LockKeyIcon size={22} />
-              <div>
-                <strong>Your evidence is not made public with this claim.</strong>
-                <span>
-                  After saving, add private artifacts, system records, or request a
-                  collaborator attestation from the evidence vault.
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="dialog-actions">
-          {step > 1 ? (
-            <Button variant="ghost" onClick={() => setStep((value) => value - 1)}>
-              Back
-            </Button>
-          ) : (
-            <span />
-          )}
-          {step < 3 ? (
-            <Button key="continue" onClick={next}>
-              Continue
-              <ArrowRightIcon size={16} />
-            </Button>
-          ) : (
-            <Button key="save" onClick={save}>Save claim</Button>
-          )}
-        </div>
-      </form>
-    </Dialog>
+          <ProfilePage
+            person={bundle.record.person}
+            claims={bundle.record.claims}
+          />
+        </>
+      ) : (
+        <PageLoader />
+      )}
+    </div>
   );
 }
 
-function EvidenceDialog({
-  open,
-  onOpenChange,
-  claims,
-  onAdd,
+function ReviewQueuePage({
+  items,
+  onDecision,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  claims: Claim[];
-  onAdd: (evidence: Evidence) => void;
+  items: EvidenceReviewItem[];
+  onDecision: (
+    item: EvidenceReviewItem,
+    decision: "Confirmed" | "Rejected",
+    note: string,
+  ) => Promise<boolean>;
 }) {
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState<Evidence["type"]>("Artifact");
-  const [claimId, setClaimId] = useState(claims[0]?.id ?? "");
-  const [access, setAccess] = useState<Evidence["access"]>("Only me");
-  const [detail, setDetail] = useState("");
+  const [selected, setSelected] = useState<EvidenceReviewItem | null>(null);
+  const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!title.trim()) {
-      setError("Give this evidence a recognizable title.");
+  const decide = async (decision: "Confirmed" | "Rejected") => {
+    if (!selected) return;
+    if (decision === "Rejected" && note.trim().length < 10) {
+      setError("Explain the rejection in at least 10 characters.");
       return;
     }
-    onAdd({
-      id: `evidence-${Date.now()}`,
-      title: title.trim(),
-      type,
-      claimIds: claimId ? [claimId] : [],
-      access,
-      status: type === "Attestation" ? "Review pending" : "Current",
-      reviewedBy: type === "Attestation" ? "Awaiting collaborator" : "Not reviewed",
-      updated: "Just now",
-      detail: detail.trim() || "Private supporting material.",
-    });
-    setTitle("");
-    setDetail("");
+    setSaving(true);
+    const saved = await onDecision(selected, decision, note.trim());
+    setSaving(false);
+    if (!saved) return;
+    setSelected(null);
+    setNote("");
     setError("");
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Add evidence"
-      description="Sources are private unless you explicitly make them public."
-    >
-      <form onSubmit={submit} className="form-section">
-        <Field label="Evidence type" htmlFor="evidence-type">
-          <select
-            id="evidence-type"
-            value={type}
-            onChange={(event) => setType(event.target.value as Evidence["type"])}
-          >
-            <option>Artifact</option>
-            <option>System record</option>
-            <option>Attestation</option>
-            <option>Organization</option>
-            <option>Outcome</option>
-          </select>
-        </Field>
-        <Field label="Title" htmlFor="evidence-title" error={error}>
-          <input
-            id="evidence-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Architecture decision record"
-          />
-        </Field>
-        <Field label="Supports claim" htmlFor="evidence-claim">
-          <select
-            id="evidence-claim"
-            value={claimId}
-            onChange={(event) => setClaimId(event.target.value)}
-          >
-            {claims.map((claim) => (
-              <option key={claim.id} value={claim.id}>
-                {claim.project}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Access" htmlFor="new-evidence-access">
-          <select
-            id="new-evidence-access"
-            value={access}
-            onChange={(event) => setAccess(event.target.value as Evidence["access"])}
-          >
-            <option>Only me</option>
-            <option>Reviewers</option>
-            <option>Public</option>
-          </select>
-        </Field>
-        <Field
-          label={type === "Attestation" ? "What should they confirm?" : "Private note"}
-          htmlFor="evidence-detail"
-        >
-          <textarea
-            id="evidence-detail"
-            rows={3}
-            value={detail}
-            onChange={(event) => setDetail(event.target.value)}
-          />
-        </Field>
-        <div className="privacy-preview compact">
-          <LockKeyIcon size={20} />
-          <span>
-            {access === "Public"
-              ? "This source will be publicly visible."
-              : `${access} can access the source; public viewers only see its verification state.`}
-          </span>
+    <div className="page">
+      <PageHeader
+        title="Evidence reviews"
+        description="Confirm only the evidence that supports the stated claim and outcome."
+      />
+      {items.length ? (
+        <div className="review-queue">
+          {items.map((item) => (
+            <article
+              key={`${item.ownerId}-${item.claimId}-${item.evidence.id}`}
+            >
+              <div>
+                <span>{item.ownerName}</span>
+                <h2>{item.claimTitle}</h2>
+                <p>{item.evidence.title}</p>
+              </div>
+              <Badge tone="warning">Pending</Badge>
+              <Button variant="outline" onClick={() => setSelected(item)}>
+                Review evidence
+              </Button>
+            </article>
+          ))}
         </div>
-        <div className="dialog-actions">
-          <span />
-          <Button type="submit">
-            {type === "Attestation" ? "Request attestation" : "Add to vault"}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
+      ) : (
+        <EmptyState
+          icon={<SealCheckIcon size={28} />}
+          title="No evidence needs review"
+          copy="New evidence requests will appear here."
+          action={<Button onClick={() => window.location.reload()}>Refresh</Button>}
+        />
+      )}
+      <Dialog
+        open={Boolean(selected)}
+        onOpenChange={(open) => {
+          if (open) return;
+          setSelected(null);
+          setNote("");
+          setError("");
+        }}
+        title="Review evidence"
+        description="Compare the source with the contribution and measured outcome."
+        wide
+      >
+        {selected ? (
+          <div className="review-decision">
+            <div className="review-decision-context">
+              <span>{selected.ownerName}</span>
+              <h2>{selected.claimTitle}</h2>
+              <div className="review-claim-context">
+                <span>Personal contribution</span>
+                <p>{selected.contribution}</p>
+                <span>Measured outcome</span>
+                <p>{selected.outcome}</p>
+                <small>{selected.outcomeContext}</small>
+              </div>
+              <strong>{selected.evidence.title}</strong>
+              <p>{selected.evidence.detail}</p>
+              {selected.evidence.sourceUrl ? (
+                <a
+                  href={selected.evidence.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open source
+                  <ArrowRightIcon size={14} />
+                </a>
+              ) : null}
+            </div>
+            <Field
+              label="Review note"
+              htmlFor="review-note"
+              helper="A rejection requires a clear reason. A confirmation note is optional."
+              error={error}
+            >
+              <textarea
+                id="review-note"
+                rows={4}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+            </Field>
+            <div className="dialog-actions split-actions">
+              <Button
+                variant="danger"
+                disabled={saving}
+                onClick={() => void decide("Rejected")}
+              >
+                Reject evidence
+              </Button>
+              <Button
+                disabled={saving}
+                onClick={() => void decide("Confirmed")}
+              >
+                Confirm evidence
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Dialog>
+    </div>
   );
 }
 
 function RequestDialog({
   open,
   onOpenChange,
-  author,
   onCreate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  author: Person;
-  onCreate: (request: ProfessionalRequest) => void;
+  onCreate: (request: NewProfessionalRequest) => Promise<boolean>;
 }) {
-  const [kind, setKind] = useState<ProfessionalRequest["kind"]>("Advice");
+  const [kind, setKind] = useState<RequestKind>("Advice");
   const [title, setTitle] = useState("");
   const [need, setNeed] = useState("");
   const [experience, setExperience] = useState("");
@@ -2290,8 +2547,9 @@ function RequestDialog({
   const [constraints, setConstraints] = useState("");
   const [preferredEvidence, setPreferredEvidence] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
     if (!title.trim()) nextErrors.title = "State the request clearly.";
@@ -2300,9 +2558,8 @@ function RequestDialog({
     if (!compensation.trim()) nextErrors.compensation = "State compensation or say that it is unpaid.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    onCreate({
-      id: `request-${Date.now()}`,
-      author,
+    setSaving(true);
+    const created = await onCreate({
       kind,
       title: title.trim(),
       need: need.trim(),
@@ -2312,8 +2569,18 @@ function RequestDialog({
       constraints: constraints.trim() || "No additional constraints",
       preferredEvidence:
         preferredEvidence.trim() || "A relevant structured claim is helpful",
-      posted: "Just now",
     });
+    setSaving(false);
+    if (!created) return;
+    setTitle("");
+    setNeed("");
+    setExperience("");
+    setCommitment("");
+    setCompensation("");
+    setConstraints("");
+    setPreferredEvidence("");
+    setErrors({});
+    onOpenChange(false);
   };
 
   return (
@@ -2331,7 +2598,7 @@ function RequestDialog({
               id="request-kind"
               value={kind}
               onChange={(event) =>
-                setKind(event.target.value as ProfessionalRequest["kind"])
+                setKind(event.target.value as RequestKind)
               }
             >
               <option>Hiring</option>
@@ -2416,7 +2683,9 @@ function RequestDialog({
         </div>
         <div className="dialog-actions">
           <span />
-          <Button type="submit">Publish request</Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Publishing…" : "Publish request"}
+          </Button>
         </div>
       </form>
     </Dialog>

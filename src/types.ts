@@ -1,18 +1,16 @@
-export type Route = "landing" | "profile" | "vault" | "discover" | "requests";
+export type Route =
+  | "landing"
+  | "profile"
+  | "vault"
+  | "discover"
+  | "requests"
+  | "reviews";
 
 export type Ownership =
   | "Contributor"
   | "Major contributor"
   | "Lead"
   | "Accountable owner";
-
-export type Verification =
-  | "Self-declared"
-  | "Supported by evidence"
-  | "Confirmed by collaborator"
-  | "System verified"
-  | "Organization verified"
-  | "Independently reviewed";
 
 export type Privacy = "Public" | "Restricted" | "Private";
 
@@ -24,6 +22,22 @@ export type Profession =
   | "Recruiting"
   | "Operations"
   | "Management";
+
+export type ClaimState = "Draft" | "Supported" | "Confirmed";
+
+export type EvidenceType =
+  | "Artifact"
+  | "System record"
+  | "Organization"
+  | "Outcome";
+
+export type EvidenceAccess = "Private" | "Public";
+
+export type EvidenceReviewStatus =
+  | "Not submitted"
+  | "Pending"
+  | "Confirmed"
+  | "Rejected";
 
 export interface Person {
   id: string;
@@ -44,14 +58,19 @@ export interface Person {
   accent: string;
 }
 
-export interface Attestation {
+export interface Evidence {
   id: string;
-  name: string;
-  initials: string;
-  relationship: string;
-  observed: string;
-  confirmsOutcome: boolean;
-  quote: string;
+  title: string;
+  type: EvidenceType;
+  sourceUrl?: string;
+  detail: string;
+  access: EvidenceAccess;
+  reviewStatus: EvidenceReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt: string;
+  redacted?: boolean;
 }
 
 export interface Claim {
@@ -66,30 +85,58 @@ export interface Claim {
   outcome: string;
   outcomeContext: string;
   period: string;
-  verification: Verification[];
   privacy: Privacy;
-  evidenceIds: string[];
-  collaborators: string[];
-  attestations: Attestation[];
+  evidence: Evidence[];
   featured: boolean;
 }
 
-export interface Evidence {
-  id: string;
-  title: string;
-  type: "Artifact" | "System record" | "Attestation" | "Organization" | "Outcome";
-  claimIds: string[];
-  access: "Only me" | "Reviewers" | "Public";
-  status: "Current" | "Review pending" | "Withdrawn";
-  reviewedBy: string;
-  updated: string;
-  detail: string;
+export interface FolioRecord {
+  version: 1;
+  revision: number;
+  person: Person;
+  claims: Claim[];
 }
+
+export interface ReviewLinkSummary {
+  id: string;
+  claimIds: string[];
+  evidenceIds: string[];
+  createdAt: string;
+  expiresAt: string;
+  revokedAt?: string;
+}
+
+export interface CreatedReviewLink extends ReviewLinkSummary {
+  token: string;
+}
+
+export interface ReviewBundle {
+  record: FolioRecord;
+  expiresAt: string;
+}
+
+export interface EvidenceReviewItem {
+  ownerId: string;
+  ownerName: string;
+  claimId: string;
+  claimTitle: string;
+  contribution: string;
+  outcome: string;
+  outcomeContext: string;
+  evidence: Evidence;
+}
+
+export type RequestKind =
+  | "Hiring"
+  | "Advice"
+  | "Contract"
+  | "Collaboration"
+  | "Research";
 
 export interface ProfessionalRequest {
   id: string;
   author: Person;
-  kind: "Hiring" | "Advice" | "Contract" | "Collaboration" | "Research";
+  kind: RequestKind;
   title: string;
   need: string;
   experience: string[];
@@ -97,7 +144,28 @@ export interface ProfessionalRequest {
   compensation: string;
   constraints: string;
   preferredEvidence: string;
-  posted: string;
+  postedAt: string;
+}
+
+export interface NewProfessionalRequest {
+  kind: RequestKind;
+  title: string;
+  need: string;
+  experience: string[];
+  commitment: string;
+  compensation: string;
+  constraints: string;
+  preferredEvidence: string;
+}
+
+export interface DiscoveryResult {
+  person: Person;
+  claim: Claim;
+}
+
+export interface ResultPage<Item> {
+  items: Item[];
+  nextCursor?: string;
 }
 
 export interface IntroductionDraft {

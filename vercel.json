@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/maintenance",
+      "schedule": "17 3 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/sign-in/:path*",

@@ -1,0 +1,326 @@
+.x-post-card {
+  display: block;
+  width: 598px;
+  max-width: 100%;
+  padding: 10px 16px 8px;
+  color: rgb(231, 233, 234);
+  border-bottom: 1px solid rgb(47, 51, 54);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.x-post-card__body {
+  display: flex;
+  gap: 8px;
+}
+
+.x-post-card__context {
+  display: flex;
+  align-items: center;
+  height: 18px;
+  padding-left: 24px;
+  gap: 8px;
+  color: rgb(113, 118, 123);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.x-post-card__context svg {
+  flex: 0 0 auto;
+}
+
+.x-post-card:hover {
+  background: rgba(255, 255, 255, 0.008);
+}
+
+.x-post-card__avatar {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.x-post-card__content {
+  min-width: 0;
+  width: 518px;
+}
+
+.x-post-card__header,
+.x-post-card__identity,
+.x-post-card__quote-header {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.x-post-card__header {
+  justify-content: space-between;
+  height: 20px;
+}
+
+.x-post-card__identity {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.x-post-card__author,
+.x-post-card__quote-header strong {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.x-post-card__verified {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  color: rgb(29, 155, 240);
+  fill: currentColor;
+}
+
+.x-post-card__verified-check {
+  fill: white;
+}
+
+.x-post-card__handle,
+.x-post-card__separator,
+.x-post-card__time,
+.x-post-card__quote-header span {
+  margin-left: 4px;
+  color: rgb(113, 118, 123);
+}
+
+.x-post-card__handle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.x-post-card__more {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 3px;
+  color: rgb(113, 118, 123);
+  line-height: 14px;
+  letter-spacing: 1px;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.x-post-card__more:hover,
+.x-post-card__more:focus-visible {
+  color: rgb(29, 155, 240);
+  background: rgba(29, 155, 240, 0.1);
+}
+
+.x-post-card__text,
+.x-post-card__quote p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.x-post-card__reply-target {
+  margin: 0;
+  color: rgb(113, 118, 123);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.x-post-card__reply-target span {
+  color: rgb(29, 155, 240);
+}
+
+.x-post-card__media {
+  display: block;
+  width: 516px;
+  max-width: 100%;
+  height: auto;
+  margin-top: 12px;
+  border: 1px solid rgb(47, 51, 54);
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.x-post-card__quote {
+  margin-top: 4px;
+  overflow: hidden;
+  border: 1px solid rgb(47, 51, 54);
+  border-radius: 16px;
+}
+
+.x-post-card__quote--media {
+  display: flex;
+  min-height: 154px;
+}
+
+.x-post-card__quote-media {
+  flex: 0 0 112px;
+  width: 112px;
+  min-height: 154px;
+  object-fit: cover;
+}
+
+.x-post-card__quote-content {
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.x-post-card__quote-header {
+  height: 20px;
+  white-space: nowrap;
+}
+
+.x-post-card__quote-header strong,
+.x-post-card__quote-header span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.x-post-card__quote-avatar {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.x-post-card__quote p {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.x-post-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 518px;
+  max-width: 100%;
+  height: 20px;
+  margin-top: 12px;
+  gap: 4px;
+  color: rgb(113, 118, 123);
+}
+
+.x-post-card__action,
+.x-post-card__utilities {
+  display: flex;
+  align-items: center;
+}
+
+.x-post-card__action {
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.x-post-card__action-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-left: -8px;
+  border-radius: 9999px;
+}
+
+.x-post-card__action-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.x-post-card__action:hover .x-post-card__action-icon,
+.x-post-card__action:focus-visible .x-post-card__action-icon,
+.x-post-card__action.is-active .x-post-card__action-icon {
+  background: rgba(29, 155, 240, 0.1);
+}
+
+.x-post-card__action--reply:hover,
+.x-post-card__action--reply:focus-visible,
+.x-post-card__action--reply.is-active,
+.x-post-card__action--views:hover,
+.x-post-card__action--views:focus-visible,
+.x-post-card__action--bookmark:hover,
+.x-post-card__action--bookmark:focus-visible,
+.x-post-card__action--bookmark.is-active,
+.x-post-card__action--share:hover,
+.x-post-card__action--share:focus-visible {
+  color: rgb(29, 155, 240);
+}
+
+.x-post-card__action--repost:hover,
+.x-post-card__action--repost:focus-visible,
+.x-post-card__action--repost.is-active {
+  color: rgb(0, 186, 124);
+}
+
+.x-post-card__action--repost:hover .x-post-card__action-icon,
+.x-post-card__action--repost:focus-visible .x-post-card__action-icon,
+.x-post-card__action--repost.is-active .x-post-card__action-icon {
+  background: rgba(0, 186, 124, 0.1);
+}
+
+.x-post-card__action--like:hover,
+.x-post-card__action--like:focus-visible,
+.x-post-card__action--like.is-active {
+  color: rgb(249, 24, 128);
+}
+
+.x-post-card__action--like:hover .x-post-card__action-icon,
+.x-post-card__action--like:focus-visible .x-post-card__action-icon,
+.x-post-card__action--like.is-active .x-post-card__action-icon {
+  background: rgba(249, 24, 128, 0.1);
+}
+
+.x-post-card__action:focus-visible,
+.x-post-card__more:focus-visible {
+  outline: 2px solid rgb(29, 155, 240);
+  outline-offset: 2px;
+}
+
+.x-post-card__utilities {
+  gap: 4px;
+}
+
+.x-post-card__utilities .x-post-card__action-icon {
+  margin: 0;
+}
+
+@media (max-width: 599px) {
+  .x-post-card {
+    width: 100%;
+  }
+
+  .x-post-card__content {
+    flex: 1;
+    width: auto;
+  }
+
+  .x-post-card__quote--media {
+    min-height: 116px;
+  }
+
+  .x-post-card__quote-media {
+    flex-basis: 82px;
+    width: 82px;
+    min-height: 116px;
+  }
+
+  .x-post-card__action--bookmark {
+    display: none;
+  }
+}
