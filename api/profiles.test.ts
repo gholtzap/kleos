@@ -4,6 +4,7 @@ import { currentPerson, initialClaims } from "../src/data";
 import { publicFolioRecord } from "../src/folio";
 import type { FolioRecord } from "../src/types";
 import type { ApiRequest, ApiResponse } from "./_shared";
+import { TestResponse } from "./test-response";
 
 const database = vi.hoisted(() => ({
   record: null as FolioRecord | null,
@@ -46,30 +47,6 @@ vi.mock("@neondatabase/serverless", () => {
   };
   return { neon: () => query };
 });
-
-class TestResponse implements ApiResponse {
-  code = 200;
-  body: unknown;
-  headers = new Map<string, string>();
-
-  status(code: number) {
-    this.code = code;
-    return this;
-  }
-
-  json(body: unknown) {
-    this.body = body;
-    return this;
-  }
-
-  setHeader(name: string, value: string) {
-    this.headers.set(name, value);
-  }
-
-  end() {
-    return this;
-  }
-}
 
 let profilesHandler: (
   request: ApiRequest,

@@ -50,6 +50,32 @@ export function parseBody(body: unknown): unknown {
   }
 }
 
+export function stringArray(value: unknown): string[] | null {
+  if (
+    Array.isArray(value) &&
+    value.every((item) => typeof item === "string")
+  ) {
+    return value;
+  }
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) &&
+      parsed.every((item) => typeof item === "string")
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isoDate(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 function configuredJwtKey(): string | null {
   const value = process.env.CLERK_JWT_KEY?.replace(/\\n/g, "\n").trim();
   return value || null;
@@ -252,13 +278,19 @@ export async function enforceRateLimit(
   };
 }
 
+export function privateResponse(response: ApiResponse): ApiResponse {
+  response.setHeader("Cache-Control", "private, no-store");
+  return response;
+}
+
 export function sendRateLimit(
   response: ApiResponse,
   result: RateLimitResult,
 ): ApiResponse {
   response.setHeader("Retry-After", String(result.retryAfterSeconds));
-  response.setHeader("Cache-Control", "private, no-store");
-  return response.status(429).json({ error: "Too many requests." });
+  return privateResponse(response)
+    .status(429)
+    .json({ error: "Too many requests." });
 }
 
 export function reviewerIsAllowed(userId: string): boolean {

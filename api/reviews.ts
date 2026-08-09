@@ -10,6 +10,7 @@ import {
   loadFolioRecord,
   observed,
   parseBody,
+  privateResponse,
   reviewerIsAllowed,
   saveFolioRecord,
   sendRateLimit,
@@ -118,8 +119,7 @@ async function handler(
           ]
         : [];
     });
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(items);
+    return privateResponse(response).status(200).json(items);
   }
 
   if (request.method === "PATCH") {
@@ -158,8 +158,7 @@ async function handler(
       if (
         await saveFolioRecord(input.ownerId, updatedRecord, record.revision)
       ) {
-        response.setHeader("Cache-Control", "private, no-store");
-        return response.status(204).end();
+        return privateResponse(response).status(204).end();
       }
     }
     return response

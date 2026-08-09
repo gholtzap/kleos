@@ -3,14 +3,6 @@ import type { FolioRecord } from "./types";
 
 const publicProfilePattern = /^#\/p\/([^/?]+)(?:\?v=([0-9]+))?$/;
 
-export function publicProfileHash(id: string, revision?: number) {
-  const version =
-    revision !== undefined && Number.isSafeInteger(revision) && revision >= 0
-      ? `?v=${revision}`
-      : "";
-  return `#/p/${encodeURIComponent(id)}${version}`;
-}
-
 export function publicProfileIdFromHash(hash: string) {
   const match = hash.match(publicProfilePattern);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
@@ -30,15 +22,6 @@ async function recordFromResponse(response: Response): Promise<FolioRecord> {
   return record;
 }
 
-export async function getFolioRecord(token: string, signal?: AbortSignal) {
-  const response = await fetch("/api/profiles", {
-    headers: { Authorization: `Bearer ${token}` },
-    signal,
-  });
-  if (response.status === 404) return null;
-  return recordFromResponse(response);
-}
-
 export async function getPublicProfile(
   id: string,
   revision?: number,
@@ -49,17 +32,4 @@ export async function getPublicProfile(
   return recordFromResponse(
     await fetch(`/api/profiles?${parameters}`, { signal }),
   );
-}
-
-export async function saveFolioRecord(token: string, record: FolioRecord) {
-  const response = await fetch("/api/profiles", {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(record),
-  });
-  if (!response.ok) throw new Error("Could not save Folio.");
-  return recordFromResponse(response);
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { normalizePerson } from "../src/folio";
+import { includesValue, normalizePerson } from "../src/folio";
 import {
   normalizeNewProfessionalRequest,
   requestKinds,
@@ -13,11 +13,14 @@ import {
   authenticatedUserId,
   enforceRateLimit,
   first,
+  isoDate,
   isRecord,
   observed,
   parseBody,
+  privateResponse,
   sendRateLimit,
   sql,
+  stringArray,
   type ApiRequest,
   type ApiResponse,
 } from "./_shared";
@@ -59,36 +62,7 @@ export function decodeRequestCursor(value: string): RequestCursor | null {
 }
 
 function requestKind(value: string | undefined): RequestKind | null {
-  if (!value) return null;
-  return requestKinds.some((kind) => kind === value)
-    ? (value as RequestKind)
-    : null;
-}
-
-function stringArray(value: unknown): string[] | null {
-  if (
-    Array.isArray(value) &&
-    value.every((item) => typeof item === "string")
-  ) {
-    return value;
-  }
-  if (typeof value !== "string") return null;
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return Array.isArray(parsed) &&
-      parsed.every((item) => typeof item === "string")
-      ? parsed
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function isoDate(value: unknown): string | null {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value !== "string") return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  return includesValue(requestKinds, value) ? value : null;
 }
 
 function requestFromRow(
@@ -102,8 +76,7 @@ function requestFromRow(
     !experience ||
     !postedAt ||
     typeof row.id !== "string" ||
-    typeof row.kind !== "string" ||
-    !requestKinds.some((kind) => kind === row.kind) ||
+    !includesValue(requestKinds, row.kind) ||
     typeof row.title !== "string" ||
     typeof row.need !== "string" ||
     typeof row.commitment !== "string" ||
@@ -116,7 +89,7 @@ function requestFromRow(
   return {
     id: row.id,
     author,
-    kind: row.kind as RequestKind,
+    kind: row.kind,
     title: row.title,
     need: row.need,
     experience,
@@ -216,8 +189,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
           ? encodeCursor({ postedAt: lastPostedAt, id: lastId })
           : undefined,
     };
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(page);
+    return privateResponse(response).status(200).json(page);
   }
 
   if (request.method === "POST") {
@@ -302,8 +274,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
     if (!created) {
       throw new Error("Stored professional request is invalid.");
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(201).json(created);
+    return privateResponse(response).status(201).json(created);
   }
 
   if (request.method === "DELETE") {
@@ -324,8 +295,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
         .status(404)
         .json({ error: "Professional request not found." });
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(204).end();
+    return privateResponse(response).status(204).end();
   }
 
   response.setHeader("Allow", "GET, POST, DELETE");

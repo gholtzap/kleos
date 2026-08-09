@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { currentPerson, initialClaims } from "../src/data";
 import type { ApiRequest, ApiResponse } from "./_shared";
+import { TestResponse } from "./test-response";
 
 vi.mock("@neondatabase/serverless", () => {
   const query = async (
@@ -28,30 +29,6 @@ vi.mock("@neondatabase/serverless", () => {
   };
   return { neon: () => query };
 });
-
-class TestResponse implements ApiResponse {
-  code = 200;
-  body: unknown;
-  headers = new Map<string, string>();
-
-  status(code: number) {
-    this.code = code;
-    return this;
-  }
-
-  json(body: unknown) {
-    this.body = body;
-    return this;
-  }
-
-  setHeader(name: string, value: string) {
-    this.headers.set(name, value);
-  }
-
-  end() {
-    return this;
-  }
-}
 
 let discoverHandler: (
   request: ApiRequest,

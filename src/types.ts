@@ -1,11 +1,3 @@
-export type Route =
-  | "landing"
-  | "profile"
-  | "vault"
-  | "discover"
-  | "requests"
-  | "reviews";
-
 export type Ownership =
   | "Contributor"
   | "Major contributor"
@@ -166,10 +158,4 @@ export interface DiscoveryResult {
 export interface ResultPage<Item> {
   items: Item[];
   nextCursor?: string;
-}
-
-export interface IntroductionDraft {
-  person: Person;
-  reason: string;
-  outcome: string;
 }

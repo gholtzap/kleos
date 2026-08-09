@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import {
   first,
   observed,
+  privateResponse,
   sql,
   type ApiRequest,
   type ApiResponse,
@@ -45,8 +46,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
       RETURNING id
     `,
   ]);
-  response.setHeader("Cache-Control", "private, no-store");
-  return response.status(200).json({
+  return privateResponse(response).status(200).json({
     removedRateLimits: rateLimits.length,
     removedReviewLinks: reviewLinks.length,
   });

@@ -2,23 +2,14 @@ import { ClerkProvider, useAuth, useUser } from "@clerk/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/manrope";
-import "@fontsource-variable/newsreader";
 import App from "./App";
 import { XHomeClone } from "./components/XHomeClone";
 import { XFrozuneProfileClone } from "./components/XFrozuneProfileClone";
-import {
-  accountHandle,
-  heapUsageIsUnsafe,
-  signedInPageFromPath,
-  type HeapSnapshot,
-} from "./lib";
+import { accountHandle, signedInPageFromPath } from "./lib";
 import { publicProfileIdFromHash } from "./public-profile";
 import { reviewTokenFromHash } from "./review-links";
+import { useLocationHash } from "./use-location-hash";
 import "./styles.css";
-
-type MemoryPerformance = Performance & {
-  memory?: HeapSnapshot;
-};
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Missing root element.");
@@ -30,11 +21,18 @@ const root = createRoot(rootElement);
 function ClerkApplication() {
   const { isLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
+  const hash = useLocationHash();
   const sharedPage =
-    publicProfileIdFromHash(window.location.hash) !== null ||
-    reviewTokenFromHash(window.location.hash) !== null;
+    publicProfileIdFromHash(hash) !== null ||
+    reviewTokenFromHash(hash) !== null;
 
-  if (isLoaded && userLoaded && isSignedIn && user && !sharedPage) {
+  if (sharedPage) return <App />;
+
+  if (!isLoaded || !userLoaded) {
+    return <p className="folio-message">Loading Folio…</p>;
+  }
+
+  if (isSignedIn && user) {
     const email = user.primaryEmailAddress?.emailAddress;
     const account = {
       name:
@@ -70,14 +68,3 @@ root.render(
     <RootApplication />
   </StrictMode>,
 );
-
-const memory = (performance as MemoryPerformance).memory;
-if (memory) {
-  const interval = window.setInterval(() => {
-    if (!heapUsageIsUnsafe(memory)) return;
-    window.clearInterval(interval);
-    root.unmount();
-    rootElement.textContent =
-      "Folio stopped this tab because it used too much memory. Reload to start again.";
-  }, 5_000);
-}

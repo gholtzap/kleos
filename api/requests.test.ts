@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { currentPerson } from "../src/data";
 import type { ApiRequest, ApiResponse } from "./_shared";
+import { TestResponse } from "./test-response";
 
 const database = vi.hoisted(() => ({
   requestRow: null as Record<string, unknown> | null,
@@ -19,6 +20,9 @@ vi.mock("@neondatabase/serverless", () => {
     if (text.includes("INSERT INTO folio_rate_limits")) {
       return [{ request_count: 1 }];
     }
+    if (text.includes("UPDATE folio_requests")) {
+      return [{ id: "request-1" }];
+    }
     if (
       text.includes("FROM folio_requests AS request") ||
       text.includes("INSERT INTO folio_requests")
@@ -29,30 +33,6 @@ vi.mock("@neondatabase/serverless", () => {
   };
   return { neon: () => query };
 });
-
-class TestResponse implements ApiResponse {
-  code = 200;
-  body: unknown;
-  headers = new Map<string, string>();
-
-  status(code: number) {
-    this.code = code;
-    return this;
-  }
-
-  json(body: unknown) {
-    this.body = body;
-    return this;
-  }
-
-  setHeader(name: string, value: string) {
-    this.headers.set(name, value);
-  }
-
-  end() {
-    return this;
-  }
-}
 
 let requestsHandler: (
   request: ApiRequest,
@@ -107,6 +87,7 @@ describe("professional requests API", () => {
     expect(listResponse.body).toMatchObject({
       items: [{ id: "request-1", author: { id: "owner-1" } }],
     });
+    expect(listResponse.headers.get("Cache-Control")).toBe("private, no-store");
 
     const createResponse = new TestResponse();
     await requestsHandler(
@@ -123,6 +104,21 @@ describe("professional requests API", () => {
       id: "request-1",
       author: { id: "owner-1" },
     });
+
+    const deleteResponse = new TestResponse();
+    await requestsHandler(
+      {
+        method: "DELETE",
+        query: { id: "request-1" },
+        headers: { authorization: "Bearer token" },
+        body: undefined,
+      },
+      deleteResponse,
+    );
+    expect(deleteResponse.code).toBe(204);
+    expect(deleteResponse.headers.get("Cache-Control")).toBe(
+      "private, no-store",
+    );
   });
 
   it("rejects invalid request content", async () => {

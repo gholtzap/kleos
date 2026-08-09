@@ -1,34 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { initialClaims, currentPerson } from "../src/data";
-import type { ApiRequest, ApiResponse } from "./_shared";
+import type { ApiRequest } from "./_shared";
+import { TestResponse } from "./test-response";
 
 const runDatabaseTests = process.env.RUN_FOLIO_DB_TESTS === "1";
 const ownerId = `folio-test-${randomUUID()}`;
-
-class TestResponse implements ApiResponse {
-  code = 200;
-  body: unknown;
-  headers = new Map<string, string>();
-
-  status(code: number) {
-    this.code = code;
-    return this;
-  }
-
-  json(body: unknown) {
-    this.body = body;
-    return this;
-  }
-
-  setHeader(name: string, value: string) {
-    this.headers.set(name, value);
-  }
-
-  end() {
-    return this;
-  }
-}
 
 describe.runIf(runDatabaseTests)("Folio database integration", () => {
   afterEach(async () => {

@@ -9,12 +9,15 @@ import {
   authenticatedUserId,
   enforceRateLimit,
   first,
+  isoDate,
   isRecord,
   loadFolioRecord,
   observed,
   parseBody,
+  privateResponse,
   sendRateLimit,
   sql,
+  stringArray,
   type ApiRequest,
   type ApiResponse,
 } from "./_shared";
@@ -68,32 +71,6 @@ function reviewLinkInput(value: unknown): ReviewLinkInput | null {
     evidenceIds: value.evidenceIds,
     expiresInDays: value.expiresInDays,
   };
-}
-
-function stringArray(value: unknown): string[] | null {
-  if (
-    Array.isArray(value) &&
-    value.every((item) => typeof item === "string")
-  ) {
-    return value;
-  }
-  if (typeof value !== "string") return null;
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return Array.isArray(parsed) &&
-      parsed.every((item) => typeof item === "string")
-      ? parsed
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function isoDate(value: unknown): string | null {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value !== "string") return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function summaryFromRow(row: Record<string, unknown>): ReviewLinkSummary | null {
@@ -262,8 +239,7 @@ async function handler(
       record: reviewFolioRecord(record, claimIds, evidenceIds),
       expiresAt,
     };
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(bundle);
+    return privateResponse(response).status(200).json(bundle);
   }
 
   const userId = await authenticatedUserId(request);
@@ -281,8 +257,7 @@ async function handler(
 
   if (request.method === "GET") {
     const links = await listReviewLinksForOwner(userId);
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(links);
+    return privateResponse(response).status(200).json(links);
   }
 
   if (request.method === "POST") {
@@ -294,8 +269,7 @@ async function handler(
     if (!created) {
       return response.status(400).json({ error: "Invalid review selection." });
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(201).json(created);
+    return privateResponse(response).status(201).json(created);
   }
 
   if (request.method === "DELETE") {
@@ -309,8 +283,7 @@ async function handler(
     if (!(await revokeReviewLinkForOwner(userId, id))) {
       return response.status(404).json({ error: "Review link not found." });
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(204).end();
+    return privateResponse(response).status(204).end();
   }
 
   response.setHeader("Allow", "GET, POST, DELETE");

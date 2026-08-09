@@ -13,6 +13,7 @@ import {
   loadPublicFolioRecord,
   observed,
   parseBody,
+  privateResponse,
   saveFolioRecord,
   sendRateLimit,
 } from "./_shared";
@@ -57,8 +58,7 @@ async function handler(
     if (!record) {
       return response.status(404).json({ error: "Profile not found." });
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(record);
+    return privateResponse(response).status(200).json(record);
   }
 
   if (request.method === "PUT") {
@@ -101,8 +101,7 @@ async function handler(
         .status(409)
         .json({ error: "Folio changed. Reload and try again." });
     }
-    response.setHeader("Cache-Control", "private, no-store");
-    return response.status(200).json(safeRecord);
+    return privateResponse(response).status(200).json(safeRecord);
   }
 
   response.setHeader("Allow", "GET, PUT");

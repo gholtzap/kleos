@@ -1,4 +1,4 @@
-import { normalizeFolioRecord } from "../src/folio";
+import { includesValue, normalizeFolioRecord } from "../src/folio";
 import type {
   Claim,
   DiscoveryResult,
@@ -33,10 +33,7 @@ function normalizedParameter(
 }
 
 function ownershipParameter(value: string): Ownership | null {
-  if (!value) return null;
-  return ownershipLevels.some((ownership) => ownership === value)
-    ? (value as Ownership)
-    : null;
+  return includesValue(ownershipLevels, value) ? value : null;
 }
 
 function claimText(claim: Claim): string {

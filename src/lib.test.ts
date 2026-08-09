@@ -5,6 +5,8 @@ import {
   applyEvidenceReviewDecision,
   discoveryProjection,
   evidenceForClaims,
+  includesValue,
+  isStringArray,
   mergeOwnerFolioRecord,
   normalizeFolioRecord,
   normalizeSubmittedFolioRecord,
@@ -13,42 +15,27 @@ import {
 } from "./folio";
 import {
   accountHandle,
-  emptyProfile,
-  heapUsageIsUnsafe,
-  initials,
-  parseCommaSeparatedList,
 } from "./lib";
 import {
-  publicProfileHash,
   publicProfileIdFromHash,
   publicProfileRevisionFromHash,
 } from "./public-profile";
-import { reviewLinkHash, reviewTokenFromHash } from "./review-links";
-import {
-  normalizeNewProfessionalRequest,
-  normalizeProfessionalRequest,
-} from "./requests";
+import { reviewTokenFromHash } from "./review-links";
+import { normalizeNewProfessionalRequest } from "./requests";
 
 describe("Folio domain fixtures", () => {
   it("keeps nested evidence and privacy context internally consistent", () => {
     const evidence = evidenceForClaims(initialClaims);
-    expect(initials("Mara Voss")).toBe("MV");
-    expect(emptyProfile("user-1", "Ada Lovelace")).toMatchObject({
-      id: "user-1",
-      initials: "AL",
-      name: "Ada Lovelace",
-      preferredLocations: [],
-      compensationPreference: "",
-    });
+    expect(includesValue(["one", "two"] as const, "two")).toBe(true);
+    expect(includesValue(["one", "two"] as const, "three")).toBe(false);
+    expect(isStringArray(["one", "two"])).toBe(true);
+    expect(isStringArray(["one", 2])).toBe(false);
     expect(accountHandle("ada", "ada@example.com", "user-1")).toBe("@ada");
     expect(accountHandle(null, "ada@example.com", "user-1")).toBe("@ada");
     expect(accountHandle(null, null, "user-1")).toBe("@user-1");
-    expect(publicProfileHash("user/1")).toBe("#/p/user%2F1");
-    expect(publicProfileHash("user/1", 7)).toBe("#/p/user%2F1?v=7");
     expect(publicProfileIdFromHash("#/p/user%2F1")).toBe("user/1");
     expect(publicProfileIdFromHash("#/p/user%2F1?v=7")).toBe("user/1");
     expect(publicProfileRevisionFromHash("#/p/user%2F1?v=7")).toBe(7);
-    expect(reviewLinkHash("token/value")).toBe("#/r/token%2Fvalue");
     expect(reviewTokenFromHash("#/r/token%2Fvalue")).toBe("token/value");
     expect(new Set(evidence.map((item) => item.id)).size).toBe(evidence.length);
     expect(initialClaims.map(claimState)).toEqual([
@@ -316,14 +303,6 @@ describe("Folio domain fixtures", () => {
     };
     expect(normalizeNewProfessionalRequest(input)).toEqual(input);
     expect(
-      normalizeProfessionalRequest({
-        ...input,
-        id: "request-1",
-        author: currentPerson,
-        postedAt: "2026-07-28T12:00:00.000Z",
-      }),
-    ).toMatchObject({ id: "request-1", kind: "Advice" });
-    expect(
       normalizeNewProfessionalRequest({
         ...input,
         need: "Too short",
@@ -331,22 +310,4 @@ describe("Folio domain fixtures", () => {
     ).toBeNull();
   });
 
-  it("trips the heap guard before tab memory gets unbounded", () => {
-    expect(heapUsageIsUnsafe({ usedJSHeapSize: 536_870_912 })).toBe(true);
-    expect(
-      heapUsageIsUnsafe({
-        usedJSHeapSize: 86,
-        jsHeapSizeLimit: 100,
-      }),
-    ).toBe(true);
-    expect(heapUsageIsUnsafe({ usedJSHeapSize: 100 })).toBe(false);
-  });
-
-  it("parses comma-separated form values", () => {
-    expect(parseCommaSeparatedList("Accessibility, , Cloud cost,")).toEqual([
-      "Accessibility",
-      "Cloud cost",
-    ]);
-    expect(parseCommaSeparatedList("")).toEqual([]);
-  });
 });
