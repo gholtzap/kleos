@@ -3,8 +3,8 @@ export type SignedInPage = "home" | "profile";
 
 export function authPageFromPath(pathname: string): AuthPage | null {
   const path = pathname.replace(/\/+$/, "");
-  if (path === "/sign-in") return "sign-in";
-  if (path === "/sign-up") return "sign-up";
+  if (path === "/sign-in" || path.startsWith("/sign-in/")) return "sign-in";
+  if (path === "/sign-up" || path.startsWith("/sign-up/")) return "sign-up";
   return null;
 }
 

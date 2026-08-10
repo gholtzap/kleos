@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { authPageFromPath, profilePath, signedInPageFromPath } from "./lib";
 
 describe("Authentication routes", () => {
-  it("recognizes only the dedicated authentication pages", () => {
+  it("recognizes the authentication flows", () => {
     expect(authPageFromPath("/sign-in")).toBe("sign-in");
     expect(authPageFromPath("/sign-up/")).toBe("sign-up");
-    expect(authPageFromPath("/sign-in/help")).toBeNull();
+    expect(authPageFromPath("/sign-in/factor-one")).toBe("sign-in");
+    expect(authPageFromPath("/sign-up/verify-email-address")).toBe("sign-up");
+    expect(authPageFromPath("/sign-updates")).toBeNull();
     expect(authPageFromPath("/")).toBeNull();
   });
 });
