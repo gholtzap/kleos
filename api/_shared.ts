@@ -4,10 +4,10 @@ import { neon } from "@neondatabase/serverless";
 import {
   discoveryProjection,
   isRecord,
-  normalizeFolioRecord,
-  publicFolioRecord,
-} from "../src/folio";
-import type { FolioRecord } from "../src/types";
+  normalizeKleosRecord,
+  publicKleosRecord,
+} from "../src/kleos";
+import type { KleosRecord } from "../src/types";
 
 export { isRecord };
 
@@ -114,9 +114,9 @@ export async function authenticatedUserId(
   }
 }
 
-export async function loadFolioRecord(
+export async function loadKleosRecord(
   ownerId: string,
-): Promise<FolioRecord | null> {
+): Promise<KleosRecord | null> {
   const [row] = await sql`
     SELECT revision, record
     FROM folio_records
@@ -124,13 +124,13 @@ export async function loadFolioRecord(
     LIMIT 1
   `;
   if (row) {
-    const record = normalizeFolioRecord(row.record);
+    const record = normalizeKleosRecord(row.record);
     const revision =
       typeof row.revision === "number" || typeof row.revision === "string"
         ? Number(row.revision)
         : Number.NaN;
     if (!record || !Number.isSafeInteger(revision) || revision < 0) {
-      throw new Error("Stored Folio record is invalid.");
+      throw new Error("Stored Kleos record is invalid.");
     }
     record.revision = revision;
     return record;
@@ -143,30 +143,30 @@ export async function loadFolioRecord(
       WHERE user_id::TEXT = ${ownerId}
       LIMIT 1
     `;
-    return normalizeFolioRecord(legacyRow?.profile);
+    return normalizeKleosRecord(legacyRow?.profile);
   } catch {
     return null;
   }
 }
 
-export async function loadPublicFolioRecord(
+export async function loadPublicKleosRecord(
   ownerId: string,
-): Promise<FolioRecord | null> {
+): Promise<KleosRecord | null> {
   const [row] = await sql`
     SELECT public_record
     FROM folio_records
     WHERE owner_id = ${ownerId}
     LIMIT 1
   `;
-  const projected = normalizeFolioRecord(row?.public_record);
+  const projected = normalizeKleosRecord(row?.public_record);
   if (projected) return projected;
-  const record = await loadFolioRecord(ownerId);
-  return record ? publicFolioRecord(record) : null;
+  const record = await loadKleosRecord(ownerId);
+  return record ? publicKleosRecord(record) : null;
 }
 
-export async function saveFolioRecord(
+export async function saveKleosRecord(
   ownerId: string,
-  record: FolioRecord,
+  record: KleosRecord,
   expectedRevision = 0,
 ): Promise<boolean> {
   const serialized = JSON.stringify(record);
@@ -294,7 +294,11 @@ export function sendRateLimit(
 }
 
 export function reviewerIsAllowed(userId: string): boolean {
-  const reviewerIds = (process.env.FOLIO_REVIEWER_USER_IDS ?? "")
+  const reviewerIds = (
+    process.env.KLEOS_REVIEWER_USER_IDS ??
+    process.env.FOLIO_REVIEWER_USER_IDS ??
+    ""
+  )
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);

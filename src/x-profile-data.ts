@@ -12,6 +12,10 @@ export const dummyProfileDetails: Omit<XProfileRecord, "name" | "handle"> = {
 };
 
 function profileStorageKey(handle: string): string {
+  return `kleos:x-profile:${handle}`;
+}
+
+function legacyProfileStorageKey(handle: string): string {
   return `folio:x-profile:${handle}`;
 }
 
@@ -37,7 +41,9 @@ export function loadEditableProfile(handle: string): XEditableProfile {
   };
 
   try {
-    const stored = localStorage.getItem(profileStorageKey(handle));
+    const stored =
+      localStorage.getItem(profileStorageKey(handle)) ??
+      localStorage.getItem(legacyProfileStorageKey(handle));
     if (!stored) return fallback;
     return editableProfileFromValue(JSON.parse(stored)) ?? fallback;
   } catch {

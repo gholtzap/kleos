@@ -5,7 +5,7 @@ import type {
   EvidenceAccess,
   EvidenceReviewStatus,
   EvidenceType,
-  FolioRecord,
+  KleosRecord,
   Ownership,
   Person,
   Privacy,
@@ -188,7 +188,7 @@ function normalizeClaim(value: unknown): Claim | null {
   };
 }
 
-export function normalizeFolioRecord(value: unknown): FolioRecord | null {
+export function normalizeKleosRecord(value: unknown): KleosRecord | null {
   if (
     !isRecord(value) ||
     (value.version !== undefined && value.version !== 1) ||
@@ -213,9 +213,9 @@ export function normalizeFolioRecord(value: unknown): FolioRecord | null {
   };
 }
 
-export function normalizeSubmittedFolioRecord(
+export function normalizeSubmittedKleosRecord(
   value: unknown,
-): FolioRecord | null {
+): KleosRecord | null {
   if (
     !isRecord(value) ||
     value.version !== 1 ||
@@ -225,7 +225,7 @@ export function normalizeSubmittedFolioRecord(
   ) {
     return null;
   }
-  return normalizeFolioRecord(value);
+  return normalizeKleosRecord(value);
 }
 
 export function validEvidenceSourceUrl(value: string): boolean {
@@ -250,7 +250,7 @@ function stringListIsValid(
   );
 }
 
-export function folioRecordContentIsValid(record: FolioRecord): boolean {
+export function kleosRecordContentIsValid(record: KleosRecord): boolean {
   if (record.claims.length > 50) return false;
   const person = record.person;
   if (
@@ -319,11 +319,11 @@ export function folioRecordContentIsValid(record: FolioRecord): boolean {
   );
 }
 
-export function mergeOwnerFolioRecord(
-  existing: FolioRecord | null,
-  submitted: FolioRecord,
+export function mergeOwnerKleosRecord(
+  existing: KleosRecord | null,
+  submitted: KleosRecord,
   ownerId: string,
-): FolioRecord {
+): KleosRecord {
   const existingClaims = new Map(
     existing?.claims.map((claim) => [claim.id, claim]) ?? [],
   );
@@ -433,7 +433,7 @@ function publicEvidence(evidence: Evidence): Evidence {
   if (evidence.access === "Public") {
     return {
       ...evidence,
-      reviewedBy: evidence.reviewedBy ? "Folio review team" : undefined,
+      reviewedBy: evidence.reviewedBy ? "Kleos review team" : undefined,
       reviewNote: undefined,
     };
   }
@@ -445,14 +445,14 @@ function publicEvidence(evidence: Evidence): Evidence {
     access: "Private",
     reviewStatus: evidence.reviewStatus,
     reviewedBy:
-      evidence.reviewStatus === "Confirmed" ? "Folio review team" : undefined,
+      evidence.reviewStatus === "Confirmed" ? "Kleos review team" : undefined,
     reviewedAt: evidence.reviewedAt,
     updatedAt: evidence.updatedAt,
     redacted: true,
   };
 }
 
-export function publicFolioRecord(record: FolioRecord): FolioRecord {
+export function publicKleosRecord(record: KleosRecord): KleosRecord {
   return {
     ...record,
     claims: record.claims
@@ -468,14 +468,14 @@ export function publicFolioRecord(record: FolioRecord): FolioRecord {
 }
 
 export interface DiscoveryProjection {
-  publicRecord: FolioRecord;
+  publicRecord: KleosRecord;
   searchText: string;
   expertise: string[];
   ownershipLevels: Ownership[];
 }
 
-export function discoveryProjection(record: FolioRecord): DiscoveryProjection {
-  const publicRecord = publicFolioRecord(record);
+export function discoveryProjection(record: KleosRecord): DiscoveryProjection {
+  const publicRecord = publicKleosRecord(record);
   const person = publicRecord.person;
   const claims = publicRecord.claims;
   const searchText = [
@@ -515,11 +515,11 @@ export function discoveryProjection(record: FolioRecord): DiscoveryProjection {
   };
 }
 
-export function reviewFolioRecord(
-  record: FolioRecord,
+export function reviewKleosRecord(
+  record: KleosRecord,
   claimIds: readonly string[],
   evidenceIds: readonly string[],
-): FolioRecord {
+): KleosRecord {
   const selectedClaims = new Set(claimIds);
   const selectedEvidence = new Set(evidenceIds);
   return {
@@ -543,7 +543,7 @@ export function reviewFolioRecord(
             .filter((item) => selectedEvidence.has(item.id))
             .map((item) => ({
               ...item,
-              reviewedBy: item.reviewedBy ? "Folio review team" : undefined,
+              reviewedBy: item.reviewedBy ? "Kleos review team" : undefined,
               reviewNote: undefined,
             })),
         };
@@ -574,14 +574,14 @@ export function evidenceReviewFingerprint(evidence: Evidence): string {
 }
 
 export function applyEvidenceReviewDecision(
-  record: FolioRecord,
+  record: KleosRecord,
   claimId: string,
   evidenceId: string,
   decision: "Confirmed" | "Rejected",
   note: string,
   reviewedBy: string,
   reviewedAt: string,
-): FolioRecord | null {
+): KleosRecord | null {
   const claim = record.claims.find((item) => item.id === claimId);
   const evidence = claim?.evidence.find((item) => item.id === evidenceId);
   if (!claim || !evidence || evidence.reviewStatus !== "Pending") return null;

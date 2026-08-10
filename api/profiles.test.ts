@@ -1,13 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { verifyToken } from "@clerk/backend";
 import { currentPerson, initialClaims } from "../src/data";
-import { publicFolioRecord } from "../src/folio";
-import type { FolioRecord } from "../src/types";
+import { publicKleosRecord } from "../src/kleos";
+import type { KleosRecord } from "../src/types";
 import type { ApiRequest, ApiResponse } from "./_shared";
 import { TestResponse } from "./test-response";
 
 const database = vi.hoisted(() => ({
-  record: null as FolioRecord | null,
+  record: null as KleosRecord | null,
   rateCount: 1,
   saveAllowed: true,
 }));
@@ -27,7 +27,7 @@ vi.mock("@neondatabase/serverless", () => {
     }
     if (text.includes("SELECT public_record")) {
       return database.record
-        ? [{ public_record: publicFolioRecord(database.record) }]
+        ? [{ public_record: publicKleosRecord(database.record) }]
         : [];
     }
     if (text.includes("SELECT revision, record")) {
@@ -89,7 +89,7 @@ describe("profiles API", () => {
     expect(response.headers.get("Vercel-CDN-Cache-Control")).toBe(
       "public, s-maxage=300, stale-while-revalidate=300",
     );
-    expect(response.headers.get("ETag")).toBe('W/"folio-5"');
+    expect(response.headers.get("ETag")).toBe('W/"kleos-5"');
     expect(response.body).toMatchObject({
       revision: 5,
       claims: [
@@ -132,7 +132,7 @@ describe("profiles API", () => {
       response,
     );
     expect(response.code).toBe(400);
-    expect(response.body).toEqual({ error: "Invalid Folio record." });
+    expect(response.body).toEqual({ error: "Invalid Kleos record." });
   });
 
   it("rejects a stale write and returns the saved revision after a valid write", async () => {

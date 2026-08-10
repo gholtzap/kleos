@@ -59,10 +59,22 @@ describe("Editable profile storage", () => {
       website: dummyProfileDetails.website,
     });
 
-    localStorage.setItem("folio:x-profile:@ada", "{} ");
+    localStorage.setItem("kleos:x-profile:@ada", "{} ");
     expect(loadEditableProfile("@ada")).toEqual({
       bio: dummyProfileDetails.bio,
       website: dummyProfileDetails.website,
+    });
+  });
+
+  it("reads profiles saved under the previous brand key", () => {
+    localStorage.setItem(
+      "folio:x-profile:@ada",
+      JSON.stringify({ bio: "Existing biography.", website: "ada.example" }),
+    );
+
+    expect(loadEditableProfile("@ada")).toEqual({
+      bio: "Existing biography.",
+      website: "ada.example",
     });
   });
 });

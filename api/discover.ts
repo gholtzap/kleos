@@ -1,8 +1,8 @@
-import { includesValue, normalizeFolioRecord } from "../src/folio";
+import { includesValue, normalizeKleosRecord } from "../src/kleos";
 import type {
   Claim,
   DiscoveryResult,
-  FolioRecord,
+  KleosRecord,
   Ownership,
   ResultPage,
 } from "../src/types";
@@ -53,7 +53,7 @@ function claimText(claim: Claim): string {
 }
 
 function matchingClaim(
-  record: FolioRecord,
+  record: KleosRecord,
   query: string,
   ownership: Ownership | null,
 ): Claim | null {
@@ -142,7 +142,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
   const items = rows
     .slice(0, PAGE_SIZE)
     .flatMap((row): DiscoveryResult[] => {
-      const record = normalizeFolioRecord(row.public_record);
+      const record = normalizeKleosRecord(row.public_record);
       const claim = record
         ? matchingClaim(record, query, ownership)
         : null;

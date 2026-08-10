@@ -1,5 +1,5 @@
 {
-  "name": "folio",
+  "name": "kleos",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "db:migrate": "node scripts/migrate.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "test:db": "npm run db:migrate && RUN_FOLIO_DB_TESTS=1 vitest run api/storage.integration.test.ts",
+    "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run api/storage.integration.test.ts",
     "test:load": "node scripts/load-test.mjs"
   },
   "dependencies": {

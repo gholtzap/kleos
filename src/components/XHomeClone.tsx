@@ -17,7 +17,7 @@ export function XHomeClone({ account }: XHomeCloneProps) {
   const [postCount, setPostCount] = useState(5);
   const composerRegion = useRef<HTMLDivElement>(null);
 
-  useXSurface("Home / Folio", "x-home");
+  useXSurface("Home / Kleos", "x-home");
 
   function focusComposer() {
     composerRegion.current

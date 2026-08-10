@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { includesValue, normalizePerson } from "../src/folio";
+import { includesValue, normalizePerson } from "../src/kleos";
 import {
   normalizeNewProfessionalRequest,
   requestKinds,
@@ -267,7 +267,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
         .status(409)
         .json({
           error:
-            "Save your Folio or close an active request before you publish another.",
+            "Save your Kleos profile or close an active request before you publish another.",
         });
     }
     const created = requestFromRow(row);

@@ -1,4 +1,4 @@
-# Folio
+# Kleos
 
 ## Local setup
 
@@ -19,6 +19,6 @@ deploy code that uses the new schema.
 - `npm run build`
 - `npm run test:db` with a disposable PostgreSQL database
 
-For a controlled capacity check, set `FOLIO_BASE_URL` and
-`FOLIO_TEST_PROFILE_ID`. Then run `npm run test:load`. You can set
-`FOLIO_LOAD_REQUESTS` and `FOLIO_LOAD_CONCURRENCY` for the approved target.
+For a controlled capacity check, set `KLEOS_BASE_URL` and
+`KLEOS_TEST_PROFILE_ID`. Then run `npm run test:load`. You can set
+`KLEOS_LOAD_REQUESTS` and `KLEOS_LOAD_CONCURRENCY` for the approved target.

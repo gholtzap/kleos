@@ -4,10 +4,10 @@ import { initialClaims, currentPerson } from "../src/data";
 import type { ApiRequest } from "./_shared";
 import { TestResponse } from "./test-response";
 
-const runDatabaseTests = process.env.RUN_FOLIO_DB_TESTS === "1";
+const runDatabaseTests = process.env.RUN_KLEOS_DB_TESTS === "1";
 const ownerId = `folio-test-${randomUUID()}`;
 
-describe.runIf(runDatabaseTests)("Folio database integration", () => {
+describe.runIf(runDatabaseTests)("Kleos database integration", () => {
   afterEach(async () => {
     const { sql } = await import("./_shared");
     await sql`DELETE FROM folio_review_links WHERE owner_id = ${ownerId}`;
@@ -19,7 +19,7 @@ describe.runIf(runDatabaseTests)("Folio database integration", () => {
   });
 
   it("persists private evidence and enforces selected, expiring review access", async () => {
-    const { loadFolioRecord, saveFolioRecord, sql } = await import(
+    const { loadKleosRecord, saveKleosRecord, sql } = await import(
       "./_shared"
     );
     const {
@@ -38,8 +38,8 @@ describe.runIf(runDatabaseTests)("Folio database integration", () => {
       person: { ...currentPerson, id: ownerId },
       claims: [claim],
     };
-    expect(await saveFolioRecord(ownerId, record)).toBe(true);
-    expect(await loadFolioRecord(ownerId)).toEqual(record);
+    expect(await saveKleosRecord(ownerId, record)).toBe(true);
+    expect(await loadKleosRecord(ownerId)).toEqual(record);
     const publicResponse = new TestResponse();
     await profilesHandler(
       {
@@ -58,11 +58,11 @@ describe.runIf(runDatabaseTests)("Folio database integration", () => {
       "public, s-maxage=300, stale-while-revalidate=300",
     );
     const revisedRecord = { ...record, revision: 1 };
-    expect(await saveFolioRecord(ownerId, revisedRecord, 0)).toBe(true);
+    expect(await saveKleosRecord(ownerId, revisedRecord, 0)).toBe(true);
     expect(
-      await saveFolioRecord(ownerId, { ...record, revision: 2 }, 0),
+      await saveKleosRecord(ownerId, { ...record, revision: 2 }, 0),
     ).toBe(false);
-    expect((await loadFolioRecord(ownerId))?.revision).toBe(1);
+    expect((await loadKleosRecord(ownerId))?.revision).toBe(1);
 
     const { default: discoverHandler } = await import("./discover");
     const discoverResponse = new TestResponse();
@@ -106,7 +106,7 @@ describe.runIf(runDatabaseTests)("Folio database integration", () => {
     const request: ApiRequest = {
       method: "GET",
       query: {},
-      headers: { "x-folio-review-token": created.token },
+      headers: { "x-kleos-review-token": created.token },
       body: undefined,
     };
     const activeResponse = new TestResponse();

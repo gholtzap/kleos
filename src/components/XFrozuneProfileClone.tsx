@@ -49,7 +49,7 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
     ...account,
   };
 
-  useXSurface(`${account.name} (${account.handle}) / Folio`, "x-profile");
+  useXSurface(`${account.name} (${account.handle}) / Kleos`, "x-profile");
 
   function goBack() {
     if (window.history.length > 1) window.history.back();

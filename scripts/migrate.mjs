@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { neon } from "@neondatabase/serverless";
 import {
   discoveryProjection,
-  normalizeFolioRecord,
-} from "../src/folio.ts";
+  normalizeKleosRecord,
+} from "../src/kleos.ts";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
@@ -64,7 +64,7 @@ try {
     if (!rows.length) break;
     const inserts = rows.flatMap((row) => {
       if (typeof row.owner_id !== "string") return [];
-      const record = normalizeFolioRecord(row.profile);
+      const record = normalizeKleosRecord(row.profile);
       if (!record) return [];
       record.person.id = row.owner_id;
       const projection = discoveryProjection(record);
@@ -130,9 +130,9 @@ for (;;) {
     ) {
       return [];
     }
-    const record = normalizeFolioRecord(row.record);
+    const record = normalizeKleosRecord(row.record);
     if (!record) {
-      throw new Error(`Stored Folio record ${row.owner_id} is invalid.`);
+      throw new Error(`Stored Kleos record ${row.owner_id} is invalid.`);
     }
     record.revision = Number(row.revision);
     const projection = discoveryProjection(record);
@@ -156,4 +156,4 @@ for (;;) {
   projectionCursor = last.owner_id;
 }
 
-console.log("Folio storage is current.");
+console.log("Kleos storage is current.");

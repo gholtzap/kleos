@@ -82,7 +82,7 @@ export interface Claim {
   featured: boolean;
 }
 
-export interface FolioRecord {
+export interface KleosRecord {
   version: 1;
   revision: number;
   person: Person;
@@ -103,7 +103,7 @@ export interface CreatedReviewLink extends ReviewLinkSummary {
 }
 
 export interface ReviewBundle {
-  record: FolioRecord;
+  record: KleosRecord;
   expiresAt: string;
 }
 

@@ -1,11 +1,11 @@
-const baseUrl = process.env.FOLIO_BASE_URL;
-const profileId = process.env.FOLIO_TEST_PROFILE_ID;
-const total = Number(process.env.FOLIO_LOAD_REQUESTS ?? 1_000);
-const concurrency = Number(process.env.FOLIO_LOAD_CONCURRENCY ?? 25);
+const baseUrl = process.env.KLEOS_BASE_URL;
+const profileId = process.env.KLEOS_TEST_PROFILE_ID;
+const total = Number(process.env.KLEOS_LOAD_REQUESTS ?? 1_000);
+const concurrency = Number(process.env.KLEOS_LOAD_CONCURRENCY ?? 25);
 
 if (!baseUrl || !profileId) {
   throw new Error(
-    "FOLIO_BASE_URL and FOLIO_TEST_PROFILE_ID are required.",
+    "KLEOS_BASE_URL and KLEOS_TEST_PROFILE_ID are required.",
   );
 }
 if (

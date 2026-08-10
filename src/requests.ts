@@ -2,7 +2,7 @@ import {
   includesValue,
   isRecord,
   isStringArray,
-} from "./folio";
+} from "./kleos";
 import type {
   NewProfessionalRequest,
   RequestKind,

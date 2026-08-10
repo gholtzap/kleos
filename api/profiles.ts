@@ -1,20 +1,20 @@
 import {
-  folioRecordContentIsValid,
-  mergeOwnerFolioRecord,
-  normalizeSubmittedFolioRecord,
-} from "../src/folio";
+  kleosRecordContentIsValid,
+  mergeOwnerKleosRecord,
+  normalizeSubmittedKleosRecord,
+} from "../src/kleos";
 import {
   authenticatedUserId,
   enforceRateLimit,
   type ApiRequest,
   type ApiResponse,
   first,
-  loadFolioRecord,
-  loadPublicFolioRecord,
+  loadKleosRecord,
+  loadPublicKleosRecord,
   observed,
   parseBody,
   privateResponse,
-  saveFolioRecord,
+  saveKleosRecord,
   sendRateLimit,
 } from "./_shared";
 
@@ -42,11 +42,11 @@ async function handler(
         "Vercel-CDN-Cache-Control",
         "public, s-maxage=300, stale-while-revalidate=300",
       );
-      const record = await loadPublicFolioRecord(publicId);
+      const record = await loadPublicKleosRecord(publicId);
       if (!record) {
         return response.status(404).json({ error: "Profile not found." });
       }
-      response.setHeader("ETag", `W/"folio-${record.revision}"`);
+      response.setHeader("ETag", `W/"kleos-${record.revision}"`);
       return response.status(200).json(record);
     }
 
@@ -54,7 +54,7 @@ async function handler(
     if (!userId) {
       return response.status(401).json({ error: "Unauthorized." });
     }
-    const record = await loadFolioRecord(userId);
+    const record = await loadKleosRecord(userId);
     if (!record) {
       return response.status(404).json({ error: "Profile not found." });
     }
@@ -74,32 +74,32 @@ async function handler(
       userId,
     );
     if (!limit.allowed) return sendRateLimit(response, limit);
-    const record = normalizeSubmittedFolioRecord(parseBody(request.body));
+    const record = normalizeSubmittedKleosRecord(parseBody(request.body));
     if (!record) {
-      return response.status(400).json({ error: "Invalid Folio record." });
+      return response.status(400).json({ error: "Invalid Kleos record." });
     }
 
-    if (!folioRecordContentIsValid(record)) {
-      return response.status(400).json({ error: "Invalid Folio content." });
+    if (!kleosRecordContentIsValid(record)) {
+      return response.status(400).json({ error: "Invalid Kleos content." });
     }
-    const existing = await loadFolioRecord(userId);
+    const existing = await loadKleosRecord(userId);
     const currentRevision = existing?.revision ?? 0;
     if (record.revision !== currentRevision) {
       return response
         .status(409)
-        .json({ error: "Folio changed. Reload and try again." });
+        .json({ error: "Kleos changed. Reload and try again." });
     }
-    const safeRecord = mergeOwnerFolioRecord(existing, record, userId);
+    const safeRecord = mergeOwnerKleosRecord(existing, record, userId);
     safeRecord.revision = currentRevision + 1;
     const serialized = JSON.stringify(safeRecord);
     if (Buffer.byteLength(serialized, "utf8") > MAX_RECORD_BYTES) {
-      return response.status(413).json({ error: "Folio record is too large." });
+      return response.status(413).json({ error: "Kleos record is too large." });
     }
 
-    if (!(await saveFolioRecord(userId, safeRecord, currentRevision))) {
+    if (!(await saveKleosRecord(userId, safeRecord, currentRevision))) {
       return response
         .status(409)
-        .json({ error: "Folio changed. Reload and try again." });
+        .json({ error: "Kleos changed. Reload and try again." });
     }
     return privateResponse(response).status(200).json(safeRecord);
   }

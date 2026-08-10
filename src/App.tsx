@@ -7,8 +7,8 @@ import {
   publicProfileRevisionFromHash,
 } from "./public-profile";
 import { getReviewBundle, reviewTokenFromHash } from "./review-links";
-import { claimState } from "./folio";
-import type { FolioRecord } from "./types";
+import { claimState } from "./kleos";
+import type { KleosRecord } from "./types";
 import { useLocationHash } from "./use-location-hash";
 
 const clerkAppearance = {
@@ -34,19 +34,19 @@ export default function App() {
   const reviewToken = reviewTokenFromHash(hash);
   if (profileId) {
     return (
-      <SharedFolioPage
+      <SharedKleosPage
         profileId={profileId}
         revision={publicProfileRevisionFromHash(hash)}
       />
     );
   }
-  if (reviewToken) return <SharedFolioPage reviewToken={reviewToken} />;
+  if (reviewToken) return <SharedKleosPage reviewToken={reviewToken} />;
 
   const authPage = authPageFromPath(window.location.pathname);
   if (authPage) {
     return (
-      <main className="folio-auth-shell">
-        <a className="folio-wordmark" href="/">Folio</a>
+      <main className="kleos-auth-shell">
+        <a className="kleos-wordmark" href="/">Kleos</a>
         {authPage === "sign-in" ? (
           <SignIn appearance={clerkAppearance} routing="path" path="/sign-in" />
         ) : (
@@ -57,23 +57,23 @@ export default function App() {
   }
 
   return (
-    <main className="folio-landing">
-      <a className="folio-wordmark" href="/">Folio</a>
+    <main className="kleos-landing">
+      <a className="kleos-wordmark" href="/">Kleos</a>
       <div>
         <h1>Show the work behind your experience.</h1>
         <p>Build a clear professional profile from your work and results.</p>
         <nav aria-label="Account actions">
-          <a className="folio-action folio-action-primary" href="/sign-up">
+          <a className="kleos-action kleos-action-primary" href="/sign-up">
             Create your account
           </a>
-          <a className="folio-action" href="/sign-in">Sign in</a>
+          <a className="kleos-action" href="/sign-in">Sign in</a>
         </nav>
       </div>
     </main>
   );
 }
 
-function SharedFolioPage({
+function SharedKleosPage({
   profileId,
   revision,
   reviewToken,
@@ -82,7 +82,7 @@ function SharedFolioPage({
   revision?: number;
   reviewToken?: string;
 }) {
-  const [record, setRecord] = useState<FolioRecord | null>(null);
+  const [record, setRecord] = useState<KleosRecord | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -93,36 +93,36 @@ function SharedFolioPage({
       ? getReviewBundle(reviewToken, controller.signal).then((bundle) => bundle.record)
       : profileId
         ? getPublicProfile(profileId, revision, controller.signal)
-        : Promise.reject(new Error("Missing shared Folio reference."));
+        : Promise.reject(new Error("Missing shared Kleos reference."));
     void request
       .then(setRecord)
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") {
           return;
         }
-        setError("This shared Folio is unavailable.");
+        setError("This shared Kleos profile is unavailable.");
       });
     return () => controller.abort();
   }, [profileId, reviewToken, revision]);
 
   return (
-    <main className="folio-shared-shell">
+    <main className="kleos-shared-shell">
       <header>
-        <a className="folio-wordmark" href="/">Folio</a>
-        <a className="folio-action" href="/sign-up">Create your Folio</a>
+        <a className="kleos-wordmark" href="/">Kleos</a>
+        <a className="kleos-action" href="/sign-up">Create your Kleos profile</a>
       </header>
-      {error ? <p className="folio-message" role="alert">{error}</p> : null}
-      {!error && !record ? <p className="folio-message">Loading Folio…</p> : null}
-      {record ? <FolioRecordView record={record} /> : null}
+      {error ? <p className="kleos-message" role="alert">{error}</p> : null}
+      {!error && !record ? <p className="kleos-message">Loading Kleos…</p> : null}
+      {record ? <KleosRecordView record={record} /> : null}
     </main>
   );
 }
 
-function FolioRecordView({ record }: { record: FolioRecord }) {
+function KleosRecordView({ record }: { record: KleosRecord }) {
   return (
-    <article className="folio-record">
-      <header className="folio-profile-heading">
-        <span className="folio-avatar" aria-hidden="true">{record.person.initials}</span>
+    <article className="kleos-record">
+      <header className="kleos-profile-heading">
+        <span className="kleos-avatar" aria-hidden="true">{record.person.initials}</span>
         <div>
           <h1>{record.person.name}</h1>
           <p>{record.person.role}</p>
@@ -131,9 +131,9 @@ function FolioRecordView({ record }: { record: FolioRecord }) {
       </header>
       <section aria-labelledby="shared-work-heading">
         <h2 id="shared-work-heading">Selected work</h2>
-        <div className="folio-claims">
+        <div className="kleos-claims">
           {record.claims.map((claim) => (
-            <article className="folio-claim" key={claim.id}>
+            <article className="kleos-claim" key={claim.id}>
               <header>
                 <h3>{claim.title}</h3>
                 <span>{claimState(claim)}</span>

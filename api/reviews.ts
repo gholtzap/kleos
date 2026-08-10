@@ -1,18 +1,18 @@
 import {
   applyEvidenceReviewDecision,
   normalizeEvidence,
-} from "../src/folio";
+} from "../src/kleos";
 import type { EvidenceReviewItem } from "../src/types";
 import {
   authenticatedUserId,
   enforceRateLimit,
   isRecord,
-  loadFolioRecord,
+  loadKleosRecord,
   observed,
   parseBody,
   privateResponse,
   reviewerIsAllowed,
-  saveFolioRecord,
+  saveKleosRecord,
   sendRateLimit,
   sql,
   type ApiRequest,
@@ -73,7 +73,7 @@ async function handler(
   if (!limit.allowed) return sendRateLimit(response, limit);
 
   if (request.method === "GET") {
-    // ponytail: Indexed JSONB fits bounded Folio records. Normalize the queue if measured latency grows.
+    // ponytail: Indexed JSONB fits bounded Kleos records. Normalize the queue if measured latency grows.
     const rows = await sql`
       SELECT
         owner_id,
@@ -133,7 +133,7 @@ async function handler(
         .json({ error: "Reviewers cannot confirm their own evidence." });
     }
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const record = await loadFolioRecord(input.ownerId);
+      const record = await loadKleosRecord(input.ownerId);
       if (!record) {
         return response
           .status(404)
@@ -156,14 +156,14 @@ async function handler(
       }
       updatedRecord.revision = record.revision + 1;
       if (
-        await saveFolioRecord(input.ownerId, updatedRecord, record.revision)
+        await saveKleosRecord(input.ownerId, updatedRecord, record.revision)
       ) {
         return privateResponse(response).status(204).end();
       }
     }
     return response
       .status(409)
-      .json({ error: "Folio changed. Review it again." });
+      .json({ error: "Kleos changed. Review it again." });
   }
 
   response.setHeader("Allow", "GET, PATCH");

@@ -1,5 +1,5 @@
-import { normalizeFolioRecord } from "./folio";
-import type { FolioRecord } from "./types";
+import { normalizeKleosRecord } from "./kleos";
+import type { KleosRecord } from "./types";
 
 const publicProfilePattern = /^#\/p\/([^/?]+)(?:\?v=([0-9]+))?$/;
 
@@ -15,10 +15,10 @@ export function publicProfileRevisionFromHash(hash: string) {
   return Number.isSafeInteger(revision) ? revision : undefined;
 }
 
-async function recordFromResponse(response: Response): Promise<FolioRecord> {
-  if (!response.ok) throw new Error("Folio record not found.");
-  const record = normalizeFolioRecord(await response.json());
-  if (!record) throw new Error("Folio returned an invalid record.");
+async function recordFromResponse(response: Response): Promise<KleosRecord> {
+  if (!response.ok) throw new Error("Kleos record not found.");
+  const record = normalizeKleosRecord(await response.json());
+  if (!record) throw new Error("Kleos returned an invalid record.");
   return record;
 }
 

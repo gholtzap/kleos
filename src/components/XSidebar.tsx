@@ -31,11 +31,11 @@ export function XSidebar({ account, activeItem, onPost }: XSidebarProps) {
   return (
     <aside className="x-sidebar">
       <a
-        aria-label="Go to Folio home"
+        aria-label="Go to Kleos home"
         className="x-sidebar__logo"
         href="/home"
       >
-        <span className="x-sidebar__wordmark">Folio</span>
+        <span className="x-sidebar__wordmark">Kleos</span>
       </a>
 
       <nav aria-label="Primary navigation" className="x-sidebar__navigation">

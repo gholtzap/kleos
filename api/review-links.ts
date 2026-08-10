@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { reviewFolioRecord } from "../src/folio";
+import { reviewKleosRecord } from "../src/kleos";
 import type {
   CreatedReviewLink,
   ReviewBundle,
@@ -11,7 +11,7 @@ import {
   first,
   isoDate,
   isRecord,
-  loadFolioRecord,
+  loadKleosRecord,
   observed,
   parseBody,
   privateResponse,
@@ -33,6 +33,14 @@ export interface ReviewLinkInput {
 
 function tokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
+}
+
+export function reviewTokenFromHeaders(
+  headers: ApiRequest["headers"],
+): string | undefined {
+  return first(
+    headers["x-kleos-review-token"] ?? headers["x-folio-review-token"],
+  );
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -103,7 +111,7 @@ export async function createReviewLinkForOwner(
   userId: string,
   input: ReviewLinkInput,
 ): Promise<CreatedReviewLink | null> {
-  const record = await loadFolioRecord(userId);
+  const record = await loadKleosRecord(userId);
   if (!record) return null;
   const claims = record.claims.filter((claim) =>
     input.claimIds.includes(claim.id),
@@ -204,7 +212,7 @@ async function handler(
   request: ApiRequest,
   response: ApiResponse,
 ) {
-  const reviewToken = first(request.headers["x-folio-review-token"]);
+  const reviewToken = reviewTokenFromHeaders(request.headers);
   if (request.method === "GET" && reviewToken) {
     const token = reviewToken;
     if (token.length < 32 || token.length > 200) {
@@ -231,12 +239,12 @@ async function handler(
     ) {
       return response.status(404).json({ error: "Review link not found." });
     }
-    const record = await loadFolioRecord(row.owner_id);
+    const record = await loadKleosRecord(row.owner_id);
     if (!record) {
       return response.status(404).json({ error: "Review link not found." });
     }
     const bundle: ReviewBundle = {
-      record: reviewFolioRecord(record, claimIds, evidenceIds),
+      record: reviewKleosRecord(record, claimIds, evidenceIds),
       expiresAt,
     };
     return privateResponse(response).status(200).json(bundle);

@@ -7,12 +7,12 @@ import {
   evidenceForClaims,
   includesValue,
   isStringArray,
-  mergeOwnerFolioRecord,
-  normalizeFolioRecord,
-  normalizeSubmittedFolioRecord,
-  publicFolioRecord,
-  reviewFolioRecord,
-} from "./folio";
+  mergeOwnerKleosRecord,
+  normalizeKleosRecord,
+  normalizeSubmittedKleosRecord,
+  publicKleosRecord,
+  reviewKleosRecord,
+} from "./kleos";
 import {
   accountHandle,
 } from "./lib";
@@ -23,7 +23,7 @@ import {
 import { reviewTokenFromHash } from "./review-links";
 import { normalizeNewProfessionalRequest } from "./requests";
 
-describe("Folio domain fixtures", () => {
+describe("Kleos domain fixtures", () => {
   it("keeps nested evidence and privacy context internally consistent", () => {
     const evidence = evidenceForClaims(initialClaims);
     expect(includesValue(["one", "two"] as const, "two")).toBe(true);
@@ -57,7 +57,7 @@ describe("Folio domain fixtures", () => {
       person: currentPerson,
       claims: initialClaims,
     };
-    const published = publicFolioRecord(record);
+    const published = publicKleosRecord(record);
     const firstPublished = published.claims[0];
     expect(published.claims.every((claim) => claim.privacy === "Public")).toBe(true);
     expect(firstPublished).toBeDefined();
@@ -73,7 +73,7 @@ describe("Folio domain fixtures", () => {
       (claim) => claim.id === "confidential-diligence",
     );
     expect(privateClaim).toBeDefined();
-    const reviewed = reviewFolioRecord(
+    const reviewed = reviewKleosRecord(
       record,
       ["confidential-diligence"],
       ["diligence-summary"],
@@ -86,7 +86,7 @@ describe("Folio domain fixtures", () => {
   it("upgrades a legacy public profile to the nested record contract", () => {
     const legacyClaim = { ...initialClaims[0] };
     const { evidence: _evidence, ...claimWithoutEvidence } = legacyClaim;
-    const normalized = normalizeFolioRecord({
+    const normalized = normalizeKleosRecord({
       person: { ...currentPerson, secretLegacyField: "remove me" },
       claims: [{ ...claimWithoutEvidence, secretLegacyField: "remove me" }],
     });
@@ -131,7 +131,7 @@ describe("Folio domain fixtures", () => {
         },
       ],
     };
-    const safeNew = mergeOwnerFolioRecord(null, forged, "owner-1");
+    const safeNew = mergeOwnerKleosRecord(null, forged, "owner-1");
     expect(safeNew.person).toMatchObject({
       id: "owner-1",
       identityVerified: false,
@@ -158,7 +158,7 @@ describe("Folio domain fixtures", () => {
           : claim,
       ),
     };
-    const safeEdit = mergeOwnerFolioRecord(record, edited, record.person.id);
+    const safeEdit = mergeOwnerKleosRecord(record, edited, record.person.id);
     expect(safeEdit.claims[0]?.evidence[0]?.reviewStatus).toBe(
       "Not submitted",
     );
@@ -171,7 +171,7 @@ describe("Folio domain fixtures", () => {
           : claim,
       ),
     };
-    const safeClaimEdit = mergeOwnerFolioRecord(
+    const safeClaimEdit = mergeOwnerKleosRecord(
       record,
       changedClaim,
       record.person.id,
@@ -195,7 +195,7 @@ describe("Folio domain fixtures", () => {
           : claim,
       ),
     };
-    const safeVisibilityEdit = mergeOwnerFolioRecord(
+    const safeVisibilityEdit = mergeOwnerKleosRecord(
       record,
       visibilityOnly,
       record.person.id,
@@ -234,20 +234,20 @@ describe("Folio domain fixtures", () => {
       reviewedBy: "reviewer-1",
     });
     const shared = reviewed
-      ? reviewFolioRecord(
+      ? reviewKleosRecord(
           reviewed,
           [pendingClaim.id],
           ["diligence-summary"],
         )
       : null;
     expect(shared?.claims[0]?.evidence[0]?.reviewedBy).toBe(
-      "Folio review team",
+      "Kleos review team",
     );
   });
 
   it("rejects unknown record versions instead of rewriting them as version one", () => {
     expect(
-      normalizeFolioRecord({
+      normalizeKleosRecord({
         version: 2,
         revision: 0,
         person: currentPerson,
@@ -255,13 +255,13 @@ describe("Folio domain fixtures", () => {
       }),
     ).toBeNull();
     expect(
-      normalizeSubmittedFolioRecord({
+      normalizeSubmittedKleosRecord({
         person: currentPerson,
         claims: initialClaims,
       }),
     ).toBeNull();
     expect(
-      normalizeSubmittedFolioRecord({
+      normalizeSubmittedKleosRecord({
         version: 1,
         revision: 0,
         person: currentPerson,

@@ -1,4 +1,4 @@
-import { isRecord, normalizeFolioRecord } from "./folio";
+import { isRecord, normalizeKleosRecord } from "./kleos";
 import type { ReviewBundle } from "./types";
 
 export function reviewTokenFromHash(hash: string) {
@@ -17,14 +17,14 @@ export async function getReviewBundle(
 ): Promise<ReviewBundle> {
   const value = await responseJson(
     await fetch("/api/review-links", {
-      headers: { "X-Folio-Review-Token": token },
+      headers: { "X-Kleos-Review-Token": token },
       signal,
     }),
   );
   if (!isRecord(value) || typeof value.expiresAt !== "string") {
     throw new Error("Invalid review bundle.");
   }
-  const record = normalizeFolioRecord(value.record);
+  const record = normalizeKleosRecord(value.record);
   if (!record) throw new Error("Invalid review bundle.");
   return { record, expiresAt: value.expiresAt };
 }

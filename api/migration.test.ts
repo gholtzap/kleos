@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-describe("Folio storage migration", () => {
+describe("Kleos storage migration", () => {
   it("defines the durable tables and query indexes outside request handlers", async () => {
     const [migration, sharedApi] = await Promise.all([
       readFile("migrations/0001_folio_storage.sql", "utf8"),

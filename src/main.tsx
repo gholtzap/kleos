@@ -29,7 +29,7 @@ function ClerkApplication() {
   if (sharedPage) return <App />;
 
   if (!isLoaded || !userLoaded) {
-    return <p className="folio-message">Loading Folio…</p>;
+    return <p className="kleos-message">Loading Kleos…</p>;
   }
 
   if (isSignedIn && user) {
