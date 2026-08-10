@@ -56,20 +56,65 @@ export default function App() {
     );
   }
 
+  return <KleosLanding />;
+}
+
+function KleosLogo() {
   return (
-    <main className="kleos-landing">
-      <a className="kleos-wordmark" href="/">Kleos</a>
-      <div>
-        <h1>Show the work behind your experience.</h1>
-        <p>Build a clear professional profile from your work and results.</p>
-        <nav aria-label="Account actions">
-          <a className="kleos-action kleos-action-primary" href="/sign-up">
-            Create your account
-          </a>
-          <a className="kleos-action" href="/sign-in">Sign in</a>
-        </nav>
-      </div>
-    </main>
+    <span aria-label="Kleos" className="kleos-landing-logo" role="img">
+      <span aria-hidden="true" className="kleos-landing-logo-mark">
+        <span />
+        <span />
+        <span />
+      </span>
+      <span>Kleos</span>
+    </span>
+  );
+}
+
+function KleosLanding() {
+  return (
+    <div className="kleos-landing">
+      <section
+        aria-label="A professional profile being assembled"
+        className="kleos-landing-visual"
+      >
+        <div className="kleos-landing-visual-header">
+          <KleosLogo />
+        </div>
+        <footer className="kleos-landing-copyright">© 2026 Kleos</footer>
+      </section>
+
+      <main className="kleos-landing-panel">
+        <header className="kleos-landing-panel-header">
+          <KleosLogo />
+        </header>
+
+        <div className="kleos-signup-prompt">
+          <h1>Professional profiles built on evidence.</h1>
+
+          <div className="kleos-signup-card">
+            <h2>Join Kleos today.</h2>
+            <a
+              className="kleos-landing-button kleos-landing-button-primary"
+              href="/sign-up"
+            >
+              Create your account
+            </a>
+          </div>
+
+          <div className="kleos-signin-prompt">
+            <span>Already have an account?</span>
+            <a
+              className="kleos-landing-button kleos-landing-button-outline"
+              href="/sign-in"
+            >
+              Sign in
+            </a>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
 
