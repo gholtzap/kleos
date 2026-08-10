@@ -1,14 +1,14 @@
 import type { XEditableProfile, XProfileRecord } from "./types/x-profile";
 
-export const dummyProfileDetails: Omit<XProfileRecord, "name" | "handle"> = {
-  postCount: "12 posts",
-  mediaCount: "4 photos & videos",
-  likeCount: "8 Likes",
-  bio: "Sample profile biography.\nAdd more details about this user here.",
-  website: "example.com",
-  joined: "Joined January 2024",
-  following: 12,
-  followers: 34,
+export const defaultProfileDetails: Omit<XProfileRecord, "name" | "handle"> = {
+  postCount: "0 posts",
+  mediaCount: "0 photos & videos",
+  likeCount: "0 Likes",
+  bio: "",
+  website: "",
+  joined: "",
+  following: 0,
+  followers: 0,
 };
 
 function profileStorageKey(handle: string): string {
@@ -36,8 +36,8 @@ function editableProfileFromValue(value: unknown): XEditableProfile | null {
 
 export function loadEditableProfile(handle: string): XEditableProfile {
   const fallback = {
-    bio: dummyProfileDetails.bio,
-    website: dummyProfileDetails.website,
+    bio: defaultProfileDetails.bio,
+    website: defaultProfileDetails.website,
   };
 
   try {

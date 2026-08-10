@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import {
-  dummyProfileDetails,
+  defaultProfileDetails,
   loadEditableProfile,
   saveEditableProfile,
 } from "../x-profile-data";
@@ -13,7 +13,6 @@ import type {
 import "../x-home.css";
 import { XDiscoveryRail } from "./XDiscoveryRail";
 import "./x-home-clone.css";
-import { XPostPlaceholderList } from "./XPostPlaceholderList";
 import { XProfileEditDialog } from "./XProfileEditDialog";
 import { XProfileHero } from "./XProfileHero";
 import { XProfileTabs } from "./XProfileTabs";
@@ -23,9 +22,9 @@ import { useXSurface } from "./use-x-surface";
 import "./x-frozune-profile-clone.css";
 
 function countForTab(tab: XProfileTab) {
-  if (tab === "Media") return dummyProfileDetails.mediaCount;
-  if (tab === "Likes") return dummyProfileDetails.likeCount;
-  return dummyProfileDetails.postCount;
+  if (tab === "Media") return defaultProfileDetails.mediaCount;
+  if (tab === "Likes") return defaultProfileDetails.likeCount;
+  return defaultProfileDetails.postCount;
 }
 
 interface XFrozuneProfileCloneProps {
@@ -44,7 +43,7 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
   const feedRef = useRef<HTMLDivElement>(null);
 
   const profile: XProfileRecord = {
-    ...dummyProfileDetails,
+    ...defaultProfileDetails,
     ...editableProfile,
     ...account,
   };
@@ -69,39 +68,6 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
     saveEditableProfile(account.handle, nextProfile);
     setEditorOpen(false);
     setEditMessage("Profile updated.");
-  }
-
-  function renderPanel() {
-    if (selectedTab === "Highlights") {
-      return (
-        <section className="x-frozune-profile__empty-state">
-          <h2>Highlight on your profile</h2>
-          <p>You must be subscribed to Premium to highlight posts on your profile.</p>
-          <button type="button">Subscribe to Premium</button>
-        </section>
-      );
-    }
-
-    if (selectedTab === "Media") {
-      return (
-        <section className="x-frozune-profile__media" aria-label="Media placeholders">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div aria-label={`Media placeholder ${index + 1}`} key={index} role="img" />
-          ))}
-        </section>
-      );
-    }
-
-    const placeholderCount = selectedTab === "Posts" ? 5 : 3;
-
-    return (
-      <>
-        {selectedTab === "Likes" ? (
-          <p className="x-frozune-profile__private-note">Your likes are private. Only you can see them.</p>
-        ) : null}
-        <XPostPlaceholderList count={placeholderCount} />
-      </>
-    );
   }
 
   return (
@@ -134,7 +100,10 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
             role="tabpanel"
             aria-labelledby={`x-profile-tab-${selectedTab.toLowerCase()}`}
           >
-            {renderPanel()}
+            <section className="x-frozune-profile__empty-state">
+              <h2>No {selectedTab.toLowerCase()} yet</h2>
+              <p>This part of your profile is empty.</p>
+            </section>
           </div>
         </main>
 

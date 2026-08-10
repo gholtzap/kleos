@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  dummyProfileDetails,
+  defaultProfileDetails,
   loadEditableProfile,
   saveEditableProfile,
 } from "./x-profile-data";
@@ -42,8 +42,8 @@ describe("Editable profile storage", () => {
 
   it("stores profile edits by account handle and rejects invalid data", () => {
     expect(loadEditableProfile("@ada")).toEqual({
-      bio: dummyProfileDetails.bio,
-      website: dummyProfileDetails.website,
+      bio: "",
+      website: "",
     });
 
     saveEditableProfile("@ada", {
@@ -55,14 +55,14 @@ describe("Editable profile storage", () => {
       website: "ada.example",
     });
     expect(loadEditableProfile("@grace")).toEqual({
-      bio: dummyProfileDetails.bio,
-      website: dummyProfileDetails.website,
+      bio: defaultProfileDetails.bio,
+      website: defaultProfileDetails.website,
     });
 
     localStorage.setItem("kleos:x-profile:@ada", "{} ");
     expect(loadEditableProfile("@ada")).toEqual({
-      bio: dummyProfileDetails.bio,
-      website: dummyProfileDetails.website,
+      bio: defaultProfileDetails.bio,
+      website: defaultProfileDetails.website,
     });
   });
 
