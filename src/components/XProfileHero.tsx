@@ -49,10 +49,12 @@ export function XProfileHero({ profile, onEdit }: XProfileHeroProps) {
               {profile.website}
             </span>
           ) : null}
-          <span className="x-profile-hero__detail">
-            <CalendarBlankIcon aria-hidden="true" size={18} />
-            {profile.joined}
-          </span>
+          {profile.joined ? (
+            <span className="x-profile-hero__detail">
+              <CalendarBlankIcon aria-hidden="true" size={18} />
+              {profile.joined}
+            </span>
+          ) : null}
         </div>
 
         <div className="x-profile-hero__counts" aria-label="Follow counts">
