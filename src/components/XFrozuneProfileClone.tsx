@@ -11,7 +11,6 @@ import type {
   XProfileTab,
 } from "../types/x-profile";
 import "../x-home.css";
-import { XDiscoveryRail } from "./XDiscoveryRail";
 import "./x-home-clone.css";
 import { XProfileEditDialog } from "./XProfileEditDialog";
 import { XProfileHero } from "./XProfileHero";
@@ -38,7 +37,6 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
   );
   const [editorOpen, setEditorOpen] = useState(false);
   const [editMessage, setEditMessage] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -55,10 +53,6 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
     else window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function focusSearch() {
-    rootRef.current?.querySelector<HTMLInputElement>('.x-discovery-search input')?.focus();
-  }
-
   function showProfileSummary() {
     heroRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -71,12 +65,13 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
   }
 
   return (
-    <div className="x-home-root" ref={rootRef}>
-      <div className="x-home-clone">
+    <div className="x-home-root">
+      <div className="x-home-clone x-frozune-profile__layout">
         <div className="x-home-clone__sidebar">
           <XSidebar
             account={account}
             activeItem="Profile"
+            collapsible
             onPost={() => feedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
         </div>
@@ -87,7 +82,6 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
             name={account.name}
             onBack={goBack}
             onProfileSummary={showProfileSummary}
-            onSearch={focusSearch}
           />
           <div ref={heroRef}>
             <XProfileHero profile={profile} onEdit={() => setEditorOpen(true)} />
@@ -106,10 +100,6 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
             </section>
           </div>
         </main>
-
-        <div className="x-home-clone__discovery">
-          <XDiscoveryRail />
-        </div>
       </div>
       {editorOpen ? (
         <XProfileEditDialog
