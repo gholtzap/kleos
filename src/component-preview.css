@@ -1,3 +1,19 @@
+.component-preview {
+  display: grid;
+  min-width: 0;
+  padding-block: 32px;
+  gap: clamp(64px, 10vw, 144px);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.component-preview > * {
+  min-width: 0;
+}
+
+.component-preview__app {
+  width: 100%;
+}
+
 .social-cards-preview,
 .social-cards-preview * {
   box-sizing: border-box;
@@ -14,6 +30,7 @@
 .social-cards-preview__stage {
   display: grid;
   min-height: 390px;
+  min-width: 0;
   place-items: center;
 }
 
@@ -82,6 +99,10 @@
 }
 
 @media (max-width: 390px) {
+  .social-cards-preview__stage {
+    min-height: 300px;
+  }
+
   .social-cards-preview__card--message {
     width: calc(100vw - 32px);
   }

@@ -19,7 +19,7 @@
 
 .featured-projects__header button {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 14px;
   align-items: center;
   gap: 8px;
@@ -119,12 +119,14 @@
 }
 
 .featured-projects__topics li {
+  max-width: 100%;
   padding: 2px 10px;
   color: var(--app-blue);
   background: rgb(29 155 240 / 10%);
   border-radius: 9999px;
   font-size: 13px;
   line-height: 18px;
+  overflow-wrap: anywhere;
 }
 
 .featured-projects__card footer {
@@ -157,5 +159,13 @@
 
   .featured-projects__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .featured-projects__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 }

@@ -6,7 +6,10 @@ import {
   UserIcon,
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
+import type { FeaturedProject } from "./types";
+import "./app-surface.css";
 import { Experience } from "./components/Experience";
+import { FeaturedProjects } from "./components/FeaturedProjects";
 import { GitHubActivity } from "./components/GithubGraph";
 import { SkillsSection } from "./components/SkillsSection";
 import {
@@ -71,11 +74,25 @@ const socialItems: readonly SocialHoverCardItem[] = [
   },
 ];
 
+const featuredProjects: readonly FeaturedProject[] = [
+  {
+    id: "gholtzap/kleos",
+    owner: "gholtzap",
+    name: "kleos",
+    description: "Professional profiles built on evidence.",
+    language: "TypeScript",
+    stars: 18,
+    forks: 3,
+    topics: ["profiles", "evidence", "react"],
+    syncedAt: "2026-08-12T00:00:00.000Z",
+  },
+];
+
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing root element.");
 
 createRoot(root).render(
-  <main style={{ display: "grid", gap: "clamp(64px, 10vw, 144px)", paddingBlock: "32px" }}>
+  <main className="component-preview">
     <section className="social-cards-preview" aria-label="Social hover cards">
       <div className="social-cards-preview__stage">
         <SocialHoverCards defaultValue="message" items={socialItems} />
@@ -84,5 +101,8 @@ createRoot(root).render(
     <Experience />
     <SkillsSection />
     <GitHubActivity account="gholtzap" showLegend />
+    <div className="app-surface component-preview__app">
+      <FeaturedProjects projects={featuredProjects} />
+    </div>
   </main>,
 );

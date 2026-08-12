@@ -28,7 +28,7 @@
 
 .experience-header button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 14px;
   align-items: center;
   gap: 10px;
@@ -221,7 +221,13 @@
     gap: 16px;
     overflow-x: auto;
     grid-template-columns: repeat(4, minmax(138px, 1fr));
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
     scrollbar-width: none;
+  }
+
+  .experience-list--collapsed > li {
+    scroll-snap-align: start;
   }
 
   .experience-list--collapsed::-webkit-scrollbar {

@@ -56,8 +56,12 @@
 }
 
 @media (max-width: 699px) {
+  .profile-page__layout,
+  .profile-page__layout:has(.sidebar--collapsed) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .profile-page__empty-state {
     padding: 28px 16px;
   }
-
 }

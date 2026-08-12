@@ -285,7 +285,7 @@ export function SocialHoverCards({
           <button
             {...sharedProps}
             key={item.value}
-            onClick={() => setActiveValue(item.value)}
+            onClick={() => setActiveValue(active ? "" : item.value)}
             type="button"
           >
             {children}

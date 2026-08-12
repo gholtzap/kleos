@@ -89,10 +89,24 @@
 @media (max-width: 699px) {
   .app-layout {
     width: 100%;
-    grid-template-columns: 68px minmax(0, 1fr);
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-layout__sidebar {
+    position: fixed;
+    z-index: 30;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: calc(64px + env(safe-area-inset-bottom));
+    grid-column: 1;
   }
 
   .app-layout__timeline {
     width: 100%;
+    grid-column: 1;
   }
 }

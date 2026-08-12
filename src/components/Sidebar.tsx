@@ -85,6 +85,7 @@ export function Sidebar({
               <li key={label}>
                 <a
                   aria-current={isActive ? "page" : undefined}
+                  aria-label={label}
                   className="sidebar__navigation-button"
                   href={href}
                 >
@@ -96,7 +97,12 @@ export function Sidebar({
         </ul>
       </nav>
 
-      <button className="sidebar__post" onClick={onPost} type="button">
+      <button
+        aria-label="Create post"
+        className="sidebar__post"
+        onClick={onPost}
+        type="button"
+      >
         <span>Post</span>
         <ComposeIcon />
       </button>

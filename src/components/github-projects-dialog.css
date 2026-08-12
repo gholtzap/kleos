@@ -185,8 +185,6 @@
   color: #71767b;
   font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .github-projects__selected ul {
@@ -208,12 +206,14 @@
   border-radius: 9999px;
   font-size: 13px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .github-projects__selected li button {
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   padding: 0;
   color: inherit;
   background: transparent;
@@ -277,6 +277,7 @@
 .github-projects__repo-name {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-weight: 700;
 }
@@ -313,4 +314,41 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+@media (max-width: 480px) {
+  .github-projects__dialog {
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    transform: none;
+  }
+
+  .github-projects__header {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  .github-projects__header h2 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .github-projects__header button:last-child {
+    padding-inline: 12px;
+  }
+
+  .github-projects__repo {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .github-projects__repo-meta {
+    grid-column: 2;
+  }
 }
