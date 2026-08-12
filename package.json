@@ -19,6 +19,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
+    "motion": "^13.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
