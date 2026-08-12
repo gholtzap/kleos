@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate": "tsx scripts/migrate.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run api/storage.integration.test.ts",
@@ -29,6 +29,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^26.1.0",
+    "tsx": "^4.23.12",
     "typescript": "~5.8.3",
     "vite": "^7.0.6",
     "vitest": "^3.2.4"
