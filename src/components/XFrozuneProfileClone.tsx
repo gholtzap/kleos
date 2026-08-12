@@ -11,6 +11,7 @@ import type {
   XProfileTab,
 } from "../types/x-profile";
 import "../x-home.css";
+import { Experience } from "./Experience";
 import "./x-home-clone.css";
 import { XProfileEditDialog } from "./XProfileEditDialog";
 import { XProfileHero } from "./XProfileHero";
@@ -86,6 +87,7 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
           <div ref={heroRef}>
             <XProfileHero profile={profile} onEdit={() => setEditorOpen(true)} />
           </div>
+          <Experience />
           <span className="x-frozune-profile__status" role="status">{editMessage}</span>
           <XProfileTabs selectedTab={selectedTab} onSelect={setSelectedTab} />
           <div
