@@ -197,6 +197,23 @@ describe("featured projects on the Kleos record", () => {
         sampleRecord([sampleProject(), sampleProject()]),
       ),
     ).toBe(false);
+    expect(
+      kleosRecordContentIsValid({
+        ...sampleRecord([sampleProject()]),
+        person: currentPerson,
+      }),
+    ).toBe(false);
+    expect(
+      kleosRecordContentIsValid(
+        sampleRecord([
+          {
+            ...sampleProject(),
+            id: featuredProjectId("someone", "kleos"),
+            owner: "someone",
+          },
+        ]),
+      ),
+    ).toBe(false);
     const many = Array.from({ length: 13 }, (_, index) => ({
       ...sampleProject(),
       id: featuredProjectId("gholtzap", `repo-${index}`),

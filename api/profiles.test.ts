@@ -12,8 +12,31 @@ const database = vi.hoisted(() => ({
   saveAllowed: true,
 }));
 
+const clerkDirectory = vi.hoisted(() => ({
+  githubUsername: "gholtzap" as string | null,
+  lookupCount: 0,
+}));
+
 vi.mock("@clerk/backend", () => ({
   verifyToken: vi.fn(async () => ({ sub: "owner-1" })),
+  createClerkClient: () => ({
+    users: {
+      getUser: async () => {
+        clerkDirectory.lookupCount += 1;
+        return {
+          externalAccounts: clerkDirectory.githubUsername
+            ? [
+                {
+                  provider: "oauth_github",
+                  username: clerkDirectory.githubUsername,
+                  verification: { status: "verified" },
+                },
+              ]
+            : [],
+        };
+      },
+    },
+  }),
 }));
 
 vi.mock("@neondatabase/serverless", () => {
@@ -56,6 +79,7 @@ let profilesHandler: (
 beforeAll(async () => {
   process.env.DATABASE_URL = "postgresql://test.invalid/folio";
   process.env.CLERK_JWT_KEY = "test-key";
+  process.env.CLERK_SECRET_KEY = "sk-test";
   vi.spyOn(console, "log").mockImplementation(() => undefined);
   vi.spyOn(console, "error").mockImplementation(() => undefined);
   profilesHandler = (await import("./profiles")).default;
@@ -71,6 +95,8 @@ beforeEach(() => {
   };
   database.rateCount = 1;
   database.saveAllowed = true;
+  clerkDirectory.githubUsername = "gholtzap";
+  clerkDirectory.lookupCount = 0;
 });
 
 describe("profiles API", () => {
@@ -158,7 +184,7 @@ describe("profiles API", () => {
         body: {
           version: 1,
           revision: 5,
-          person: { ...currentPerson, github: "gholtzap" },
+          person: { ...currentPerson, github: "GHoltzap" },
           claims: initialClaims,
           projects: [project],
         },
@@ -171,6 +197,85 @@ describe("profiles API", () => {
       person: { github: "gholtzap" },
       projects: [project],
     });
+    expect(clerkDirectory.lookupCount).toBe(1);
+  });
+
+  it("refuses a github account the user has not linked and verified", async () => {
+    clerkDirectory.githubUsername = null;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, github: "someone-else" },
+          claims: initialClaims,
+          projects: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(403);
+    expect(response.body).toEqual({
+      error: "Connect this GitHub account to Kleos before adding it.",
+    });
+  });
+
+  it("skips verification when the stored github account is unchanged", async () => {
+    if (database.record) database.record.person.github = "gholtzap";
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, github: "gholtzap" },
+          claims: initialClaims,
+          projects: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(clerkDirectory.lookupCount).toBe(0);
+  });
+
+  it("rejects featured projects that are not owned by the connected account", async () => {
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, github: "gholtzap" },
+          claims: initialClaims,
+          projects: [
+            {
+              id: "github:someone-else/repo",
+              owner: "someone-else",
+              name: "repo",
+              description: "Not theirs.",
+              topics: [],
+              stars: 1,
+              forks: 0,
+              syncedAt: "2026-08-12T00:00:00.000Z",
+            },
+          ],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(400);
+    expect(response.body).toEqual({ error: "Invalid Kleos content." });
   });
 
   it("rejects a featured project that fails validation", async () => {

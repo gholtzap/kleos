@@ -96,64 +96,7 @@
   gap: 14px;
 }
 
-.github-projects__account {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-.github-projects__account label {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.github-projects__account label span {
-  color: #71767b;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.github-projects__account input {
-  min-height: 40px;
-  padding: 0 12px;
-  color: #e7e9ea;
-  background: transparent;
-  border: 1px solid #2f3336;
-  border-radius: 8px;
-  font: inherit;
-}
-
-.github-projects__account input:disabled {
-  color: #71767b;
-}
-
-.github-projects__account button {
-  min-height: 40px;
-  padding: 0 16px;
-  color: #e7e9ea;
-  background: transparent;
-  border: 1px solid #536471;
-  border-radius: 9999px;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.github-projects__account button:hover:not(:disabled) {
-  background: rgb(239 243 244 / 10%);
-}
-
-.github-projects__account button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.github-projects__header button:focus-visible,
-.github-projects__account input:focus,
-.github-projects__account button:focus-visible {
+.github-projects__header button:focus-visible {
   outline: 2px solid #1d9bf0;
   outline-offset: 2px;
 }
@@ -167,13 +110,54 @@
   font-size: 13px;
 }
 
-.github-projects__verify {
+.github-projects__connect {
   display: inline-flex;
-  padding: 0;
+  min-height: 44px;
+  padding: 0 20px;
   align-items: center;
   align-self: flex-start;
-  gap: 6px;
+  gap: 10px;
+  color: #0f1419;
+  background: #eff3f4;
+  border: 0;
+  border-radius: 9999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.github-projects__connect:hover:not(:disabled) {
+  background: #d7dbdc;
+}
+
+.github-projects__connect:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.github-projects__connect:focus-visible {
+  outline: 2px solid #1d9bf0;
+  outline-offset: 2px;
+}
+
+.github-projects__retry {
+  padding: 0;
   color: #1d9bf0;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.github-projects__retry:hover {
+  text-decoration: underline;
+}
+
+.github-projects__disconnect {
+  padding: 0;
+  align-self: flex-start;
+  color: #f4212e;
   background: transparent;
   border: 0;
   font: inherit;
@@ -182,18 +166,12 @@
   cursor: pointer;
 }
 
-.github-projects__verify:hover:not(:disabled) {
+.github-projects__disconnect:hover:not(:disabled) {
   text-decoration: underline;
 }
 
-.github-projects__verify:disabled {
+.github-projects__disconnect:disabled {
   opacity: 0.6;
-  cursor: default;
-}
-
-.github-projects__verify:focus-visible {
-  outline: 2px solid #1d9bf0;
-  outline-offset: 2px;
 }
 
 .github-projects__error {

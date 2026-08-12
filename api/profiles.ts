@@ -17,6 +17,7 @@ import {
   privateResponse,
   saveKleosRecord,
   sendRateLimit,
+  verifiedGithubUsername,
 } from "./_shared";
 
 const MAX_RECORD_BYTES = 100_000;
@@ -90,6 +91,31 @@ async function handler(
         .status(409)
         .json({ error: "Kleos changed. Reload and try again." });
     }
+
+    const submittedGithub = record.person.github;
+    if (
+      submittedGithub !== undefined &&
+      submittedGithub !== existing?.person.github
+    ) {
+      let verified: string | null;
+      try {
+        verified = await verifiedGithubUsername(userId);
+      } catch {
+        return response
+          .status(503)
+          .json({ error: "GitHub verification is unavailable. Try again." });
+      }
+      if (
+        !verified ||
+        verified.toLowerCase() !== submittedGithub.toLowerCase()
+      ) {
+        return response.status(403).json({
+          error: "Connect this GitHub account to Kleos before adding it.",
+        });
+      }
+      record.person.github = verified;
+    }
+
     const safeRecord = mergeOwnerKleosRecord(existing, record, userId);
     safeRecord.revision = currentRevision + 1;
     const serialized = JSON.stringify(safeRecord);

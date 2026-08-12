@@ -327,10 +327,16 @@ function featuredProjectIsValid(project: FeaturedProject): boolean {
 export function kleosRecordContentIsValid(record: KleosRecord): boolean {
   if (record.claims.length > 50) return false;
   if (record.projects.length > 12) return false;
+  const github = record.person.github;
   const projectIds = record.projects.map((project) => project.id);
   if (
     new Set(projectIds).size !== projectIds.length ||
-    !record.projects.every(featuredProjectIsValid)
+    !record.projects.every(
+      (project) =>
+        featuredProjectIsValid(project) &&
+        github !== undefined &&
+        project.owner.toLowerCase() === github.toLowerCase(),
+    )
   ) {
     return false;
   }

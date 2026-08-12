@@ -2,6 +2,7 @@ import { useUser } from "@clerk/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   GitForkIcon,
+  GithubLogoIcon,
   SealCheckIcon,
   StarIcon,
   XIcon,
@@ -13,7 +14,6 @@ import {
   featuredProjectId,
   fetchGithubRepos,
   MAX_FEATURED_PROJECTS,
-  normalizeGithubAccount,
   type GithubRepo,
 } from "../github";
 import type { FeaturedProject } from "../types";
@@ -45,12 +45,43 @@ export function GithubProjectsDialog({
   onSave,
 }: GithubProjectsDialogProps) {
   const { user } = useUser();
-  const [account, setAccount] = useState(verifiedGithub ?? github);
   const [resource, setResource] = useState<RepoResource>({ status: "idle" });
   const [selected, setSelected] = useState<readonly FeaturedProject[]>(projects);
   const [formError, setFormError] = useState("");
   const [verifying, setVerifying] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  function loadRepos(account: string) {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setResource({ status: "loading" });
+    fetchGithubRepos(account, controller.signal)
+      .then((repos) => {
+        if (controller.signal.aborted) return;
+        setResource({
+          status: "ready",
+          repos: repos.sort(compareReposByProminence),
+        });
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setResource({
+          status: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Could not load repositories from GitHub.",
+        });
+      });
+  }
+
+  useEffect(() => {
+    if (verifiedGithub) loadRepos(verifiedGithub);
+    return () => abortRef.current?.abort();
+    // Load once for the verified account the dialog opened with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function verifyWithGithub() {
     if (!user || verifying) return;
@@ -71,41 +102,6 @@ export function GithubProjectsDialog({
       setVerifying(false);
     }
   }
-
-  function loadRepos(value: string) {
-    const normalized = normalizeGithubAccount(value);
-    if (!normalized) {
-      setResource({ status: "error", message: "Enter a valid GitHub username." });
-      return;
-    }
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setResource({ status: "loading" });
-    fetchGithubRepos(normalized, controller.signal)
-      .then((repos) => {
-        if (controller.signal.aborted) return;
-        setResource({ status: "ready", repos: repos.sort(compareReposByProminence) });
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setResource({
-          status: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Could not load repositories from GitHub.",
-        });
-      });
-  }
-
-  useEffect(() => {
-    const initial = verifiedGithub ?? github;
-    if (normalizeGithubAccount(initial)) loadRepos(initial);
-    return () => abortRef.current?.abort();
-    // Load once for the account the dialog opened with.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function toggleRepo(repo: GithubRepo) {
     setFormError("");
@@ -132,13 +128,12 @@ export function GithubProjectsDialog({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = account.trim();
-    const normalized = trimmed ? normalizeGithubAccount(trimmed) : null;
-    if (trimmed && !normalized) {
-      setFormError("Enter a valid GitHub username.");
-      return;
-    }
-    onSave(normalized ?? "", [...selected]);
+    if (!verifiedGithub) return;
+    onSave(verifiedGithub, [...selected]);
+  }
+
+  function disconnect() {
+    onSave("", []);
   }
 
   const error = formError || saveError;
@@ -154,14 +149,19 @@ export function GithubProjectsDialog({
               <XIcon aria-hidden="true" size={20} />
             </Dialog.Close>
             <Dialog.Title>Featured projects</Dialog.Title>
-            <button disabled={saving} form="github-projects-form" type="submit">
+            <button
+              disabled={saving || !verifiedGithub}
+              form="github-projects-form"
+              type="submit"
+            >
               {saving ? "Saving…" : "Save"}
             </button>
           </header>
 
           <Dialog.Description className="github-projects__description">
-            Plug in your GitHub and pick up to {MAX_FEATURED_PROJECTS} projects
-            to feature on your profile.
+            {verifiedGithub
+              ? `Pick up to ${MAX_FEATURED_PROJECTS} projects to feature on your profile.`
+              : "Connect your GitHub account to feature your projects on your profile."}
           </Dialog.Description>
 
           <form
@@ -169,45 +169,21 @@ export function GithubProjectsDialog({
             id="github-projects-form"
             onSubmit={submit}
           >
-            <div className="github-projects__account">
-              <label htmlFor="github-projects-account">
-                <span>GitHub username</span>
-                <input
-                  autoComplete="off"
-                  disabled={Boolean(verifiedGithub)}
-                  id="github-projects-account"
-                  maxLength={40}
-                  onChange={(event) => setAccount(event.currentTarget.value)}
-                  placeholder="octocat"
-                  spellCheck={false}
-                  type="text"
-                  value={account}
-                />
-              </label>
-              <button
-                disabled={resource.status === "loading"}
-                onClick={() => loadRepos(account)}
-                type="button"
-              >
-                {resource.status === "loading" ? "Loading…" : "Load repositories"}
-              </button>
-            </div>
             {verifiedGithub ? (
               <p className="github-projects__verified">
                 <SealCheckIcon aria-hidden="true" size={16} weight="fill" />
-                Verified through your linked GitHub account.
+                @{verifiedGithub} · verified through your linked GitHub
+                account.
               </p>
             ) : (
               <button
-                className="github-projects__verify"
+                className="github-projects__connect"
                 disabled={verifying}
                 onClick={() => void verifyWithGithub()}
                 type="button"
               >
-                <SealCheckIcon aria-hidden="true" size={16} />
-                {verifying
-                  ? "Opening GitHub…"
-                  : "Verify ownership by connecting your GitHub account"}
+                <GithubLogoIcon aria-hidden="true" size={18} weight="bold" />
+                {verifying ? "Opening GitHub…" : "Connect your GitHub account"}
               </button>
             )}
 
@@ -217,7 +193,7 @@ export function GithubProjectsDialog({
               </p>
             ) : null}
 
-            {selected.length ? (
+            {verifiedGithub && selected.length ? (
               <div className="github-projects__selected">
                 <h3>
                   Featured · {selected.length}/{MAX_FEATURED_PROJECTS}
@@ -239,13 +215,24 @@ export function GithubProjectsDialog({
               </div>
             ) : null}
 
-            {resource.status === "error" ? (
+            {verifiedGithub && resource.status === "loading" ? (
+              <p className="github-projects__empty">Loading repositories…</p>
+            ) : null}
+
+            {verifiedGithub && resource.status === "error" ? (
               <p className="github-projects__error" role="alert">
-                {resource.message}
+                {resource.message}{" "}
+                <button
+                  className="github-projects__retry"
+                  onClick={() => loadRepos(verifiedGithub)}
+                  type="button"
+                >
+                  Retry
+                </button>
               </p>
             ) : null}
 
-            {resource.status === "ready" ? (
+            {verifiedGithub && resource.status === "ready" ? (
               <ul className="github-projects__repos">
                 {resource.repos.length === 0 ? (
                   <li className="github-projects__empty">
@@ -289,6 +276,17 @@ export function GithubProjectsDialog({
                   );
                 })}
               </ul>
+            ) : null}
+
+            {github ? (
+              <button
+                className="github-projects__disconnect"
+                disabled={saving}
+                onClick={disconnect}
+                type="button"
+              >
+                Disconnect GitHub and remove featured projects
+              </button>
             ) : null}
           </form>
         </Dialog.Content>
