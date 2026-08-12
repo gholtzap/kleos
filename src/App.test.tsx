@@ -13,8 +13,10 @@ describe("public landing page", () => {
   it("keeps the original evidence-led account entry page", () => {
     document.body.innerHTML = renderToStaticMarkup(<App />);
 
-    expect(document.querySelector(".kleos-landing")).not.toBeNull();
-    expect(document.querySelector(".kleos-landing-visual")).not.toBeNull();
+    expect(
+      document.querySelector('section[aria-label="A professional profile being assembled"]'),
+    ).not.toBeNull();
+    expect(document.querySelector("main")).not.toBeNull();
     expect(document.querySelector("h1")?.textContent).toBe(
       "Professional profiles built on evidence.",
     );

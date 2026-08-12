@@ -1,7 +1,11 @@
+import * as stylex from "@stylexjs/stylex";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { appBreakpoints } from "../app-tokens.stylex";
 import { normalizeGithubAccount } from "../github";
-import "./github-graph.css";
+
+const TABLET = "@media (max-width: 720px)";
+const MOBILE = "@media (max-width: 420px)";
 
 export { normalizeGithubAccount };
 
@@ -211,35 +215,42 @@ export function GithubGraph({
   }, [weeks]);
 
   return (
-    <div className="github-graph" aria-busy={resource.status === "loading"}>
-      {showAccount ? <p className="github-graph__account">@{normalizedAccount ?? account}</p> : null}
+    <div {...stylex.props(styles.graph)} aria-busy={resource.status === "loading"}>
+      {showAccount ? (
+        <p {...stylex.props(styles.account)}>@{normalizedAccount ?? account}</p>
+      ) : null}
 
       {resource.status === "loading" ? (
-        <div className="github-graph__loading" aria-label="Loading contributions">
-          {Array.from({ length: 182 }, (_, index) => <span key={index} />)}
+        <div {...stylex.props(styles.loading)} aria-label="Loading contributions">
+          {Array.from({ length: 182 }, (_, index) => (
+            <span {...stylex.props(styles.cellSize, styles.loadingCell)} key={index} />
+          ))}
         </div>
       ) : null}
 
       {resource.status === "error" ? (
-        <p className="github-graph__message" role="alert">{resource.message}</p>
+        <p {...stylex.props(styles.message)} role="alert">{resource.message}</p>
       ) : null}
 
       {resource.status === "ready" && weeks.length > 0 ? (
-        <div className="github-graph__scroll" ref={scrollRef}>
-          <div className="github-graph__grid" role="grid" aria-label={`GitHub contributions for ${normalizedAccount ?? account}`}>
+        <div {...stylex.props(styles.scroll)} ref={scrollRef}>
+          <div {...stylex.props(styles.grid)} role="grid" aria-label={`GitHub contributions for ${normalizedAccount ?? account}`}>
             {weeks.map((week, weekIndex) => (
-              <div className="github-graph__week" role="row" key={week[0]?.date ?? weekIndex}>
+              <div {...stylex.props(styles.week)} role="row" key={week[0]?.date ?? weekIndex}>
                 {week.map((contribution, dayIndex) => {
                   const label = contributionLabel(contribution);
                   return (
                     <motion.span
+                      {...stylex.props(
+                        styles.cellSize,
+                        styles.cell,
+                        styles.cellColor(colors[contribution.level]),
+                      )}
                       aria-label={label}
-                      className="github-graph__cell"
                       initial={reducedMotion ? false : { opacity: 0, scale: 0.45 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: reducedMotion ? 0 : weekIndex * 0.018 + dayIndex * 0.012 }}
                       role="gridcell"
-                      style={{ backgroundColor: colors[contribution.level] }}
                       tabIndex={0}
                       title={label}
                       key={contribution.date}
@@ -253,10 +264,14 @@ export function GithubGraph({
       ) : null}
 
       {showLegend && resource.status === "ready" ? (
-        <div className="github-graph__legend" aria-label="Contribution activity legend">
+        <div {...stylex.props(styles.legend)} aria-label="Contribution activity legend">
           <span>Less</span>
           {colors.map((color, level) => (
-            <i aria-label={`Level ${level}`} key={color} style={{ backgroundColor: color }} />
+            <i
+              {...stylex.props(styles.cellSize, styles.cellColor(color))}
+              aria-label={`Level ${level}`}
+              key={color}
+            />
           ))}
           <span>More</span>
         </div>
@@ -268,12 +283,17 @@ export function GithubGraph({
 export function GitHubActivity({ title = "GitHub activity", account, ...graphProps }: GitHubActivityProps) {
   const normalizedAccount = normalizeGithubAccount(account);
   return (
-    <section className="github-activity" aria-labelledby="github-activity-heading">
-      <div className="github-activity__content">
-        <header>
-          <h2 id="github-activity-heading">{title}</h2>
+    <section {...stylex.props(styles.activity)} aria-labelledby="github-activity-heading">
+      <div {...stylex.props(styles.content)}>
+        <header {...stylex.props(styles.header)}>
+          <h2 {...stylex.props(styles.heading)} id="github-activity-heading">{title}</h2>
           {normalizedAccount ? (
-            <a href={`https://github.com/${normalizedAccount}`} rel="noreferrer" target="_blank">
+            <a
+              {...stylex.props(styles.accountLink)}
+              href={`https://github.com/${normalizedAccount}`}
+              rel="noreferrer"
+              target="_blank"
+            >
               @{normalizedAccount}
             </a>
           ) : null}
@@ -283,3 +303,130 @@ export function GitHubActivity({ title = "GitHub activity", account, ...graphPro
     </section>
   );
 }
+
+const pulse = stylex.keyframes({ to: { opacity: 0.35 } });
+
+const styles = stylex.create({
+  activity: {
+    boxSizing: "border-box",
+    width: "100%",
+    paddingBlock: "clamp(34px, 5vw, 72px)",
+    paddingInline: { default: "clamp(24px, 5vw, 74px)", [TABLET]: 18 },
+    color: "#a0a0a0",
+    backgroundColor: "#080808",
+    fontFamily: '"Manrope Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  content: { boxSizing: "border-box", width: "fit-content", maxWidth: "100%" },
+  header: {
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: { default: "baseline", [MOBILE]: "flex-start" },
+    justifyContent: "space-between",
+    flexDirection: { default: "row", [MOBILE]: "column" },
+    gap: { default: 24, [MOBILE]: 8 },
+    marginBottom: "clamp(34px, 4vw, 56px)",
+  },
+  heading: {
+    boxSizing: "border-box",
+    margin: 0,
+    color: "#bdbdbd",
+    fontSize: "clamp(25px, 2.1vw, 34px)",
+    fontWeight: 450,
+    letterSpacing: "-0.04em",
+  },
+  accountLink: {
+    boxSizing: "border-box",
+    margin: 0,
+    color: { default: "#929292", ":hover": "#dedede" },
+    fontSize: 15,
+    textDecoration: "none",
+  },
+  graph: { boxSizing: "border-box", width: "fit-content", maxWidth: "100%" },
+  account: {
+    boxSizing: "border-box",
+    marginBlockStart: 0,
+    marginBlockEnd: 18,
+    color: "#929292",
+    fontSize: 15,
+  },
+  scroll: {
+    boxSizing: "border-box",
+    width: "fit-content",
+    maxWidth: "100%",
+    paddingBlockStart: 3,
+    paddingBlockEnd: 10,
+    overflowX: "auto",
+    overscrollBehaviorInline: "contain",
+    scrollbarWidth: "none",
+    "::-webkit-scrollbar": { display: "none" },
+  },
+  grid: {
+    boxSizing: "border-box",
+    display: "flex",
+    width: "max-content",
+    gap: 4,
+  },
+  week: {
+    boxSizing: "border-box",
+    display: "grid",
+    gap: 4,
+    gridTemplateRows: "repeat(7, 1fr)",
+  },
+  cellSize: {
+    boxSizing: "border-box",
+    display: "block",
+    width: { default: "clamp(11px, 1.2vw, 17px)", [TABLET]: 13 },
+    aspectRatio: 1,
+    borderRadius: 3,
+  },
+  cell: {
+    outline: 0,
+    filter: { default: "none", ":hover": "brightness(1.45)", ":focus-visible": "brightness(1.45)" },
+    boxShadow: {
+      default: "none",
+      ":hover": "0 0 0 2px #080808, 0 0 0 3px #d0d0d0",
+      ":focus-visible": "0 0 0 2px #080808, 0 0 0 3px #d0d0d0",
+    },
+    transitionProperty: "filter, box-shadow",
+    transitionDuration: "100ms",
+    transitionTimingFunction: "ease",
+  },
+  cellColor: (color: string) => ({ backgroundColor: color }),
+  loading: {
+    boxSizing: "border-box",
+    display: "grid",
+    width: "max-content",
+    gridTemplateColumns: "repeat(26, auto)",
+    gridTemplateRows: "repeat(7, auto)",
+    gridAutoFlow: "column",
+    gap: 4,
+    overflow: "hidden",
+  },
+  loadingCell: {
+    backgroundColor: "#1d1d1d",
+    animationName: { default: pulse, [appBreakpoints.reducedMotion]: "none" },
+    animationDuration: "1.5s",
+    animationTimingFunction: "ease-in-out",
+    animationIterationCount: "infinite",
+    animationDirection: "alternate",
+  },
+  message: {
+    boxSizing: "border-box",
+    minHeight: 120,
+    display: "grid",
+    alignItems: "center",
+    margin: 0,
+    color: "#858585",
+    fontSize: 15,
+  },
+  legend: {
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+    marginTop: 14,
+    color: "#777",
+    fontSize: 12,
+  },
+});

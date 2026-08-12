@@ -1,3 +1,5 @@
+import * as stylex from "@stylexjs/stylex";
+import type { StyleXStyles } from "@stylexjs/stylex";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   type FocusEvent,
@@ -11,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import "./social-hover-cards.css";
+import { appBreakpoints } from "../app-tokens.stylex";
 
 export interface SocialHoverCardItem {
   value: string;
@@ -35,19 +37,15 @@ export interface SocialHoverCardsProps {
   contentBlur?: number;
   springStiffness?: number;
   springDamping?: number;
-  cardClassName?: string;
-  linkClassName?: string;
-  className?: string;
+  cardStyle?: StyleXStyles;
+  linkStyle?: StyleXStyles;
+  style?: StyleXStyles;
 }
 
 interface CardLayout {
   x: number;
   width: number;
   height: number;
-}
-
-function classNames(...values: Array<string | undefined>): string {
-  return values.filter((value): value is string => Boolean(value)).join(" ");
 }
 
 export function SocialHoverCards({
@@ -62,9 +60,9 @@ export function SocialHoverCards({
   contentBlur = 8,
   springStiffness = 420,
   springDamping = 38,
-  cardClassName,
-  linkClassName,
-  className,
+  cardStyle,
+  linkStyle,
+  style,
 }: SocialHoverCardsProps) {
   const controlled = value !== undefined;
   const [localValue, setLocalValue] = useState(defaultValue);
@@ -184,7 +182,7 @@ export function SocialHoverCards({
 
   return (
     <div
-      className={classNames("social-hover-cards", className)}
+      {...stylex.props(styles.root, style)}
       onBlurCapture={handleBlur}
       onPointerEnter={clearCloseTimer}
       onPointerLeave={scheduleClose}
@@ -192,6 +190,7 @@ export function SocialHoverCards({
     >
       {activeItem ? (
         <motion.div
+          {...stylex.props(styles.card, styles.cardOffset(cardOffset), cardStyle)}
           animate={{
             height: cardLayout.height,
             opacity: 1,
@@ -200,18 +199,16 @@ export function SocialHoverCards({
             x: cardLayout.x,
           }}
           aria-label={`${activeItem.label} preview`}
-          className={classNames("social-hover-cards__card", cardClassName)}
           id={previewId}
           initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.98 }}
           onPointerEnter={clearCloseTimer}
           role="group"
-          style={{ bottom: `calc(100% + ${cardOffset}px)` }}
           transition={{ ...spring, opacity: { duration: reducedMotion ? 0 : 0.15 } }}
         >
           <AnimatePresence custom={direction} initial={false} mode="popLayout">
             <motion.div
+              {...stylex.props(styles.content)}
               animate="center"
-              className="social-hover-cards__content"
               custom={direction}
               exit="exit"
               initial="enter"
@@ -238,10 +235,11 @@ export function SocialHoverCards({
           "aria-controls": active ? previewId : undefined,
           "aria-expanded": active,
           "aria-label": showLabels ? undefined : item.label,
-          className: classNames(
-            "social-hover-cards__trigger",
-            showLabels ? "social-hover-cards__trigger--labeled" : undefined,
-            item.href ? linkClassName : undefined,
+          ...stylex.props(
+            styles.trigger,
+            showLabels && styles.labeledTrigger,
+            active && styles.activeTrigger,
+            item.href ? linkStyle : undefined,
           ),
           onFocus: () => setActiveValue(item.value),
           onPointerEnter: (event: PointerEvent<HTMLElement>) => {
@@ -252,9 +250,8 @@ export function SocialHoverCards({
         const children = (
           <>
             <span
+              {...stylex.props(styles.icon, styles.iconSize(iconSize))}
               aria-hidden="true"
-              className="social-hover-cards__icon"
-              style={{ height: iconSize, width: iconSize }}
             >
               {item.icon}
             </span>
@@ -295,3 +292,73 @@ export function SocialHoverCards({
     </div>
   );
 }
+
+const styles = stylex.create({
+  root: {
+    boxSizing: "border-box",
+    position: "relative",
+    display: "inline-flex",
+    maxWidth: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  trigger: {
+    boxSizing: "border-box",
+    display: "flex",
+    width: 44,
+    height: 44,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    color: {
+      default: "#a0a0a0",
+      ":hover": "#e5e5e5",
+      ":focus": "#e5e5e5",
+    },
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderRadius: 10,
+    font: "inherit",
+    textDecoration: "none",
+    cursor: "pointer",
+    transitionProperty: "color",
+    transitionDuration: { default: "150ms", [appBreakpoints.reducedMotion]: "0s" },
+    transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+    outlineColor: { default: null, ":focus-visible": "#e5e5e5" },
+    outlineStyle: { default: null, ":focus-visible": "solid" },
+    outlineWidth: { default: null, ":focus-visible": 2 },
+    outlineOffset: { default: null, ":focus-visible": 2 },
+  },
+  activeTrigger: { color: "#e5e5e5" },
+  labeledTrigger: { width: "auto" },
+  icon: {
+    boxSizing: "border-box",
+    display: "grid",
+    flex: "0 0 auto",
+    placeItems: "center",
+  },
+  iconSize: (size: number) => ({ width: size, height: size }),
+  card: {
+    boxSizing: "border-box",
+    position: "absolute",
+    zIndex: 20,
+    left: 0,
+    overflow: "hidden",
+    maxWidth: "calc(100vw - 32px)",
+    color: "#e5e5e5",
+    backgroundColor: "#171717",
+    borderColor: "rgb(255 255 255 / 4%)",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderRadius: 14,
+    transformOrigin: "bottom center",
+  },
+  cardOffset: (offset: number) => ({ bottom: `calc(100% + ${offset}px)` }),
+  content: {
+    boxSizing: "border-box",
+    width: "max-content",
+    maxWidth: "calc(100vw - 32px)",
+  },
+});

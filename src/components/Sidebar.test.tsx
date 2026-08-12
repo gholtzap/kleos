@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
+import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
@@ -16,32 +16,40 @@ describe("Sidebar", () => {
     document.body.append(container);
     const root = createRoot(container);
 
-    act(() => root.render(
-      <Sidebar
-        account={{ name: "Gavin Holtzapple", handle: "@gavinholtzapple" }}
-        activeItem="Profile"
-        collapsible
-        onPost={vi.fn()}
-      />,
-    ));
+    function ControlledSidebar() {
+      const [collapsed, setCollapsed] = useState(false);
+      return (
+        <Sidebar
+          account={{ name: "Gavin Holtzapple", handle: "@gavinholtzapple" }}
+          activeItem="Profile"
+          collapsed={collapsed}
+          collapsible
+          onCollapsedChange={setCollapsed}
+          onPost={vi.fn()}
+        />
+      );
+    }
+
+    act(() => root.render(<ControlledSidebar />));
 
     const sidebar = container.querySelector("aside");
     const collapseButton = container.querySelector<HTMLButtonElement>(
       'button[aria-label="Collapse sidebar"]',
     );
 
-    expect(sidebar?.classList.contains("sidebar--collapsed")).toBe(false);
+    expect(sidebar?.getAttribute("id")).toBe("sidebar");
     expect(container.querySelector('a[aria-label="Home"]')).not.toBeNull();
     expect(container.querySelector('a[aria-label="Profile"]')).not.toBeNull();
     expect(container.querySelector('button[aria-label="Create post"]')).not.toBeNull();
     act(() => collapseButton?.click());
-    expect(sidebar?.classList.contains("sidebar--collapsed")).toBe(true);
+    expect(collapseButton?.getAttribute("aria-expanded")).toBe("false");
     expect(container.querySelector('button[aria-label="Expand sidebar"]')).not.toBeNull();
 
     act(() => container.querySelector<HTMLButtonElement>(
       'button[aria-label="Expand sidebar"]',
     )?.click());
-    expect(sidebar?.classList.contains("sidebar--collapsed")).toBe(false);
+    expect(container.querySelector('button[aria-label="Collapse sidebar"]')?.getAttribute("aria-expanded"))
+      .toBe("true");
 
     act(() => root.unmount());
   });

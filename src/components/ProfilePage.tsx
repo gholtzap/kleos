@@ -1,5 +1,8 @@
 import { useAuth, useUser } from "@clerk/react";
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState } from "react";
+import { appSurfaceStyles } from "../app-surface";
+import { appBreakpoints, appColors } from "../app-tokens.stylex";
 import {
   defaultProfileDetails,
   loadEditableProfile,
@@ -18,9 +21,8 @@ import type {
   ProfileRecord,
   ProfileTab,
 } from "../types/profile";
-import "../app-surface.css";
 import { Experience } from "./Experience";
-import "./app-layout.css";
+import { appLayoutStyles } from "./app-layout";
 import { FeaturedProjects } from "./FeaturedProjects";
 import { GitHubActivity } from "./GithubGraph";
 import { GithubProjectsDialog } from "./GithubProjectsDialog";
@@ -30,7 +32,6 @@ import { ProfileTabs } from "./ProfileTabs";
 import { ProfileTopBar } from "./ProfileTopBar";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "./use-app-surface";
-import "./profile-page.css";
 
 function countForTab(tab: ProfileTab) {
   if (tab === "Media") return defaultProfileDetails.mediaCount;
@@ -55,6 +56,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
   const [githubEditorOpen, setGithubEditorOpen] = useState(false);
   const [githubSaving, setGithubSaving] = useState(false);
   const [githubSaveError, setGithubSaveError] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -146,18 +148,26 @@ export function ProfilePage({ account }: ProfilePageProps) {
   const projects = record?.projects ?? [];
 
   return (
-    <div className="app-surface">
-      <div className="app-layout profile-page__layout">
-        <div className="app-layout__sidebar">
+    <div {...stylex.props(appSurfaceStyles.root)}>
+      <div
+        {...stylex.props(
+          appLayoutStyles.root,
+          appLayoutStyles.profileRoot,
+          sidebarCollapsed && appLayoutStyles.profileRootCollapsed,
+        )}
+      >
+        <div {...stylex.props(appLayoutStyles.sidebar)}>
           <Sidebar
             account={account}
             activeItem="Profile"
+            collapsed={sidebarCollapsed}
             collapsible
+            onCollapsedChange={setSidebarCollapsed}
             onPost={() => feedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
         </div>
 
-        <main className="app-layout__timeline profile-page__timeline">
+        <main {...stylex.props(appLayoutStyles.timeline, appLayoutStyles.profileTimeline)}>
           <ProfileTopBar
             count={countForTab(selectedTab)}
             name={account.name}
@@ -170,7 +180,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
           <Experience />
           <FeaturedProjects projects={projects} onEdit={openGithubEditor} />
           {github ? <GitHubActivity account={github} /> : null}
-          <span className="profile-page__status" role="status">{editMessage}</span>
+          <span {...stylex.props(profileStyles.status)} role="status">{editMessage}</span>
           <ProfileTabs selectedTab={selectedTab} onSelect={setSelectedTab} />
           <div
             id="profile-panel"
@@ -178,9 +188,9 @@ export function ProfilePage({ account }: ProfilePageProps) {
             role="tabpanel"
             aria-labelledby={`profile-tab-${selectedTab.toLowerCase()}`}
           >
-            <section className="profile-page__empty-state">
-              <h2>No {selectedTab.toLowerCase()} yet</h2>
-              <p>This part of your profile is empty.</p>
+            <section {...stylex.props(profileStyles.emptyState)}>
+              <h2 {...stylex.props(profileStyles.emptyHeading)}>No {selectedTab.toLowerCase()} yet</h2>
+              <p {...stylex.props(profileStyles.emptyCopy)}>This part of your profile is empty.</p>
             </section>
           </div>
         </main>
@@ -209,3 +219,26 @@ export function ProfilePage({ account }: ProfilePageProps) {
     </div>
   );
 }
+
+const profileStyles = stylex.create({
+  status: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    whiteSpace: "nowrap",
+  },
+  emptyState: {
+    display: "flex",
+    minHeight: 220,
+    padding: { default: 32, [appBreakpoints.mobile]: "28px 16px" },
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  emptyHeading: { margin: 0, fontSize: 24, fontWeight: 800, lineHeight: "28px" },
+  emptyCopy: { marginBlockStart: 8, marginBlockEnd: 0, color: appColors.muted },
+});

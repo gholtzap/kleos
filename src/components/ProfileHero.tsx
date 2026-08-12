@@ -1,6 +1,9 @@
 import { CalendarBlankIcon, LinkIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
+import { appColors } from "../app-tokens.stylex";
 import type { ProfileRecord } from "../types/profile";
-import "./profile-hero.css";
+
+const MOBILE = "@media (max-width: 480px)";
 
 interface ProfileHeroProps {
   profile: ProfileRecord;
@@ -9,25 +12,25 @@ interface ProfileHeroProps {
 
 export function ProfileHero({ profile, onEdit }: ProfileHeroProps) {
   return (
-    <section className="profile-hero" aria-label={`${profile.name} profile`}>
+    <section {...stylex.props(styles.root)} aria-label={`${profile.name} profile`}>
       <div
+        {...stylex.props(styles.banner)}
         aria-label="Profile banner placeholder"
-        className="profile-hero__banner"
         role="img"
       />
 
-      <div className="profile-hero__body">
-        <div className="profile-hero__actions">
-          <div className="profile-hero__avatar-frame">
+      <div {...stylex.props(styles.body)}>
+        <div {...stylex.props(styles.actions)}>
+          <div {...stylex.props(styles.avatarFrame)}>
             <div
+              {...stylex.props(styles.avatar)}
               aria-label="Profile picture placeholder"
-              className="profile-hero__avatar"
               role="img"
             />
           </div>
 
           <button
-            className="profile-hero__edit"
+            {...stylex.props(styles.edit)}
             type="button"
             onClick={onEdit}
           >
@@ -35,37 +38,163 @@ export function ProfileHero({ profile, onEdit }: ProfileHeroProps) {
           </button>
         </div>
 
-        <div className="profile-hero__identity">
-          <h1>{profile.name}</h1>
-          <span>{profile.handle}</span>
+        <div {...stylex.props(styles.identity)}>
+          <h1 {...stylex.props(styles.name)}>{profile.name}</h1>
+          <span {...stylex.props(styles.handle)}>{profile.handle}</span>
         </div>
 
-        <p className="profile-hero__bio">{profile.bio}</p>
+        <p {...stylex.props(styles.bio)}>{profile.bio}</p>
 
-        <div className="profile-hero__details">
+        <div {...stylex.props(styles.details)}>
           {profile.website ? (
-            <span className="profile-hero__detail profile-hero__link">
+            <span {...stylex.props(styles.detail, styles.link)}>
               <LinkIcon aria-hidden="true" size={18} />
               {profile.website}
             </span>
           ) : null}
           {profile.joined ? (
-            <span className="profile-hero__detail">
+            <span {...stylex.props(styles.detail)}>
               <CalendarBlankIcon aria-hidden="true" size={18} />
               {profile.joined}
             </span>
           ) : null}
         </div>
 
-        <div className="profile-hero__counts" aria-label="Follow counts">
+        <div {...stylex.props(styles.counts)} aria-label="Follow counts">
           <span>
-            <strong>{profile.following}</strong> Following
+            <strong {...stylex.props(styles.countStrong)}>{profile.following}</strong> Following
           </span>
           <span>
-            <strong>{profile.followers}</strong> Followers
+            <strong {...stylex.props(styles.countStrong)}>{profile.followers}</strong> Followers
           </span>
         </div>
       </div>
     </section>
   );
 }
+
+const styles = stylex.create({
+  root: {
+    boxSizing: "border-box",
+    width: "100%",
+    color: appColors.text,
+    backgroundColor: appColors.background,
+  },
+  banner: {
+    display: "block",
+    width: "100%",
+    aspectRatio: "3 / 1",
+    backgroundColor: "#202327",
+  },
+  body: {
+    boxSizing: "border-box",
+    paddingBlockEnd: 3,
+    paddingInline: 16,
+  },
+  actions: {
+    position: "relative",
+    display: "flex",
+    height: { default: 76, [MOBILE]: 56 },
+    justifyContent: "flex-end",
+  },
+  avatarFrame: {
+    boxSizing: "border-box",
+    position: "absolute",
+    top: { default: -73, [MOBILE]: -29 },
+    left: { default: 0, [MOBILE]: 3 },
+    width: { default: 145.5, [MOBILE]: 72 },
+    height: { default: 145.5, [MOBILE]: 72 },
+    padding: { default: 6, [MOBILE]: 3 },
+    backgroundColor: appColors.background,
+    borderRadius: "50%",
+  },
+  avatar: {
+    boxSizing: "border-box",
+    display: "block",
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    backgroundColor: appColors.border,
+  },
+  edit: {
+    boxSizing: "border-box",
+    width: 113.172,
+    height: 36,
+    paddingInline: 16,
+    marginTop: 12,
+    color: appColors.text,
+    backgroundColor: { default: "transparent", ":hover": "rgb(239 243 244 / 10%)" },
+    borderColor: "#536471",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderRadius: 9999,
+    font: "inherit",
+    fontWeight: 700,
+    cursor: "pointer",
+    transitionProperty: "background-color",
+    transitionDuration: "0.2s",
+    outlineColor: { default: null, ":focus-visible": appColors.blue },
+    outlineStyle: { default: null, ":focus-visible": "solid" },
+    outlineWidth: { default: null, ":focus-visible": 2 },
+    outlineOffset: { default: null, ":focus-visible": 2 },
+  },
+  identity: { boxSizing: "border-box", marginTop: 8 },
+  name: {
+    boxSizing: "border-box",
+    margin: 0,
+    fontSize: 20,
+    fontWeight: 800,
+    lineHeight: "24px",
+  },
+  handle: {
+    boxSizing: "border-box",
+    display: "block",
+    color: appColors.muted,
+    fontSize: 15,
+    lineHeight: "20px",
+  },
+  bio: {
+    boxSizing: "border-box",
+    marginBlockStart: 12,
+    marginBlockEnd: 0,
+    fontSize: 15,
+    lineHeight: "20px",
+    whiteSpace: "pre-line",
+  },
+  details: {
+    boxSizing: "border-box",
+    display: "flex",
+    marginTop: 10,
+    flexWrap: "wrap",
+    flexDirection: { default: "row", [MOBILE]: "column" },
+    columnGap: 12,
+    rowGap: { default: 4, [MOBILE]: 0 },
+    color: appColors.muted,
+    fontSize: 15,
+    lineHeight: "20px",
+  },
+  detail: {
+    boxSizing: "border-box",
+    display: "inline-flex",
+    minWidth: 0,
+    maxWidth: "100%",
+    alignItems: "center",
+    gap: 4,
+    whiteSpace: "nowrap",
+  },
+  link: {
+    color: appColors.blue,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  counts: {
+    boxSizing: "border-box",
+    display: "flex",
+    marginTop: 12,
+    gap: 20,
+    color: appColors.muted,
+    fontSize: 14,
+    lineHeight: "20px",
+  },
+  countStrong: { color: appColors.text, fontWeight: 700 },
+});

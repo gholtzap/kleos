@@ -22,7 +22,7 @@ describe("Experience", () => {
     expect(button?.getAttribute("aria-expanded")).toBe("false");
     expect(container.textContent).not.toContain("Member of Technical Staff");
     expect(
-      Array.from(container.querySelectorAll<HTMLImageElement>(".experience-mark img"))
+      Array.from(container.querySelectorAll<HTMLImageElement>('img[src^="/company-logos/"]'))
         .map((image) => image.getAttribute("src")),
     ).toEqual([
       "/company-logos/vercel.png",

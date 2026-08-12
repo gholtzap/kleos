@@ -1,12 +1,13 @@
+import * as stylex from "@stylexjs/stylex";
 import { useRef, useState } from "react";
+import { appSurfaceStyles } from "../app-surface";
 import type { AccountIdentity } from "../types/profile";
-import "../app-surface.css";
 import { PostComposer } from "./PostComposer";
 import { DiscoveryRail } from "./DiscoveryRail";
 import { PostPlaceholderList } from "./PostPlaceholderList";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "./use-app-surface";
-import "./app-layout.css";
+import { appLayoutStyles } from "./app-layout";
 
 interface HomePageProps {
   account: AccountIdentity;
@@ -30,9 +31,9 @@ export function HomePage({ account }: HomePageProps) {
   }
 
   return (
-    <div className="app-surface">
-      <div className="app-layout">
-        <div className="app-layout__sidebar">
+    <div {...stylex.props(appSurfaceStyles.root)}>
+      <div {...stylex.props(appLayoutStyles.root)}>
+        <div {...stylex.props(appLayoutStyles.sidebar)}>
           <Sidebar
             account={account}
             activeItem="Home"
@@ -40,25 +41,25 @@ export function HomePage({ account }: HomePageProps) {
           />
         </div>
 
-        <main className="app-layout__timeline">
+        <main {...stylex.props(appLayoutStyles.timeline)}>
           <section aria-label="Home feed">
             <div ref={composerRegion}>
               <PostComposer onPost={addPost} />
             </div>
             {showNewPosts ? (
               <button
-                className="app-layout__new-posts"
+                {...stylex.props(appLayoutStyles.newPosts)}
                 onClick={() => setShowNewPosts(false)}
                 type="button"
               >
-                <span aria-hidden="true" />
+                <span {...stylex.props(appLayoutStyles.newPostsMark)} aria-hidden="true" />
               </button>
             ) : null}
             <PostPlaceholderList count={postCount} />
           </section>
         </main>
 
-        <div className="app-layout__discovery">
+        <div {...stylex.props(appLayoutStyles.discovery)}>
           <DiscoveryRail />
         </div>
       </div>

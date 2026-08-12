@@ -2,14 +2,17 @@ import { ClerkProvider, useAuth, useUser } from "@clerk/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/manrope";
-import App from "./App";
+import App, { KleosMessage } from "./App";
 import { HomePage } from "./components/HomePage";
 import { ProfilePage } from "./components/ProfilePage";
 import { accountHandle, signedInPageFromPath } from "./lib";
 import { publicProfileIdFromHash } from "./public-profile";
 import { reviewTokenFromHash } from "./review-links";
+import { enableStylexDevelopmentStyles } from "./stylex-dev";
 import { useLocationHash } from "./use-location-hash";
-import "./styles.css";
+import "./global.css";
+
+enableStylexDevelopmentStyles();
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Missing root element.");
@@ -29,7 +32,7 @@ function ClerkApplication() {
   if (sharedPage) return <App />;
 
   if (!isLoaded || !userLoaded) {
-    return <p className="kleos-message">Loading Kleos…</p>;
+    return <KleosMessage>Loading Kleos…</KleosMessage>;
   }
 
   if (isSignedIn && user) {
