@@ -3,13 +3,13 @@ import {
   CaretDoubleRightIcon,
   DotsThreeIcon,
   HouseIcon,
+  NotePencilIcon,
   UserIcon,
   type Icon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { AccountIdentity } from "../types/profile";
 import { profilePath } from "../lib";
-import { ComposeIcon } from "./icons";
 import "./sidebar.css";
 
 interface SidebarProps {
@@ -104,7 +104,7 @@ export function Sidebar({
         type="button"
       >
         <span>Post</span>
-        <ComposeIcon />
+        <NotePencilIcon aria-hidden="true" />
       </button>
 
       <a
