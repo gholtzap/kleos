@@ -6,8 +6,8 @@ import {
   isRecord,
   normalizeKleosRecord,
   publicKleosRecord,
-} from "../src/kleos";
-import type { KleosRecord } from "../src/types";
+} from "../src/kleos.js";
+import type { KleosRecord } from "../src/types.js";
 
 export { isRecord };
 

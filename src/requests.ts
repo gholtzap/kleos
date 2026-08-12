@@ -2,11 +2,11 @@ import {
   includesValue,
   isRecord,
   isStringArray,
-} from "./kleos";
+} from "./kleos.js";
 import type {
   NewProfessionalRequest,
   RequestKind,
-} from "./types";
+} from "./types.js";
 
 export const requestKinds: readonly RequestKind[] = [
   "Hiring",

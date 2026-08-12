@@ -4,8 +4,8 @@ import {
   MAX_PROJECT_TOPICS,
   normalizeGithubAccount,
   validGithubRepoName,
-} from "./github";
-import { ownershipLevels } from "./types";
+} from "./github.js";
+import { ownershipLevels } from "./types.js";
 import type {
   Claim,
   ClaimState,
@@ -19,7 +19,7 @@ import type {
   Person,
   Privacy,
   Profession,
-} from "./types";
+} from "./types.js";
 
 const professions: readonly Profession[] = [
   "Engineering",

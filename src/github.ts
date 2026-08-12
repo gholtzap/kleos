@@ -1,8 +1,8 @@
-import type { FeaturedProject } from "./types";
+import type { FeaturedProject } from "./types.js";
 import {
   sessionAuthorizationHeader,
   type SessionTokenGetter,
-} from "./api-client";
+} from "./api-client.js";
 
 export const MAX_FEATURED_PROJECTS = 6;
 export const MAX_PROJECT_DESCRIPTION_LENGTH = 1_000;

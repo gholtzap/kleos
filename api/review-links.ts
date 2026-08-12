@@ -1,10 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { reviewKleosRecord } from "../src/kleos";
+import { reviewKleosRecord } from "../src/kleos.js";
 import type {
   CreatedReviewLink,
   ReviewBundle,
   ReviewLinkSummary,
-} from "../src/types";
+} from "../src/types.js";
 import {
   authenticatedUserId,
   enforceRateLimit,
@@ -21,7 +21,7 @@ import {
   stringArray,
   type ApiRequest,
   type ApiResponse,
-} from "./_shared";
+} from "./_shared.js";
 
 const MAX_EXPIRY_DAYS = 90;
 const MAX_ACTIVE_LINKS = 100;

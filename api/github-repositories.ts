@@ -9,7 +9,7 @@ import {
   privateResponse,
   sendRateLimit,
   verifiedGithubAccount,
-} from "./_shared";
+} from "./_shared.js";
 
 const GITHUB_API_VERSION = "2022-11-28";
 
