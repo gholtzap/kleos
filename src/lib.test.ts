@@ -6,6 +6,7 @@ import {
   discoveryProjection,
   evidenceForClaims,
   includesValue,
+  isOwnership,
   isStringArray,
   mergeOwnerKleosRecord,
   normalizeKleosRecord,
@@ -28,6 +29,8 @@ describe("Kleos domain fixtures", () => {
     const evidence = evidenceForClaims(initialClaims);
     expect(includesValue(["one", "two"] as const, "two")).toBe(true);
     expect(includesValue(["one", "two"] as const, "three")).toBe(false);
+    expect(isOwnership("Accountable owner")).toBe(true);
+    expect(isOwnership("Unknown")).toBe(false);
     expect(isStringArray(["one", "two"])).toBe(true);
     expect(isStringArray(["one", 2])).toBe(false);
     expect(accountHandle("ada", "ada@example.com", "user-1")).toBe("@ada");

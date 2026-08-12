@@ -1,4 +1,4 @@
-import { includesValue, normalizeKleosRecord } from "../src/kleos";
+import { isOwnership, normalizeKleosRecord } from "../src/kleos";
 import type {
   Claim,
   DiscoveryResult,
@@ -18,12 +18,6 @@ import {
 } from "./_shared";
 
 const PAGE_SIZE = 20;
-const ownershipLevels: readonly Ownership[] = [
-  "Contributor",
-  "Major contributor",
-  "Lead",
-  "Accountable owner",
-];
 
 function normalizedParameter(
   value: string | undefined,
@@ -31,10 +25,6 @@ function normalizedParameter(
 ): string | null {
   const normalized = value?.trim() ?? "";
   return normalized.length <= maximumLength ? normalized : null;
-}
-
-function ownershipParameter(value: string): Ownership | null {
-  return includesValue(ownershipLevels, value) ? value : null;
 }
 
 function claimText(claim: Claim): string {
@@ -108,7 +98,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
   ) {
     return response.status(400).json({ error: "Invalid discovery query." });
   }
-  const ownership = ownershipParameter(ownershipValue);
+  const ownership = isOwnership(ownershipValue) ? ownershipValue : null;
   if (ownershipValue && !ownership) {
     return response.status(400).json({ error: "Invalid ownership level." });
   }
