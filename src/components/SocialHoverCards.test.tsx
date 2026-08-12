@@ -53,6 +53,19 @@ describe("SocialHoverCards", () => {
     act(() => root.unmount());
   });
 
+  it("closes an open button when it is selected again", () => {
+    const { container, root } = render(
+      <SocialHoverCards defaultValue="code" items={items} />,
+    );
+    const button = container.querySelector("button");
+
+    expect(button?.getAttribute("aria-expanded")).toBe("true");
+    act(() => button?.click());
+    expect(button?.getAttribute("aria-expanded")).toBe("false");
+
+    act(() => root.unmount());
+  });
+
   it("reports controlled changes without owning the value", () => {
     const changes: string[] = [];
     const { container, root } = render(

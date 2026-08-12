@@ -6,14 +6,17 @@
 .social-hover-cards {
   position: relative;
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .social-hover-cards__trigger {
   display: flex;
-  width: 40px;
-  height: 40px;
-  padding: 8px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
   align-items: center;
   justify-content: center;
   gap: 8px;

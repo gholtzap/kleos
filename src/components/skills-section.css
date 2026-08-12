@@ -13,6 +13,7 @@
 
 .skills-section details > summary {
   display: flex;
+  min-height: 44px;
   align-items: center;
   justify-content: space-between;
   gap: 24px;

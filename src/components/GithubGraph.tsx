@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { normalizeGithubAccount } from "../github";
 import "./github-graph.css";
 
@@ -148,6 +148,7 @@ export function GithubGraph({
   data,
 }: GithubGraphProps) {
   const reducedMotion = useReducedMotion();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const normalizedAccount = useMemo(() => normalizeGithubAccount(account), [account]);
   const [resource, setResource] = useState<ResourceState>(() =>
     data ? { status: "ready", contributions: data } : { status: "loading" },
@@ -204,6 +205,11 @@ export function GithubGraph({
   );
   const colors = VARIANTS[variant];
 
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current;
+    if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+  }, [weeks]);
+
   return (
     <div className="github-graph" aria-busy={resource.status === "loading"}>
       {showAccount ? <p className="github-graph__account">@{normalizedAccount ?? account}</p> : null}
@@ -219,7 +225,7 @@ export function GithubGraph({
       ) : null}
 
       {resource.status === "ready" && weeks.length > 0 ? (
-        <div className="github-graph__scroll">
+        <div className="github-graph__scroll" ref={scrollRef}>
           <div className="github-graph__grid" role="grid" aria-label={`GitHub contributions for ${normalizedAccount ?? account}`}>
             {weeks.map((week, weekIndex) => (
               <div className="github-graph__week" role="row" key={week[0]?.date ?? weekIndex}>
