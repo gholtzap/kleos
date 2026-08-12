@@ -1,8 +1,8 @@
 import {
   applyEvidenceReviewDecision,
   normalizeEvidence,
-} from "../src/kleos";
-import type { EvidenceReviewItem } from "../src/types";
+} from "../src/kleos.js";
+import type { EvidenceReviewItem } from "../src/types.js";
 import {
   authenticatedUserId,
   enforceRateLimit,
@@ -18,7 +18,7 @@ import {
   sql,
   type ApiRequest,
   type ApiResponse,
-} from "./_shared";
+} from "./_shared.js";
 
 interface ReviewDecision {
   ownerId: string;

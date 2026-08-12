@@ -2,7 +2,7 @@ import {
   kleosRecordContentIsValid,
   mergeOwnerKleosRecord,
   normalizeSubmittedKleosRecord,
-} from "../src/kleos";
+} from "../src/kleos.js";
 import {
   authenticatedUserId,
   enforceRateLimit,
@@ -18,7 +18,7 @@ import {
   saveKleosRecord,
   sendRateLimit,
   verifiedGithubUsername,
-} from "./_shared";
+} from "./_shared.js";
 
 const MAX_RECORD_BYTES = 100_000;
 

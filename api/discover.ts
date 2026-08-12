@@ -1,11 +1,11 @@
-import { isOwnership, normalizeKleosRecord } from "../src/kleos";
+import { isOwnership, normalizeKleosRecord } from "../src/kleos.js";
 import type {
   Claim,
   DiscoveryResult,
   KleosRecord,
   Ownership,
   ResultPage,
-} from "../src/types";
+} from "../src/types.js";
 import {
   enforceRateLimit,
   first,
@@ -15,7 +15,7 @@ import {
   sql,
   type ApiRequest,
   type ApiResponse,
-} from "./_shared";
+} from "./_shared.js";
 
 const PAGE_SIZE = 20;
 

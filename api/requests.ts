@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { includesValue, normalizePerson } from "../src/kleos";
+import { includesValue, normalizePerson } from "../src/kleos.js";
 import {
   normalizeNewProfessionalRequest,
   requestKinds,
-} from "../src/requests";
+} from "../src/requests.js";
 import type {
   ProfessionalRequest,
   RequestKind,
   ResultPage,
-} from "../src/types";
+} from "../src/types.js";
 import {
   authenticatedUserId,
   enforceRateLimit,
@@ -24,7 +24,7 @@ import {
   stringArray,
   type ApiRequest,
   type ApiResponse,
-} from "./_shared";
+} from "./_shared.js";
 
 const PAGE_SIZE = 20;
 const MAX_ACTIVE_REQUESTS = 100;

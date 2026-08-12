@@ -7,7 +7,7 @@ import {
   sql,
   type ApiRequest,
   type ApiResponse,
-} from "./_shared";
+} from "./_shared.js";
 
 function authorized(request: ApiRequest): boolean {
   const configured = process.env.CRON_SECRET;
