@@ -1,12 +1,12 @@
 import { useState } from "react";
 
-import "./x-composer.css";
+import "./post-composer.css";
 
-interface XComposerProps {
+interface PostComposerProps {
   onPost: (text: string) => void;
 }
 
-export function XComposer({ onPost }: XComposerProps) {
+export function PostComposer({ onPost }: PostComposerProps) {
   const [text, setText] = useState("");
   const postText = text.trim();
 
@@ -18,13 +18,13 @@ export function XComposer({ onPost }: XComposerProps) {
   }
 
   return (
-    <section className="x-composer" aria-label="Create a post">
-      <span aria-hidden="true" className="x-composer__avatar-placeholder" />
+    <section className="post-composer" aria-label="Create a post">
+      <span aria-hidden="true" className="post-composer__avatar-placeholder" />
 
-      <div className="x-composer__content">
-        <div className="x-composer__input-shell">
+      <div className="post-composer__content">
+        <div className="post-composer__input-shell">
           <textarea
-            className="x-composer__input"
+            className="post-composer__input"
             aria-label="Post text"
             placeholder="What’s happening?"
             rows={1}
@@ -33,9 +33,9 @@ export function XComposer({ onPost }: XComposerProps) {
           />
         </div>
 
-        <div className="x-composer__toolbar">
+        <div className="post-composer__toolbar">
           <button
-            className="x-composer__post"
+            className="post-composer__post"
             type="button"
             disabled={!postText}
             onClick={submitPost}

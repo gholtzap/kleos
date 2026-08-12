@@ -2,38 +2,38 @@ import {
   ArrowLeftIcon,
   PlanetIcon,
 } from "@phosphor-icons/react";
-import "./x-profile-top-bar.css";
+import "./profile-top-bar.css";
 
-interface XProfileTopBarProps {
+interface ProfileTopBarProps {
   count: string;
   name: string;
   onBack: () => void;
   onProfileSummary: () => void;
 }
 
-export function XProfileTopBar({
+export function ProfileTopBar({
   count,
   name,
   onBack,
   onProfileSummary,
-}: XProfileTopBarProps) {
+}: ProfileTopBarProps) {
   return (
-    <header className="x-profile-top-bar">
+    <header className="profile-top-bar">
       <button
         aria-label="Back"
-        className="x-profile-top-bar__back"
+        className="profile-top-bar__back"
         onClick={onBack}
         type="button"
       >
         <ArrowLeftIcon aria-hidden="true" size={20} />
       </button>
 
-      <div className="x-profile-top-bar__copy">
+      <div className="profile-top-bar__copy">
         <strong>{name}</strong>
         <span>{count}</span>
       </div>
 
-      <div className="x-profile-top-bar__actions">
+      <div className="profile-top-bar__actions">
         <button aria-label="Profile Summary" onClick={onProfileSummary} type="button">
           <PlanetIcon aria-hidden="true" size={20} />
         </button>

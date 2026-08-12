@@ -3,37 +3,37 @@ import {
   defaultProfileDetails,
   loadEditableProfile,
   saveEditableProfile,
-} from "../x-profile-data";
+} from "../profile-data";
 import type {
-  XAccountIdentity,
-  XEditableProfile,
-  XProfileRecord,
-  XProfileTab,
-} from "../types/x-profile";
-import "../x-home.css";
+  AccountIdentity,
+  EditableProfile,
+  ProfileRecord,
+  ProfileTab,
+} from "../types/profile";
+import "../app-surface.css";
 import { Experience } from "./Experience";
-import "./x-home-clone.css";
-import { XProfileEditDialog } from "./XProfileEditDialog";
-import { XProfileHero } from "./XProfileHero";
-import { XProfileTabs } from "./XProfileTabs";
-import { XProfileTopBar } from "./XProfileTopBar";
-import { XSidebar } from "./XSidebar";
-import { useXSurface } from "./use-x-surface";
-import "./x-frozune-profile-clone.css";
+import "./app-layout.css";
+import { ProfileEditDialog } from "./ProfileEditDialog";
+import { ProfileHero } from "./ProfileHero";
+import { ProfileTabs } from "./ProfileTabs";
+import { ProfileTopBar } from "./ProfileTopBar";
+import { Sidebar } from "./Sidebar";
+import { useAppSurface } from "./use-app-surface";
+import "./profile-page.css";
 
-function countForTab(tab: XProfileTab) {
+function countForTab(tab: ProfileTab) {
   if (tab === "Media") return defaultProfileDetails.mediaCount;
   if (tab === "Likes") return defaultProfileDetails.likeCount;
   return defaultProfileDetails.postCount;
 }
 
-interface XFrozuneProfileCloneProps {
-  account: XAccountIdentity;
+interface ProfilePageProps {
+  account: AccountIdentity;
 }
 
-export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
-  const [selectedTab, setSelectedTab] = useState<XProfileTab>("Posts");
-  const [editableProfile, setEditableProfile] = useState<XEditableProfile>(() =>
+export function ProfilePage({ account }: ProfilePageProps) {
+  const [selectedTab, setSelectedTab] = useState<ProfileTab>("Posts");
+  const [editableProfile, setEditableProfile] = useState<EditableProfile>(() =>
     loadEditableProfile(account.handle),
   );
   const [editorOpen, setEditorOpen] = useState(false);
@@ -41,13 +41,13 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
-  const profile: XProfileRecord = {
+  const profile: ProfileRecord = {
     ...defaultProfileDetails,
     ...editableProfile,
     ...account,
   };
 
-  useXSurface(`${account.name} (${account.handle}) / Kleos`, "x-profile");
+  useAppSurface(`${account.name} (${account.handle}) / Kleos`);
 
   function goBack() {
     if (window.history.length > 1) window.history.back();
@@ -58,7 +58,7 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
     heroRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function saveProfile(nextProfile: XEditableProfile) {
+  function saveProfile(nextProfile: EditableProfile) {
     setEditableProfile(nextProfile);
     saveEditableProfile(account.handle, nextProfile);
     setEditorOpen(false);
@@ -66,10 +66,10 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
   }
 
   return (
-    <div className="x-home-root">
-      <div className="x-home-clone x-frozune-profile__layout">
-        <div className="x-home-clone__sidebar">
-          <XSidebar
+    <div className="app-surface">
+      <div className="app-layout profile-page__layout">
+        <div className="app-layout__sidebar">
+          <Sidebar
             account={account}
             activeItem="Profile"
             collapsible
@@ -77,26 +77,26 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
           />
         </div>
 
-        <main className="x-home-clone__timeline x-frozune-profile__timeline">
-          <XProfileTopBar
+        <main className="app-layout__timeline profile-page__timeline">
+          <ProfileTopBar
             count={countForTab(selectedTab)}
             name={account.name}
             onBack={goBack}
             onProfileSummary={showProfileSummary}
           />
           <div ref={heroRef}>
-            <XProfileHero profile={profile} onEdit={() => setEditorOpen(true)} />
+            <ProfileHero profile={profile} onEdit={() => setEditorOpen(true)} />
           </div>
           <Experience />
-          <span className="x-frozune-profile__status" role="status">{editMessage}</span>
-          <XProfileTabs selectedTab={selectedTab} onSelect={setSelectedTab} />
+          <span className="profile-page__status" role="status">{editMessage}</span>
+          <ProfileTabs selectedTab={selectedTab} onSelect={setSelectedTab} />
           <div
-            id="x-profile-panel"
+            id="profile-panel"
             ref={feedRef}
             role="tabpanel"
-            aria-labelledby={`x-profile-tab-${selectedTab.toLowerCase()}`}
+            aria-labelledby={`profile-tab-${selectedTab.toLowerCase()}`}
           >
-            <section className="x-frozune-profile__empty-state">
+            <section className="profile-page__empty-state">
               <h2>No {selectedTab.toLowerCase()} yet</h2>
               <p>This part of your profile is empty.</p>
             </section>
@@ -104,7 +104,7 @@ export function XFrozuneProfileClone({ account }: XFrozuneProfileCloneProps) {
         </main>
       </div>
       {editorOpen ? (
-        <XProfileEditDialog
+        <ProfileEditDialog
           account={account}
           profile={editableProfile}
           onCancel={() => setEditorOpen(false)}

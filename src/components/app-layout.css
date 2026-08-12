@@ -1,4 +1,4 @@
-.x-home-clone {
+.app-layout {
   display: grid;
   width: min(100%, 1249px);
   min-height: 100dvh;
@@ -6,42 +6,42 @@
   grid-template-columns: 267px 600px 30px minmax(290px, 350px);
 }
 
-.x-home-clone__sidebar {
+.app-layout__sidebar {
   position: sticky;
   top: 0;
   height: 100dvh;
   grid-column: 1;
 }
 
-.x-home-clone__timeline {
+.app-layout__timeline {
   width: 600px;
   min-width: 0;
   grid-column: 2;
-  border-right: 1px solid var(--x-border);
-  border-left: 1px solid var(--x-border);
+  border-right: 1px solid var(--app-border);
+  border-left: 1px solid var(--app-border);
 }
 
-.x-home-clone__posts {
+.app-layout__posts {
   width: 100%;
 }
 
-.x-home-clone__new-posts {
+.app-layout__new-posts {
   width: 100%;
   height: 49px;
   padding: 0;
-  color: var(--x-blue);
+  color: var(--app-blue);
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--x-border);
+  border-bottom: 1px solid var(--app-border);
   cursor: pointer;
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.x-home-clone__new-posts:hover {
+.app-layout__new-posts:hover {
   background: rgb(231 233 234 / 2.4%);
 }
 
-.x-home-clone__new-posts span {
+.app-layout__new-posts span {
   display: block;
   width: 96px;
   height: 10px;
@@ -50,18 +50,18 @@
   border-radius: 9999px;
 }
 
-.x-home-clone__new-posts:focus-visible {
-  outline: 2px solid var(--x-blue);
+.app-layout__new-posts:focus-visible {
+  outline: 2px solid var(--app-blue);
   outline-offset: -2px;
 }
 
-.x-home-clone__discovery {
+.app-layout__discovery {
   width: 100%;
   grid-column: 4;
 }
 
 @media (min-width: 1160px) and (max-width: 1264px) {
-  .x-home-clone {
+  .app-layout {
     width: 100%;
     max-width: 1200px;
     grid-template-columns: minmax(250px, 1fr) 600px 20px 290px;
@@ -69,30 +69,30 @@
 }
 
 @media (min-width: 1005px) and (max-width: 1159px) {
-  .x-home-clone {
+  .app-layout {
     width: min(100%, 978px);
     grid-template-columns: 68px 600px 20px 290px;
   }
 }
 
 @media (max-width: 1004px) {
-  .x-home-clone {
+  .app-layout {
     width: 668px;
     grid-template-columns: 68px 600px;
   }
 
-  .x-home-clone__discovery {
+  .app-layout__discovery {
     display: none;
   }
 }
 
 @media (max-width: 699px) {
-  .x-home-clone {
+  .app-layout {
     width: 100%;
     grid-template-columns: 68px minmax(0, 1fr);
   }
 
-  .x-home-clone__timeline {
+  .app-layout__timeline {
     width: 100%;
   }
 }

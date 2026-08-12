@@ -1,0 +1,41 @@
+.app-surface {
+  --app-background: #000;
+  --app-border: #2f3336;
+  --app-blue: #1d9bf0;
+  --app-green: #00ba7c;
+  --app-pink: #f91880;
+  --app-text: #e7e9ea;
+  --app-muted: #71767b;
+  min-height: 100dvh;
+  color: var(--app-text);
+  background: var(--app-background);
+  font-family: "Manrope Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+:root[data-surface="app"] body {
+  background: #000;
+}
+
+:root[data-surface="app"] body::before {
+  display: none;
+}
+
+.app-surface *,
+.app-surface *::before,
+.app-surface *::after {
+  box-sizing: border-box;
+}
+
+.app-surface button,
+.app-surface input,
+.app-surface textarea {
+  color: inherit;
+  font: inherit;
+}
+
+.app-surface button,
+.app-surface a {
+  -webkit-tap-highlight-color: transparent;
+}

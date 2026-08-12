@@ -5,7 +5,7 @@ import {
   defaultProfileDetails,
   loadEditableProfile,
   saveEditableProfile,
-} from "./x-profile-data";
+} from "./profile-data";
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -59,22 +59,25 @@ describe("Editable profile storage", () => {
       website: defaultProfileDetails.website,
     });
 
-    localStorage.setItem("kleos:x-profile:@ada", "{} ");
+    localStorage.setItem("kleos:profile:@ada", "{} ");
     expect(loadEditableProfile("@ada")).toEqual({
       bio: defaultProfileDetails.bio,
       website: defaultProfileDetails.website,
     });
   });
 
-  it("reads profiles saved under the previous brand key", () => {
-    localStorage.setItem(
-      "folio:x-profile:@ada",
-      JSON.stringify({ bio: "Existing biography.", website: "ada.example" }),
-    );
+  it("reads profiles saved under the previous storage keys", () => {
+    for (const key of ["kleos:x-profile:@ada", "folio:x-profile:@ada"]) {
+      localStorage.clear();
+      localStorage.setItem(
+        key,
+        JSON.stringify({ bio: "Existing biography.", website: "ada.example" }),
+      );
 
-    expect(loadEditableProfile("@ada")).toEqual({
-      bio: "Existing biography.",
-      website: "ada.example",
-    });
+      expect(loadEditableProfile("@ada")).toEqual({
+        bio: "Existing biography.",
+        website: "ada.example",
+      });
+    }
   });
 });

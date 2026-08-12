@@ -1,4 +1,4 @@
-.x-profile-top-bar {
+.profile-top-bar {
   position: sticky;
   z-index: 10;
   top: 0;
@@ -6,12 +6,12 @@
   align-items: center;
   width: 100%;
   height: 53px;
-  color: var(--x-text, #e7e9ea);
+  color: var(--app-text, #e7e9ea);
   background: rgb(0 0 0 / 90%);
   backdrop-filter: blur(12px);
 }
 
-.x-profile-top-bar button {
+.profile-top-bar button {
   appearance: none;
   display: grid;
   width: 36px;
@@ -26,22 +26,22 @@
   transition: background-color 0.2s;
 }
 
-.x-profile-top-bar button:hover {
+.profile-top-bar button:hover {
   background: rgba(239, 243, 244, 0.1);
 }
 
-.x-profile-top-bar button:focus-visible {
-  outline: 2px solid var(--x-blue, #1d9bf0);
+.profile-top-bar button:focus-visible {
+  outline: 2px solid var(--app-blue, #1d9bf0);
   outline-offset: 2px;
 }
 
-.x-profile-top-bar .x-profile-top-bar__back {
+.profile-top-bar .profile-top-bar__back {
   width: 56px;
   height: 53px;
   border-radius: 0;
 }
 
-.x-profile-top-bar__back svg {
+.profile-top-bar__back svg {
   padding: 8px;
   overflow: visible;
   border-radius: 50%;
@@ -49,15 +49,15 @@
   transition: background-color 0.2s;
 }
 
-.x-profile-top-bar__back:hover {
+.profile-top-bar__back:hover {
   background: transparent !important;
 }
 
-.x-profile-top-bar__back:hover svg {
+.profile-top-bar__back:hover svg {
   background: rgba(239, 243, 244, 0.1);
 }
 
-.x-profile-top-bar__copy {
+.profile-top-bar__copy {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -65,7 +65,7 @@
   padding-left: 16px;
 }
 
-.x-profile-top-bar__copy strong {
+.profile-top-bar__copy strong {
   overflow: hidden;
   font-size: 20px;
   font-weight: 700;
@@ -74,7 +74,7 @@
   white-space: nowrap;
 }
 
-.x-profile-top-bar__copy span {
+.profile-top-bar__copy span {
   overflow: hidden;
   color: #71767b;
   font-size: 13px;
@@ -83,7 +83,7 @@
   white-space: nowrap;
 }
 
-.x-profile-top-bar__actions {
+.profile-top-bar__actions {
   display: flex;
   align-items: center;
   padding-right: 16px;

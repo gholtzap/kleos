@@ -1,13 +1,13 @@
-.x-sidebar {
+.sidebar {
   display: flex;
   flex-direction: column;
   width: 259px;
   min-height: 100dvh;
   padding: 0;
-  color: var(--x-text, #e7e9ea);
+  color: var(--app-text, #e7e9ea);
 }
 
-.x-sidebar button {
+.sidebar button {
   appearance: none;
   border: 0;
   color: inherit;
@@ -17,19 +17,19 @@
   cursor: pointer;
 }
 
-.x-sidebar a {
+.sidebar a {
   color: inherit;
   text-decoration: none;
 }
 
-.x-sidebar__header {
+.sidebar__header {
   display: flex;
   width: 259px;
   align-items: center;
   justify-content: space-between;
 }
 
-.x-sidebar__logo {
+.sidebar__logo {
   display: flex;
   width: fit-content;
   height: 52px;
@@ -39,35 +39,35 @@
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.x-sidebar__logo:hover,
-.x-sidebar__navigation-button:hover,
-.x-sidebar__account:hover {
+.sidebar__logo:hover,
+.sidebar__navigation-button:hover,
+.sidebar__account:hover {
   background-color: rgba(231, 233, 234, 0.024);
 }
 
-.x-sidebar__logo:focus-visible,
-.x-sidebar__toggle:focus-visible,
-.x-sidebar__navigation-button:focus-visible,
-.x-sidebar__post:focus-visible,
-.x-sidebar__account:focus-visible {
-  outline: 2px solid var(--x-blue, #1d9bf0);
+.sidebar__logo:focus-visible,
+.sidebar__toggle:focus-visible,
+.sidebar__navigation-button:focus-visible,
+.sidebar__post:focus-visible,
+.sidebar__account:focus-visible {
+  outline: 2px solid var(--app-blue, #1d9bf0);
   outline-offset: 2px;
 }
 
-.x-sidebar__wordmark {
+.sidebar__wordmark {
   font-size: 22px;
   font-weight: 750;
   letter-spacing: -0.04em;
   line-height: 28px;
 }
 
-.x-sidebar__mark {
+.sidebar__mark {
   display: none;
   width: 28px;
   height: 28px;
 }
 
-.x-sidebar__toggle {
+.sidebar__toggle {
   display: grid;
   width: 36px;
   height: 36px;
@@ -77,28 +77,28 @@
   transition: background-color 0.2s;
 }
 
-.x-sidebar__toggle:hover {
+.sidebar__toggle:hover {
   background: rgba(239, 243, 244, 0.1);
 }
 
-.x-sidebar__navigation {
+.sidebar__navigation {
   margin-top: 6px;
 }
 
-.x-sidebar__navigation ul {
+.sidebar__navigation ul {
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-.x-sidebar__navigation li {
+.sidebar__navigation li {
   display: flex;
   align-items: center;
   height: 58.25px;
   padding: 4px 0;
 }
 
-.x-sidebar__navigation-button {
+.sidebar__navigation-button {
   display: flex;
   align-items: center;
   width: fit-content;
@@ -111,15 +111,15 @@
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.x-sidebar__navigation-button[aria-current="page"] {
+.sidebar__navigation-button[aria-current="page"] {
   font-weight: 700;
 }
 
-.x-sidebar__navigation-button svg {
+.sidebar__navigation-button svg {
   flex: 0 0 auto;
 }
 
-.x-sidebar__post {
+.sidebar__post {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,17 +137,17 @@
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.x-sidebar__post:hover {
+.sidebar__post:hover {
   background: rgb(215, 219, 220) !important;
 }
 
-.x-sidebar__post svg {
+.sidebar__post svg {
   display: none;
   width: 24px;
   height: 24px;
 }
 
-.x-sidebar__account {
+.sidebar__account {
   display: flex;
   align-items: center;
   width: 259px;
@@ -160,7 +160,7 @@
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
-.x-sidebar__account-avatar-placeholder {
+.sidebar__account-avatar-placeholder {
   display: block;
   width: 40px;
   height: 40px;
@@ -169,11 +169,11 @@
   object-fit: cover;
 }
 
-.x-sidebar__account-avatar-placeholder {
+.sidebar__account-avatar-placeholder {
   background: #2f3336;
 }
 
-.x-sidebar__account-text {
+.sidebar__account-text {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -181,104 +181,104 @@
   line-height: 20px;
 }
 
-.x-sidebar__account-text strong {
+.sidebar__account-text strong {
   font-weight: 700;
 }
 
-.x-sidebar__account-text > span {
+.sidebar__account-text > span {
   overflow: hidden;
-  color: var(--x-muted, #71767b);
+  color: var(--app-muted, #71767b);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.x-sidebar--collapsed {
+.sidebar--collapsed {
   align-items: center;
   width: 68px;
 }
 
-.x-sidebar--collapsed .x-sidebar__header {
+.sidebar--collapsed .sidebar__header {
   width: 68px;
   flex-direction: column;
 }
 
-.x-sidebar--collapsed .x-sidebar__logo,
-.x-sidebar--collapsed .x-sidebar__toggle {
+.sidebar--collapsed .sidebar__logo,
+.sidebar--collapsed .sidebar__toggle {
   margin-right: 0;
 }
 
-.x-sidebar--collapsed .x-sidebar__wordmark,
-.x-sidebar--collapsed .x-sidebar__navigation-button span,
-.x-sidebar--collapsed .x-sidebar__post span,
-.x-sidebar--collapsed .x-sidebar__account-text,
-.x-sidebar--collapsed .x-sidebar__account > svg {
+.sidebar--collapsed .sidebar__wordmark,
+.sidebar--collapsed .sidebar__navigation-button span,
+.sidebar--collapsed .sidebar__post span,
+.sidebar--collapsed .sidebar__account-text,
+.sidebar--collapsed .sidebar__account > svg {
   display: none;
 }
 
-.x-sidebar--collapsed .x-sidebar__mark,
-.x-sidebar--collapsed .x-sidebar__post svg {
+.sidebar--collapsed .sidebar__mark,
+.sidebar--collapsed .sidebar__post svg {
   display: block;
 }
 
-.x-sidebar--collapsed .x-sidebar__navigation-button,
-.x-sidebar--collapsed .x-sidebar__post,
-.x-sidebar--collapsed .x-sidebar__account {
+.sidebar--collapsed .sidebar__navigation-button,
+.sidebar--collapsed .sidebar__post,
+.sidebar--collapsed .sidebar__account {
   width: 52px;
   justify-content: center;
   padding: 0;
 }
 
-.x-sidebar--collapsed .x-sidebar__account {
+.sidebar--collapsed .sidebar__account {
   height: 65.555px;
   padding: 6px;
 }
 
 @media (max-width: 1159px) {
-  .x-sidebar {
+  .sidebar {
     align-items: center;
     width: 68px;
   }
 
-  .x-sidebar__header {
+  .sidebar__header {
     width: 68px;
     justify-content: center;
   }
 
-  .x-sidebar__toggle {
+  .sidebar__toggle {
     display: none;
   }
 
-  .x-sidebar__wordmark {
+  .sidebar__wordmark {
     display: none;
   }
 
-  .x-sidebar__mark {
+  .sidebar__mark {
     display: block;
   }
 
-  .x-sidebar__navigation-button {
+  .sidebar__navigation-button {
     width: 52px;
     justify-content: center;
     padding: 0;
   }
 
-  .x-sidebar__navigation-button span,
-  .x-sidebar__post span,
-  .x-sidebar__account-text,
-  .x-sidebar__account > svg {
+  .sidebar__navigation-button span,
+  .sidebar__post span,
+  .sidebar__account-text,
+  .sidebar__account > svg {
     display: none;
   }
 
-  .x-sidebar__post {
+  .sidebar__post {
     width: 52px;
     padding: 0;
   }
 
-  .x-sidebar__post svg {
+  .sidebar__post svg {
     display: block;
   }
 
-  .x-sidebar__account {
+  .sidebar__account {
     width: 52px;
     height: 65.555px;
     justify-content: center;
@@ -287,7 +287,7 @@
 }
 
 @media (max-width: 699px) {
-  .x-sidebar__navigation li {
+  .sidebar__navigation li {
     height: 50.25px;
     padding: 0;
   }

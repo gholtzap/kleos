@@ -3,8 +3,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/manrope";
 import App from "./App";
-import { XHomeClone } from "./components/XHomeClone";
-import { XFrozuneProfileClone } from "./components/XFrozuneProfileClone";
+import { HomePage } from "./components/HomePage";
+import { ProfilePage } from "./components/ProfilePage";
 import { accountHandle, signedInPageFromPath } from "./lib";
 import { publicProfileIdFromHash } from "./public-profile";
 import { reviewTokenFromHash } from "./review-links";
@@ -44,9 +44,9 @@ function ClerkApplication() {
     };
 
     return signedInPageFromPath(window.location.pathname) === "profile" ? (
-      <XFrozuneProfileClone account={account} />
+      <ProfilePage account={account} />
     ) : (
-      <XHomeClone account={account} />
+      <HomePage account={account} />
     );
   }
 

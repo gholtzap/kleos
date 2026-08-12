@@ -1,23 +1,23 @@
 import { useRef, useState } from "react";
-import type { XAccountIdentity } from "../types/x-profile";
-import "../x-home.css";
-import { XComposer } from "./XComposer";
-import { XDiscoveryRail } from "./XDiscoveryRail";
-import { XPostPlaceholderList } from "./XPostPlaceholderList";
-import { XSidebar } from "./XSidebar";
-import { useXSurface } from "./use-x-surface";
-import "./x-home-clone.css";
+import type { AccountIdentity } from "../types/profile";
+import "../app-surface.css";
+import { PostComposer } from "./PostComposer";
+import { DiscoveryRail } from "./DiscoveryRail";
+import { PostPlaceholderList } from "./PostPlaceholderList";
+import { Sidebar } from "./Sidebar";
+import { useAppSurface } from "./use-app-surface";
+import "./app-layout.css";
 
-interface XHomeCloneProps {
-  account: XAccountIdentity;
+interface HomePageProps {
+  account: AccountIdentity;
 }
 
-export function XHomeClone({ account }: XHomeCloneProps) {
+export function HomePage({ account }: HomePageProps) {
   const [showNewPosts, setShowNewPosts] = useState(true);
   const [postCount, setPostCount] = useState(5);
   const composerRegion = useRef<HTMLDivElement>(null);
 
-  useXSurface("Home / Kleos", "x-home");
+  useAppSurface("Home / Kleos");
 
   function focusComposer() {
     composerRegion.current
@@ -30,36 +30,36 @@ export function XHomeClone({ account }: XHomeCloneProps) {
   }
 
   return (
-    <div className="x-home-root">
-      <div className="x-home-clone">
-        <div className="x-home-clone__sidebar">
-          <XSidebar
+    <div className="app-surface">
+      <div className="app-layout">
+        <div className="app-layout__sidebar">
+          <Sidebar
             account={account}
             activeItem="Home"
             onPost={focusComposer}
           />
         </div>
 
-        <main className="x-home-clone__timeline">
+        <main className="app-layout__timeline">
           <section aria-label="Home feed">
             <div ref={composerRegion}>
-              <XComposer onPost={addPost} />
+              <PostComposer onPost={addPost} />
             </div>
             {showNewPosts ? (
               <button
-                className="x-home-clone__new-posts"
+                className="app-layout__new-posts"
                 onClick={() => setShowNewPosts(false)}
                 type="button"
               >
                 <span aria-hidden="true" />
               </button>
             ) : null}
-            <XPostPlaceholderList count={postCount} />
+            <PostPlaceholderList count={postCount} />
           </section>
         </main>
 
-        <div className="x-home-clone__discovery">
-          <XDiscoveryRail />
+        <div className="app-layout__discovery">
+          <DiscoveryRail />
         </div>
       </div>
     </div>
