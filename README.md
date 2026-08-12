@@ -9,8 +9,9 @@
 5. Run `npm run dev`.
 
 Production must set `CLERK_JWT_KEY`, `CLERK_AUTHORIZED_PARTIES`,
-`RATE_LIMIT_SECRET`, and `CRON_SECRET`. Run the database migration before you
-deploy code that uses the new schema.
+`CLERK_SECRET_KEY` (GitHub account verification), `RATE_LIMIT_SECRET`, and
+`CRON_SECRET`. Run the database migration before you deploy code that uses the
+new schema.
 
 ## Checks
 

@@ -1,3 +1,10 @@
+import {
+  featuredProjectId,
+  MAX_PROJECT_DESCRIPTION_LENGTH,
+  MAX_PROJECT_TOPICS,
+  normalizeGithubAccount,
+  validGithubRepoName,
+} from "./github";
 import type {
   Claim,
   ClaimState,
@@ -5,6 +12,7 @@ import type {
   EvidenceAccess,
   EvidenceReviewStatus,
   EvidenceType,
+  FeaturedProject,
   KleosRecord,
   Ownership,
   Person,
@@ -71,6 +79,7 @@ export function normalizePerson(value: unknown): Person | null {
       typeof value.role === "string" &&
       typeof value.location === "string" &&
       typeof value.summary === "string" &&
+      isOptionalString(value.github) &&
       isStringArray(value.expertise) &&
       isStringArray(value.interests) &&
       isStringArray(value.availability) &&
@@ -93,6 +102,7 @@ export function normalizePerson(value: unknown): Person | null {
     role: value.role,
     location: value.location,
     summary: value.summary,
+    github: value.github,
     expertise: value.expertise,
     interests: value.interests,
     availability: value.availability,
@@ -139,6 +149,40 @@ export function normalizeEvidence(value: unknown): Evidence | null {
     reviewNote: value.reviewNote,
     updatedAt: value.updatedAt,
     redacted: value.redacted,
+  };
+}
+
+function isFeaturedProject(value: unknown): value is FeaturedProject {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.owner === "string" &&
+    typeof value.name === "string" &&
+    typeof value.description === "string" &&
+    isOptionalString(value.homepage) &&
+    isOptionalString(value.language) &&
+    isStringArray(value.topics) &&
+    typeof value.stars === "number" &&
+    typeof value.forks === "number" &&
+    typeof value.syncedAt === "string"
+  );
+}
+
+export function normalizeFeaturedProject(
+  value: unknown,
+): FeaturedProject | null {
+  if (!isFeaturedProject(value)) return null;
+  return {
+    id: value.id,
+    owner: value.owner,
+    name: value.name,
+    description: value.description,
+    homepage: value.homepage,
+    language: value.language,
+    topics: value.topics,
+    stars: value.stars,
+    forks: value.forks,
+    syncedAt: value.syncedAt,
   };
 }
 
@@ -200,6 +244,12 @@ export function normalizeKleosRecord(value: unknown): KleosRecord | null {
   if (!person) return null;
   const claims = value.claims.map(normalizeClaim);
   if (claims.some((claim) => claim === null)) return null;
+  const rawProjects = value.projects;
+  if (rawProjects !== undefined && !Array.isArray(rawProjects)) return null;
+  const projects = Array.isArray(rawProjects)
+    ? rawProjects.map(normalizeFeaturedProject)
+    : [];
+  if (projects.some((project) => project === null)) return null;
   return {
     version: 1,
     revision:
@@ -210,6 +260,9 @@ export function normalizeKleosRecord(value: unknown): KleosRecord | null {
         : 0,
     person,
     claims: claims.filter((claim): claim is Claim => claim !== null),
+    projects: projects.filter(
+      (project): project is FeaturedProject => project !== null,
+    ),
   };
 }
 
@@ -250,8 +303,43 @@ function stringListIsValid(
   );
 }
 
+function featuredProjectIsValid(project: FeaturedProject): boolean {
+  return (
+    project.id === featuredProjectId(project.owner, project.name) &&
+    normalizeGithubAccount(project.owner) === project.owner &&
+    validGithubRepoName(project.name) &&
+    project.description.length <= MAX_PROJECT_DESCRIPTION_LENGTH &&
+    (project.homepage === undefined ||
+      (project.homepage.length <= 2_000 &&
+        validEvidenceSourceUrl(project.homepage))) &&
+    (project.language === undefined ||
+      (project.language.trim().length > 0 && project.language.length <= 100)) &&
+    stringListIsValid(project.topics, MAX_PROJECT_TOPICS, 100) &&
+    Number.isSafeInteger(project.stars) &&
+    project.stars >= 0 &&
+    Number.isSafeInteger(project.forks) &&
+    project.forks >= 0 &&
+    project.syncedAt.length <= 50 &&
+    !Number.isNaN(Date.parse(project.syncedAt))
+  );
+}
+
 export function kleosRecordContentIsValid(record: KleosRecord): boolean {
   if (record.claims.length > 50) return false;
+  if (record.projects.length > 12) return false;
+  const github = record.person.github;
+  const projectIds = record.projects.map((project) => project.id);
+  if (
+    new Set(projectIds).size !== projectIds.length ||
+    !record.projects.every(
+      (project) =>
+        featuredProjectIsValid(project) &&
+        github !== undefined &&
+        project.owner.toLowerCase() === github.toLowerCase(),
+    )
+  ) {
+    return false;
+  }
   const person = record.person;
   if (
     person.id.length > 200 ||
@@ -261,6 +349,8 @@ export function kleosRecordContentIsValid(record: KleosRecord): boolean {
     person.role.length > 300 ||
     person.location.length > 300 ||
     person.summary.length > 5_000 ||
+    (person.github !== undefined &&
+      normalizeGithubAccount(person.github) !== person.github) ||
     person.relationship.length > 300 ||
     person.accent.length > 100 ||
     !stringListIsValid(person.expertise, 50, 200) ||
@@ -336,6 +426,7 @@ export function mergeOwnerKleosRecord(
       identityVerified: existing?.person.identityVerified ?? false,
       employmentVerified: existing?.person.employmentVerified ?? false,
     },
+    projects: submitted.projects,
     claims: submitted.claims.map((claim) => {
       const existingClaim = existingClaims.get(claim.id);
       const reviewContextUnchanged =
@@ -483,6 +574,13 @@ export function discoveryProjection(record: KleosRecord): DiscoveryProjection {
     person.role,
     person.location,
     person.summary,
+    person.github ?? "",
+    ...publicRecord.projects.flatMap((project) => [
+      `${project.owner}/${project.name}`,
+      project.description,
+      project.language ?? "",
+      ...project.topics,
+    ]),
     ...person.expertise,
     ...person.interests,
     ...person.availability,
@@ -524,6 +622,7 @@ export function reviewKleosRecord(
   const selectedEvidence = new Set(evidenceIds);
   return {
     ...record,
+    projects: [],
     person: {
       ...record.person,
       expertise: [],

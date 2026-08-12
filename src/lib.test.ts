@@ -56,6 +56,7 @@ describe("Kleos domain fixtures", () => {
       revision: 0,
       person: currentPerson,
       claims: initialClaims,
+      projects: [],
     };
     const published = publicKleosRecord(record);
     const firstPublished = published.claims[0];
@@ -105,6 +106,7 @@ describe("Kleos domain fixtures", () => {
       revision: 0,
       person: currentPerson,
       claims: initialClaims,
+      projects: [],
     };
     const confirmed = initialClaims[0]?.evidence[0];
     expect(confirmed).toBeDefined();
@@ -216,6 +218,7 @@ describe("Kleos domain fixtures", () => {
       revision: 0,
       person: currentPerson,
       claims: [pendingClaim],
+      projects: [],
     };
     const reviewed = applyEvidenceReviewDecision(
       record,
@@ -252,12 +255,14 @@ describe("Kleos domain fixtures", () => {
         revision: 0,
         person: currentPerson,
         claims: initialClaims,
+        projects: [],
       }),
     ).toBeNull();
     expect(
       normalizeSubmittedKleosRecord({
         person: currentPerson,
         claims: initialClaims,
+        projects: [],
       }),
     ).toBeNull();
     expect(
@@ -276,6 +281,7 @@ describe("Kleos domain fixtures", () => {
       revision: 4,
       person: currentPerson,
       claims: initialClaims,
+      projects: [],
     };
     const projection = discoveryProjection(record);
     expect(projection.publicRecord.claims).toHaveLength(2);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { verifyToken } from "@clerk/backend";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { neon } from "@neondatabase/serverless";
 import {
   discoveryProjection,
@@ -125,6 +125,24 @@ export async function authenticatedUserId(
   } catch {
     return null;
   }
+}
+
+export async function verifiedGithubUsername(
+  userId: string,
+): Promise<string | null> {
+  const secretKey = process.env.CLERK_SECRET_KEY?.trim();
+  if (!secretKey) {
+    throw new Error("CLERK_SECRET_KEY is required for GitHub verification.");
+  }
+  const clerk = createClerkClient({ secretKey });
+  const user = await clerk.users.getUser(userId);
+  const account = user.externalAccounts.find(
+    (external) =>
+      external.provider.endsWith("github") &&
+      external.verification?.status === "verified" &&
+      external.username,
+  );
+  return account?.username ?? null;
 }
 
 export async function loadKleosRecord(

@@ -7,6 +7,7 @@ import {
   publicProfileRevisionFromHash,
 } from "./public-profile";
 import { getReviewBundle, reviewTokenFromHash } from "./review-links";
+import { githubRepoUrl } from "./github";
 import { claimState } from "./kleos";
 import type { KleosRecord } from "./types";
 import { useLocationHash } from "./use-location-hash";
@@ -204,6 +205,33 @@ function KleosRecordView({ record }: { record: KleosRecord }) {
           ))}
         </div>
       </section>
+      {record.projects.length ? (
+        <section aria-labelledby="shared-projects-heading">
+          <h2 id="shared-projects-heading">Featured projects</h2>
+          <div className="kleos-claims">
+            {record.projects.map((project) => (
+              <article className="kleos-claim" key={project.id}>
+                <header>
+                  <h3>
+                    <a
+                      href={githubRepoUrl(project)}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {project.owner}/{project.name}
+                    </a>
+                  </h3>
+                  <span>
+                    {project.language ? `${project.language} · ` : ""}
+                    ★ {project.stars}
+                  </span>
+                </header>
+                {project.description ? <p>{project.description}</p> : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }

@@ -37,6 +37,7 @@ describe.runIf(runDatabaseTests)("Kleos database integration", () => {
       revision: 0,
       person: { ...currentPerson, id: ownerId },
       claims: [claim],
+      projects: [],
     };
     expect(await saveKleosRecord(ownerId, record)).toBe(true);
     expect(await loadKleosRecord(ownerId)).toEqual(record);
