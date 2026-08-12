@@ -1,4 +1,8 @@
-import { useReverification, useUser } from "@clerk/react";
+import {
+  useAuth,
+  useReverification,
+  useUser,
+} from "@clerk/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   GitForkIcon,
@@ -25,18 +29,23 @@ type RepoResource =
   | { status: "ready"; repos: GithubRepo[] }
   | { status: "error"; message: string };
 
+type GithubAccountConnection = Pick<
+  NonNullable<ReturnType<typeof useUser>["user"]>["externalAccounts"][number],
+  "destroy" | "reauthorize"
+>;
+
 interface GithubProjectsDialogProps {
-  github: string;
+  githubAccount?: GithubAccountConnection;
   verifiedGithub?: string;
   projects: readonly FeaturedProject[];
   saving: boolean;
   saveError: string;
   onCancel: () => void;
-  onSave: (github: string, projects: FeaturedProject[]) => void;
+  onSave: (github: string, projects: FeaturedProject[]) => Promise<boolean>;
 }
 
 export function GithubProjectsDialog({
-  github,
+  githubAccount,
   verifiedGithub,
   projects,
   saving,
@@ -44,23 +53,33 @@ export function GithubProjectsDialog({
   onCancel,
   onSave,
 }: GithubProjectsDialogProps) {
+  const { getToken } = useAuth();
   const { user } = useUser();
-  const createExternalAccount = useReverification(
-    (params: Parameters<NonNullable<typeof user>["createExternalAccount"]>[0]) =>
-      user?.createExternalAccount(params),
+  const connectExternalAccount = useReverification(
+    (redirectUrl: string) =>
+      githubAccount
+        ? githubAccount.reauthorize({ redirectUrl })
+        : user?.createExternalAccount({
+            strategy: "oauth_github",
+            redirectUrl,
+          }),
+  );
+  const destroyExternalAccount = useReverification(() =>
+    githubAccount?.destroy(),
   );
   const [resource, setResource] = useState<RepoResource>({ status: "idle" });
   const [selected, setSelected] = useState<readonly FeaturedProject[]>(projects);
   const [formError, setFormError] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  function loadRepos(account: string) {
+  function loadRepos() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setResource({ status: "loading" });
-    fetchGithubRepos(account, controller.signal)
+    fetchGithubRepos(getToken, controller.signal)
       .then((repos) => {
         if (controller.signal.aborted) return;
         setResource({
@@ -81,7 +100,7 @@ export function GithubProjectsDialog({
   }
 
   useEffect(() => {
-    if (verifiedGithub) loadRepos(verifiedGithub);
+    if (verifiedGithub) loadRepos();
     return () => abortRef.current?.abort();
     // Load once for the verified account the dialog opened with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,10 +111,7 @@ export function GithubProjectsDialog({
     setVerifying(true);
     setFormError("");
     try {
-      const external = await createExternalAccount({
-        strategy: "oauth_github",
-        redirectUrl: window.location.href,
-      });
+      const external = await connectExternalAccount(window.location.href);
       const redirect = external?.verification?.externalVerificationRedirectURL;
       if (!redirect) throw new Error("Missing verification redirect.");
       window.location.href = redirect.toString();
@@ -130,14 +146,29 @@ export function GithubProjectsDialog({
     setSelected((current) => current.filter((project) => project.id !== id));
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!verifiedGithub) return;
-    onSave(verifiedGithub, [...selected]);
+    if (await onSave(verifiedGithub, [...selected])) onCancel();
   }
 
-  function disconnect() {
-    onSave("", []);
+  async function disconnect() {
+    if (!githubAccount || disconnecting) return;
+    setDisconnecting(true);
+    setFormError("");
+    if (!(await onSave("", []))) {
+      setDisconnecting(false);
+      return;
+    }
+    try {
+      await destroyExternalAccount();
+      onCancel();
+    } catch {
+      setFormError(
+        "Your profile is clear, but Kleos could not remove the GitHub connection. Try again.",
+      );
+      setDisconnecting(false);
+    }
   }
 
   const error = formError || saveError;
@@ -228,7 +259,7 @@ export function GithubProjectsDialog({
                 {resource.message}{" "}
                 <button
                   className="github-projects__retry"
-                  onClick={() => loadRepos(verifiedGithub)}
+                  onClick={loadRepos}
                   type="button"
                 >
                   Retry
@@ -282,14 +313,16 @@ export function GithubProjectsDialog({
               </ul>
             ) : null}
 
-            {github ? (
+            {githubAccount ? (
               <button
                 className="github-projects__disconnect"
-                disabled={saving}
-                onClick={disconnect}
+                disabled={saving || disconnecting}
+                onClick={() => void disconnect()}
                 type="button"
               >
-                Disconnect GitHub and remove featured projects
+                {disconnecting
+                  ? "Disconnecting GitHub…"
+                  : "Disconnect GitHub and remove featured projects"}
               </button>
             ) : null}
           </form>

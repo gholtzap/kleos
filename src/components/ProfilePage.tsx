@@ -64,13 +64,13 @@ export function ProfilePage({ account }: ProfilePageProps) {
     ...account,
   };
 
+  const githubAccount = user?.externalAccounts.find(
+    (external) => external.provider === "github",
+  );
   const verifiedGithub =
-    user?.externalAccounts.find(
-      (external) =>
-        external.provider === "github" &&
-        external.verification?.status === "verified" &&
-        external.username,
-    )?.username ?? undefined;
+    githubAccount?.verification?.status === "verified"
+      ? githubAccount.username
+      : undefined;
 
   useAppSurface(`${account.name} (${account.handle}) / Kleos`);
 
@@ -110,7 +110,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
   async function saveGithubProjects(
     github: string,
     projects: FeaturedProject[],
-  ) {
+  ): Promise<boolean> {
     setGithubSaving(true);
     setGithubSaveError("");
     const base = record ?? emptyProfileRecord(account);
@@ -122,8 +122,8 @@ export function ProfilePage({ account }: ProfilePageProps) {
     try {
       const saved = await saveOwnProfileRecord(next, getToken);
       setRecord(saved);
-      setGithubEditorOpen(false);
       setEditMessage("Featured projects updated.");
+      return true;
     } catch (error) {
       if (error instanceof ProfileConflictError) {
         try {
@@ -137,6 +137,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
           ? error.message
           : "Could not save your featured projects.",
       );
+      return false;
     } finally {
       setGithubSaving(false);
     }
@@ -195,15 +196,13 @@ export function ProfilePage({ account }: ProfilePageProps) {
       ) : null}
       {githubEditorOpen ? (
         <GithubProjectsDialog
-          github={github}
+          githubAccount={githubAccount}
           verifiedGithub={verifiedGithub}
           projects={projects}
           saving={githubSaving}
           saveError={githubSaveError}
           onCancel={() => setGithubEditorOpen(false)}
-          onSave={(nextGithub, nextProjects) => {
-            void saveGithubProjects(nextGithub, nextProjects);
-          }}
+          onSave={saveGithubProjects}
         />
       ) : null}
     </div>

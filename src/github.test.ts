@@ -105,27 +105,24 @@ describe("github module", () => {
       new Response(JSON.stringify([apiRepo, { junk: true }]), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const repos = await fetchGithubRepos("@gholtzap");
+    const repos = await fetchGithubRepos(async () => "session-token");
     expect(repos).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.github.com/users/gholtzap/repos?per_page=100&sort=pushed",
+      "/api/github-repositories",
       expect.objectContaining({
-        headers: { Accept: "application/vnd.github+json" },
+        headers: { Authorization: "Bearer session-token" },
       }),
     );
-    await expect(fetchGithubRepos("in valid")).rejects.toThrow(
-      "Enter a valid GitHub username.",
-    );
 
-    vi.stubGlobal("fetch", async () => new Response("{}", { status: 404 }));
-    await expect(fetchGithubRepos("gholtzap")).rejects.toThrow(
-      "GitHub account not found.",
+    vi.stubGlobal("fetch", async () => new Response("{}", { status: 409 }));
+    await expect(fetchGithubRepos(async () => "session-token")).rejects.toThrow(
+      "Reconnect your GitHub account",
     );
 
     vi.stubGlobal("fetch", async () => new Response("{}", { status: 200 }));
-    await expect(fetchGithubRepos("gholtzap")).rejects.toThrow(
-      "GitHub returned an unexpected response.",
-    );
+    await expect(
+      fetchGithubRepos(async () => "session-token"),
+    ).rejects.toThrow("GitHub returned an unexpected response.");
   });
 
   it("orders repositories by stars and recency", () => {

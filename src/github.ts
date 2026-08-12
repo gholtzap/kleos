@@ -1,10 +1,12 @@
 import type { FeaturedProject } from "./types";
+import {
+  sessionAuthorizationHeader,
+  type SessionTokenGetter,
+} from "./api-client";
 
 export const MAX_FEATURED_PROJECTS = 6;
 export const MAX_PROJECT_DESCRIPTION_LENGTH = 1_000;
 export const MAX_PROJECT_TOPICS = 20;
-
-const REPOS_ENDPOINT = "https://api.github.com/users";
 
 export function normalizeGithubAccount(account: string): string | null {
   const normalized = account.trim().replace(/^@+/, "");
@@ -105,17 +107,17 @@ export function githubRepoFromValue(value: unknown): GithubRepo | null {
 }
 
 export async function fetchGithubRepos(
-  account: string,
+  getToken: SessionTokenGetter,
   signal?: AbortSignal,
 ): Promise<GithubRepo[]> {
-  const normalized = normalizeGithubAccount(account);
-  if (!normalized) throw new Error("Enter a valid GitHub username.");
-  const response = await fetch(
-    `${REPOS_ENDPOINT}/${normalized}/repos?per_page=100&sort=pushed`,
-    { headers: { Accept: "application/vnd.github+json" }, signal },
-  );
-  if (response.status === 404) throw new Error("GitHub account not found.");
-  if (response.status === 403 || response.status === 429) {
+  const response = await fetch("/api/github-repositories", {
+    headers: await sessionAuthorizationHeader(getToken),
+    signal,
+  });
+  if (response.status === 409) {
+    throw new Error("Reconnect your GitHub account and try again.");
+  }
+  if (response.status === 429) {
     throw new Error("GitHub rate limit reached. Try again in a few minutes.");
   }
   if (!response.ok) throw new Error("Could not load repositories from GitHub.");
