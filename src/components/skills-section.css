@@ -1,0 +1,129 @@
+.skills-section,
+.skills-section * {
+  box-sizing: border-box;
+}
+
+.skills-section {
+  width: 100%;
+  padding: clamp(28px, 4vw, 58px) clamp(24px, 5vw, 74px);
+  color: #909090;
+  background: #080808;
+  font-family: "Manrope Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.skills-section details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  color: #b8b8b8;
+  cursor: pointer;
+  list-style: none;
+}
+
+.skills-section details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.skills-section h2 {
+  margin: 0;
+  color: #bdbdbd;
+  font-size: clamp(25px, 2.1vw, 34px);
+  font-weight: 450;
+  letter-spacing: -0.04em;
+}
+
+.skills-section__control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(16px, 1.45vw, 24px);
+  font-weight: 600;
+}
+
+.skills-section__less,
+.skills-section details[open] .skills-section__more {
+  display: none;
+}
+
+.skills-section details[open] .skills-section__less {
+  display: inline;
+}
+
+.skills-section__groups {
+  display: grid;
+  gap: clamp(30px, 3vw, 48px);
+  margin: clamp(48px, 5vw, 78px) 0 0;
+}
+
+.skills-section__group {
+  display: grid;
+  grid-template-columns: clamp(150px, 20vw, 270px) minmax(0, 1fr);
+  align-items: start;
+  gap: 26px;
+}
+
+.skills-section dt {
+  font-size: clamp(17px, 1.45vw, 24px);
+  line-height: 1.3;
+}
+
+.skills-section dd {
+  display: flex;
+  margin: 0;
+  flex-wrap: wrap;
+  gap: 20px clamp(24px, 2.8vw, 48px);
+}
+
+.skills-section__skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-size: clamp(17px, 1.45vw, 24px);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.skills-section__logo {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  filter: grayscale(1) brightness(0) invert(0.58);
+  object-fit: contain;
+}
+
+.skills-section__logo--native {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.skills-section summary:hover,
+.skills-section summary:focus-visible {
+  color: #e2e2e2;
+}
+
+.skills-section summary:focus-visible {
+  outline: 2px solid #b8b8b8;
+  outline-offset: 8px;
+}
+
+@media (max-width: 720px) {
+  .skills-section__group {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .skills-section dd {
+    gap: 16px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .skills-section {
+    padding-inline: 18px;
+  }
+
+  .skills-section__groups {
+    margin-top: 38px;
+  }
+}
