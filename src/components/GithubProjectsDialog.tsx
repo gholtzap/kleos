@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/react";
+import { useReverification, useUser } from "@clerk/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   GitForkIcon,
@@ -45,6 +45,10 @@ export function GithubProjectsDialog({
   onSave,
 }: GithubProjectsDialogProps) {
   const { user } = useUser();
+  const createExternalAccount = useReverification(
+    (params: Parameters<NonNullable<typeof user>["createExternalAccount"]>[0]) =>
+      user?.createExternalAccount(params),
+  );
   const [resource, setResource] = useState<RepoResource>({ status: "idle" });
   const [selected, setSelected] = useState<readonly FeaturedProject[]>(projects);
   const [formError, setFormError] = useState("");
@@ -88,11 +92,11 @@ export function GithubProjectsDialog({
     setVerifying(true);
     setFormError("");
     try {
-      const external = await user.createExternalAccount({
+      const external = await createExternalAccount({
         strategy: "oauth_github",
         redirectUrl: window.location.href,
       });
-      const redirect = external.verification?.externalVerificationRedirectURL;
+      const redirect = external?.verification?.externalVerificationRedirectURL;
       if (!redirect) throw new Error("Missing verification redirect.");
       window.location.href = redirect.toString();
     } catch {
