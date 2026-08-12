@@ -1,6 +1,9 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { normalizeGithubAccount } from "../github";
 import "./github-graph.css";
+
+export { normalizeGithubAccount };
 
 export type GithubGraphVariant = "github" | "graphite" | "ocean" | "violet";
 
@@ -67,13 +70,6 @@ function contributionFromValue(value: unknown): GithubContribution | null {
   const level = "level" in value ? value.level : undefined;
   if (level !== undefined && (typeof level !== "number" || !Number.isFinite(level))) return null;
   return { date: value.date, count: Math.max(0, value.count), level };
-}
-
-export function normalizeGithubAccount(account: string): string | null {
-  const normalized = account.trim().replace(/^@+/, "");
-  return /^(?!-)[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(normalized)
-    ? normalized
-    : null;
 }
 
 export function buildContributionWeeks(

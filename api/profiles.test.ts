@@ -67,6 +67,7 @@ beforeEach(() => {
     revision: 5,
     person: { ...currentPerson, id: "owner-1" },
     claims: initialClaims,
+    projects: [],
   };
   database.rateCount = 1;
   database.saveAllowed = true;
@@ -135,6 +136,75 @@ describe("profiles API", () => {
     expect(response.body).toEqual({ error: "Invalid Kleos record." });
   });
 
+  it("persists a connected github account and featured projects", async () => {
+    const project = {
+      id: "github:gholtzap/kleos",
+      owner: "gholtzap",
+      name: "kleos",
+      description: "Professional profiles built on evidence.",
+      homepage: "https://kleos.bio",
+      language: "TypeScript",
+      topics: ["react"],
+      stars: 42,
+      forks: 3,
+      syncedAt: "2026-08-12T00:00:00.000Z",
+    };
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, github: "gholtzap" },
+          claims: initialClaims,
+          projects: [project],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({
+      revision: 6,
+      person: { github: "gholtzap" },
+      projects: [project],
+    });
+  });
+
+  it("rejects a featured project that fails validation", async () => {
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: currentPerson,
+          claims: initialClaims,
+          projects: [
+            {
+              id: "github:someone-else/repo",
+              owner: "gholtzap",
+              name: "repo",
+              description: "Mismatched id.",
+              topics: [],
+              stars: 1,
+              forks: 0,
+              syncedAt: "2026-08-12T00:00:00.000Z",
+            },
+          ],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(400);
+    expect(response.body).toEqual({ error: "Invalid Kleos content." });
+  });
+
   it("rejects a stale write and returns the saved revision after a valid write", async () => {
     const staleResponse = new TestResponse();
     await profilesHandler(
@@ -147,6 +217,7 @@ describe("profiles API", () => {
           revision: 4,
           person: currentPerson,
           claims: initialClaims,
+          projects: [],
         },
       },
       staleResponse,
@@ -164,6 +235,7 @@ describe("profiles API", () => {
           revision: 5,
           person: currentPerson,
           claims: initialClaims,
+          projects: [],
         },
       },
       savedResponse,

@@ -38,6 +38,7 @@ export interface Person {
   role: string;
   location: string;
   summary: string;
+  github?: string;
   expertise: string[];
   interests: string[];
   availability: string[];
@@ -82,11 +83,25 @@ export interface Claim {
   featured: boolean;
 }
 
+export interface FeaturedProject {
+  id: string;
+  owner: string;
+  name: string;
+  description: string;
+  homepage?: string;
+  language?: string;
+  topics: string[];
+  stars: number;
+  forks: number;
+  syncedAt: string;
+}
+
 export interface KleosRecord {
   version: 1;
   revision: number;
   person: Person;
   claims: Claim[];
+  projects: FeaturedProject[];
 }
 
 export interface ReviewLinkSummary {
