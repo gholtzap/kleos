@@ -1,4 +1,14 @@
+.x-frozune-profile__layout {
+  width: min(100%, 1249px);
+  grid-template-columns: 267px minmax(0, 1fr);
+}
+
+.x-frozune-profile__layout:has(.x-sidebar--collapsed) {
+  grid-template-columns: 68px minmax(0, 1fr);
+}
+
 .x-frozune-profile__timeline {
+  width: 100%;
   min-height: 100dvh;
 }
 
@@ -36,6 +46,13 @@
 .x-frozune-profile__empty-state p {
   margin-top: 8px;
   color: var(--x-muted);
+}
+
+@media (max-width: 1159px) {
+  .x-frozune-profile__layout,
+  .x-frozune-profile__layout:has(.x-sidebar--collapsed) {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 699px) {

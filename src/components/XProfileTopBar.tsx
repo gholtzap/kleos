@@ -1,6 +1,5 @@
 import {
   ArrowLeftIcon,
-  MagnifyingGlassIcon,
   PlanetIcon,
 } from "@phosphor-icons/react";
 import "./x-profile-top-bar.css";
@@ -10,7 +9,6 @@ interface XProfileTopBarProps {
   name: string;
   onBack: () => void;
   onProfileSummary: () => void;
-  onSearch: () => void;
 }
 
 export function XProfileTopBar({
@@ -18,7 +16,6 @@ export function XProfileTopBar({
   name,
   onBack,
   onProfileSummary,
-  onSearch,
 }: XProfileTopBarProps) {
   return (
     <header className="x-profile-top-bar">
@@ -39,9 +36,6 @@ export function XProfileTopBar({
       <div className="x-profile-top-bar__actions">
         <button aria-label="Profile Summary" onClick={onProfileSummary} type="button">
           <PlanetIcon aria-hidden="true" size={20} />
-        </button>
-        <button aria-label="Search" onClick={onSearch} type="button">
-          <MagnifyingGlassIcon aria-hidden="true" size={20} />
         </button>
       </div>
     </header>

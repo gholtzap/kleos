@@ -22,6 +22,13 @@
   text-decoration: none;
 }
 
+.x-sidebar__header {
+  display: flex;
+  width: 259px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .x-sidebar__logo {
   display: flex;
   width: fit-content;
@@ -39,6 +46,7 @@
 }
 
 .x-sidebar__logo:focus-visible,
+.x-sidebar__toggle:focus-visible,
 .x-sidebar__navigation-button:focus-visible,
 .x-sidebar__post:focus-visible,
 .x-sidebar__account:focus-visible {
@@ -51,6 +59,26 @@
   font-weight: 750;
   letter-spacing: -0.04em;
   line-height: 28px;
+}
+
+.x-sidebar__mark {
+  display: none;
+  width: 28px;
+  height: 28px;
+}
+
+.x-sidebar__toggle {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+  border-radius: 50%;
+  place-items: center;
+  transition: background-color 0.2s;
+}
+
+.x-sidebar__toggle:hover {
+  background: rgba(239, 243, 244, 0.1);
 }
 
 .x-sidebar__navigation {
@@ -164,10 +192,68 @@
   white-space: nowrap;
 }
 
+.x-sidebar--collapsed {
+  align-items: center;
+  width: 68px;
+}
+
+.x-sidebar--collapsed .x-sidebar__header {
+  width: 68px;
+  flex-direction: column;
+}
+
+.x-sidebar--collapsed .x-sidebar__logo,
+.x-sidebar--collapsed .x-sidebar__toggle {
+  margin-right: 0;
+}
+
+.x-sidebar--collapsed .x-sidebar__wordmark,
+.x-sidebar--collapsed .x-sidebar__navigation-button span,
+.x-sidebar--collapsed .x-sidebar__post span,
+.x-sidebar--collapsed .x-sidebar__account-text,
+.x-sidebar--collapsed .x-sidebar__account > svg {
+  display: none;
+}
+
+.x-sidebar--collapsed .x-sidebar__mark,
+.x-sidebar--collapsed .x-sidebar__post svg {
+  display: block;
+}
+
+.x-sidebar--collapsed .x-sidebar__navigation-button,
+.x-sidebar--collapsed .x-sidebar__post,
+.x-sidebar--collapsed .x-sidebar__account {
+  width: 52px;
+  justify-content: center;
+  padding: 0;
+}
+
+.x-sidebar--collapsed .x-sidebar__account {
+  height: 65.555px;
+  padding: 6px;
+}
+
 @media (max-width: 1159px) {
   .x-sidebar {
     align-items: center;
     width: 68px;
+  }
+
+  .x-sidebar__header {
+    width: 68px;
+    justify-content: center;
+  }
+
+  .x-sidebar__toggle {
+    display: none;
+  }
+
+  .x-sidebar__wordmark {
+    display: none;
+  }
+
+  .x-sidebar__mark {
+    display: block;
   }
 
   .x-sidebar__navigation-button {
