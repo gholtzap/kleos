@@ -8,6 +8,7 @@ import {
   enforceRateLimit,
   isRecord,
   loadKleosRecord,
+  methodNotAllowed,
   observed,
   parseBody,
   privateResponse,
@@ -166,8 +167,7 @@ async function handler(
       .json({ error: "Kleos changed. Review it again." });
   }
 
-  response.setHeader("Allow", "GET, PATCH");
-  return response.status(405).json({ error: "Method not allowed." });
+  return methodNotAllowed(response, ["GET", "PATCH"]);
 }
 
 export default observed("reviews", handler);

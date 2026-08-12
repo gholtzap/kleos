@@ -9,6 +9,7 @@ import type {
 import {
   enforceRateLimit,
   first,
+  methodNotAllowed,
   observed,
   sendRateLimit,
   sql,
@@ -87,8 +88,7 @@ function matchingClaim(
 
 async function handler(request: ApiRequest, response: ApiResponse) {
   if (request.method !== "GET") {
-    response.setHeader("Allow", "GET");
-    return response.status(405).json({ error: "Method not allowed." });
+    return methodNotAllowed(response, ["GET"]);
   }
   const query = normalizedParameter(first(request.query.q), 200);
   const expertise = normalizedParameter(

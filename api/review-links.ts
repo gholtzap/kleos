@@ -12,6 +12,7 @@ import {
   isoDate,
   isRecord,
   loadKleosRecord,
+  methodNotAllowed,
   observed,
   parseBody,
   privateResponse,
@@ -294,8 +295,7 @@ async function handler(
     return privateResponse(response).status(204).end();
   }
 
-  response.setHeader("Allow", "GET, POST, DELETE");
-  return response.status(405).json({ error: "Method not allowed." });
+  return methodNotAllowed(response, ["GET", "POST", "DELETE"]);
 }
 
 export default observed("review-links", handler);

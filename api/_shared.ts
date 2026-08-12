@@ -27,6 +27,19 @@ export interface ApiResponse {
   end(): ApiResponse;
 }
 
+export type HttpMethod =
+  | "CONNECT"
+  | "DELETE"
+  | "GET"
+  | "HEAD"
+  | "OPTIONS"
+  | "PATCH"
+  | "POST"
+  | "PUT"
+  | "TRACE";
+
+export type AllowedMethods = readonly [HttpMethod, ...HttpMethod[]];
+
 export type ApiHandler = (
   request: ApiRequest,
   response: ApiResponse,
@@ -281,6 +294,14 @@ export async function enforceRateLimit(
 export function privateResponse(response: ApiResponse): ApiResponse {
   response.setHeader("Cache-Control", "private, no-store");
   return response;
+}
+
+export function methodNotAllowed(
+  response: ApiResponse,
+  allowedMethods: AllowedMethods,
+): ApiResponse {
+  response.setHeader("Allow", allowedMethods.join(", "));
+  return response.status(405).json({ error: "Method not allowed." });
 }
 
 export function sendRateLimit(

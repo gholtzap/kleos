@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { TestResponse } from "./test-response";
 
 beforeAll(() => {
   process.env.DATABASE_URL = "postgresql://user:password@test.invalid/folio";
@@ -44,5 +45,21 @@ describe("shared database value parsers", () => {
         process.env.FOLIO_REVIEWER_USER_IDS = currentLegacyIds;
       }
     }
+  });
+});
+
+describe("shared HTTP responses", () => {
+  it("sends a method-not-allowed response with one or more allowed methods", async () => {
+    const { methodNotAllowed } = await import("./_shared");
+    const response = new TestResponse();
+    const readOnlyResponse = new TestResponse();
+
+    expect(methodNotAllowed(response, ["GET", "POST", "DELETE"])).toBe(response);
+    expect(response.code).toBe(405);
+    expect(response.body).toEqual({ error: "Method not allowed." });
+    expect(response.headers.get("Allow")).toBe("GET, POST, DELETE");
+
+    methodNotAllowed(readOnlyResponse, ["GET"]);
+    expect(readOnlyResponse.headers.get("Allow")).toBe("GET");
   });
 });
