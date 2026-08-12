@@ -5,6 +5,7 @@ import {
   normalizeGithubAccount,
   validGithubRepoName,
 } from "./github";
+import { ownershipLevels } from "./types";
 import type {
   Claim,
   ClaimState,
@@ -28,12 +29,6 @@ const professions: readonly Profession[] = [
   "Recruiting",
   "Operations",
   "Management",
-];
-const ownershipLevels: readonly Ownership[] = [
-  "Contributor",
-  "Major contributor",
-  "Lead",
-  "Accountable owner",
 ];
 const privacyLevels: readonly Privacy[] = ["Public", "Restricted", "Private"];
 const evidenceTypes: readonly EvidenceType[] = [
@@ -67,6 +62,10 @@ export function includesValue<T extends string>(
   value: unknown,
 ): value is T {
   return typeof value === "string" && values.some((item) => item === value);
+}
+
+export function isOwnership(value: unknown): value is Ownership {
+  return includesValue(ownershipLevels, value);
 }
 
 export function normalizePerson(value: unknown): Person | null {
@@ -195,7 +194,7 @@ function isClaimCore(value: unknown): value is Omit<Claim, "evidence"> {
     typeof value.organization === "string" &&
     typeof value.organizationHidden === "boolean" &&
     includesValue(professions, value.profession) &&
-    includesValue(ownershipLevels, value.ownership) &&
+    isOwnership(value.ownership) &&
     typeof value.contribution === "string" &&
     typeof value.outcome === "string" &&
     typeof value.outcomeContext === "string" &&

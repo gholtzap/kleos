@@ -1,8 +1,11 @@
-export type Ownership =
-  | "Contributor"
-  | "Major contributor"
-  | "Lead"
-  | "Accountable owner";
+export const ownershipLevels = [
+  "Contributor",
+  "Major contributor",
+  "Lead",
+  "Accountable owner",
+] as const;
+
+export type Ownership = (typeof ownershipLevels)[number];
 
 export type Privacy = "Public" | "Restricted" | "Private";
 

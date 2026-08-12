@@ -81,4 +81,18 @@ describe("discovery API", () => {
     );
     expect(response.code).toBe(400);
   });
+
+  it("rejects an unknown ownership level", async () => {
+    const response = new TestResponse();
+    await discoverHandler(
+      {
+        method: "GET",
+        query: { ownership: "Unknown" },
+        headers: {},
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(400);
+  });
 });
