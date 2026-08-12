@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import {
   first,
+  methodNotAllowed,
   observed,
   privateResponse,
   sql,
@@ -25,8 +26,7 @@ function authorized(request: ApiRequest): boolean {
 
 async function handler(request: ApiRequest, response: ApiResponse) {
   if (request.method !== "GET") {
-    response.setHeader("Allow", "GET");
-    return response.status(405).json({ error: "Method not allowed." });
+    return methodNotAllowed(response, ["GET"]);
   }
   if (!authorized(request)) {
     return response.status(401).json({ error: "Unauthorized." });

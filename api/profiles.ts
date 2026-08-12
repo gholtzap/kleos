@@ -11,6 +11,7 @@ import {
   first,
   loadKleosRecord,
   loadPublicKleosRecord,
+  methodNotAllowed,
   observed,
   parseBody,
   privateResponse,
@@ -104,8 +105,7 @@ async function handler(
     return privateResponse(response).status(200).json(safeRecord);
   }
 
-  response.setHeader("Allow", "GET, PUT");
-  return response.status(405).json({ error: "Method not allowed." });
+  return methodNotAllowed(response, ["GET", "PUT"]);
 }
 
 export default observed("profiles", handler);

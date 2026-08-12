@@ -15,6 +15,7 @@ import {
   first,
   isoDate,
   isRecord,
+  methodNotAllowed,
   observed,
   parseBody,
   privateResponse,
@@ -298,8 +299,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
     return privateResponse(response).status(204).end();
   }
 
-  response.setHeader("Allow", "GET, POST, DELETE");
-  return response.status(405).json({ error: "Method not allowed." });
+  return methodNotAllowed(response, ["GET", "POST", "DELETE"]);
 }
 
 export default observed("requests", handler);
