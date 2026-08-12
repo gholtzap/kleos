@@ -7,13 +7,13 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import type { XAccountIdentity } from "../types/x-profile";
+import type { AccountIdentity } from "../types/profile";
 import { profilePath } from "../lib";
-import { ComposeIcon } from "./x-icons";
-import "./x-sidebar.css";
+import { ComposeIcon } from "./icons";
+import "./sidebar.css";
 
-interface XSidebarProps {
-  account: XAccountIdentity;
+interface SidebarProps {
+  account: AccountIdentity;
   activeItem: string;
   collapsible?: boolean;
   onPost: () => void;
@@ -25,12 +25,12 @@ interface NavigationItem {
   href: string;
 }
 
-export function XSidebar({
+export function Sidebar({
   account,
   activeItem,
   collapsible = false,
   onPost,
-}: XSidebarProps) {
+}: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const accountProfilePath = profilePath(account.handle);
   const navigationItems: readonly NavigationItem[] = [
@@ -40,24 +40,24 @@ export function XSidebar({
 
   return (
     <aside
-      className={`x-sidebar${collapsed ? " x-sidebar--collapsed" : ""}`}
-      id="x-sidebar"
+      className={`sidebar${collapsed ? " sidebar--collapsed" : ""}`}
+      id="sidebar"
     >
-      <div className="x-sidebar__header">
+      <div className="sidebar__header">
         <a
           aria-label="Go to Kleos home"
-          className="x-sidebar__logo"
+          className="sidebar__logo"
           href="/home"
         >
-          <span className="x-sidebar__wordmark">Kleos</span>
-          <img alt="" className="x-sidebar__mark" src="/kleos-icon.svg" />
+          <span className="sidebar__wordmark">Kleos</span>
+          <img alt="" className="sidebar__mark" src="/kleos-icon.svg" />
         </a>
         {collapsible ? (
           <button
-            aria-controls="x-sidebar"
+            aria-controls="sidebar"
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="x-sidebar__toggle"
+            className="sidebar__toggle"
             onClick={() => setCollapsed((current) => !current)}
             type="button"
           >
@@ -70,7 +70,7 @@ export function XSidebar({
         ) : null}
       </div>
 
-      <nav aria-label="Primary navigation" className="x-sidebar__navigation">
+      <nav aria-label="Primary navigation" className="sidebar__navigation">
         <ul>
           {navigationItems.map(({ label, icon: NavigationIcon, href }) => {
             const isActive = activeItem === label;
@@ -85,7 +85,7 @@ export function XSidebar({
               <li key={label}>
                 <a
                   aria-current={isActive ? "page" : undefined}
-                  className="x-sidebar__navigation-button"
+                  className="sidebar__navigation-button"
                   href={href}
                 >
                   {content}
@@ -96,18 +96,18 @@ export function XSidebar({
         </ul>
       </nav>
 
-      <button className="x-sidebar__post" onClick={onPost} type="button">
+      <button className="sidebar__post" onClick={onPost} type="button">
         <span>Post</span>
         <ComposeIcon />
       </button>
 
       <a
         aria-label={`Go to the ${account.name} profile`}
-        className="x-sidebar__account"
+        className="sidebar__account"
         href={accountProfilePath}
       >
-        <span aria-hidden="true" className="x-sidebar__account-avatar-placeholder" />
-        <span className="x-sidebar__account-text">
+        <span aria-hidden="true" className="sidebar__account-avatar-placeholder" />
+        <span className="sidebar__account-text">
           <strong>{account.name}</strong>
           <span>{account.handle}</span>
         </span>

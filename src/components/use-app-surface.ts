@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 
-export function useXSurface(title: string, surface: string) {
+export function useAppSurface(title: string) {
   useEffect(() => {
     const previousTitle = document.title;
     const previousSurface = document.documentElement.dataset.surface;
     const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const previousThemeColor = themeMeta?.content;
     document.title = title;
-    document.documentElement.dataset.surface = surface;
+    document.documentElement.dataset.surface = "app";
     if (themeMeta) themeMeta.content = "#000000";
 
     return () => {
@@ -16,5 +16,5 @@ export function useXSurface(title: string, surface: string) {
       else delete document.documentElement.dataset.surface;
       if (themeMeta && previousThemeColor) themeMeta.content = previousThemeColor;
     };
-  }, [surface, title]);
+  }, [title]);
 }

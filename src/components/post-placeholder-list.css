@@ -1,12 +1,12 @@
-.x-post-placeholder {
+.post-placeholder {
   display: flex;
   min-height: 170px;
   padding: 12px 16px;
   gap: 10px;
-  border-bottom: 1px solid var(--x-border);
+  border-bottom: 1px solid var(--app-border);
 }
 
-.x-post-placeholder__avatar {
+.post-placeholder__avatar {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
@@ -14,7 +14,7 @@
   border-radius: 50%;
 }
 
-.x-post-placeholder__body {
+.post-placeholder__body {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -22,38 +22,38 @@
   gap: 10px;
 }
 
-.x-post-placeholder__line {
+.post-placeholder__line {
   width: 92%;
   height: 12px;
   background: #202327;
   border-radius: 9999px;
 }
 
-.x-post-placeholder__line--author {
+.post-placeholder__line--author {
   width: 42%;
   height: 14px;
   background: #2f3336;
 }
 
-.x-post-placeholder__line--short {
+.post-placeholder__line--short {
   width: 68%;
 }
 
-.x-post-placeholder__media {
+.post-placeholder__media {
   width: 100%;
   aspect-ratio: 16 / 7;
   background: #202327;
   border-radius: 16px;
 }
 
-.x-post-placeholder__actions {
+.post-placeholder__actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
 }
 
-.x-post-placeholder__actions span {
+.post-placeholder__actions span {
   width: 18px;
   height: 18px;
   background: #202327;

@@ -1,6 +1,6 @@
-import type { XEditableProfile, XProfileRecord } from "./types/x-profile";
+import type { EditableProfile, ProfileRecord } from "./types/profile";
 
-export const defaultProfileDetails: Omit<XProfileRecord, "name" | "handle"> = {
+export const defaultProfileDetails: Omit<ProfileRecord, "name" | "handle"> = {
   postCount: "0 posts",
   mediaCount: "0 photos & videos",
   likeCount: "0 Likes",
@@ -12,14 +12,18 @@ export const defaultProfileDetails: Omit<XProfileRecord, "name" | "handle"> = {
 };
 
 function profileStorageKey(handle: string): string {
+  return `kleos:profile:${handle}`;
+}
+
+function previousKleosProfileStorageKey(handle: string): string {
   return `kleos:x-profile:${handle}`;
 }
 
-function legacyProfileStorageKey(handle: string): string {
+function previousFolioProfileStorageKey(handle: string): string {
   return `folio:x-profile:${handle}`;
 }
 
-function editableProfileFromValue(value: unknown): XEditableProfile | null {
+function editableProfileFromValue(value: unknown): EditableProfile | null {
   if (
     typeof value !== "object" ||
     value === null ||
@@ -34,7 +38,7 @@ function editableProfileFromValue(value: unknown): XEditableProfile | null {
   return { bio: value.bio, website: value.website };
 }
 
-export function loadEditableProfile(handle: string): XEditableProfile {
+export function loadEditableProfile(handle: string): EditableProfile {
   const fallback = {
     bio: defaultProfileDetails.bio,
     website: defaultProfileDetails.website,
@@ -43,7 +47,8 @@ export function loadEditableProfile(handle: string): XEditableProfile {
   try {
     const stored =
       localStorage.getItem(profileStorageKey(handle)) ??
-      localStorage.getItem(legacyProfileStorageKey(handle));
+      localStorage.getItem(previousKleosProfileStorageKey(handle)) ??
+      localStorage.getItem(previousFolioProfileStorageKey(handle));
     if (!stored) return fallback;
     return editableProfileFromValue(JSON.parse(stored)) ?? fallback;
   } catch {
@@ -53,7 +58,7 @@ export function loadEditableProfile(handle: string): XEditableProfile {
 
 export function saveEditableProfile(
   handle: string,
-  profile: XEditableProfile,
+  profile: EditableProfile,
 ): void {
   try {
     localStorage.setItem(profileStorageKey(handle), JSON.stringify(profile));
