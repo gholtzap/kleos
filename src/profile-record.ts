@@ -1,22 +1,16 @@
 import { normalizeKleosRecord } from "./kleos";
+import {
+  sessionAuthorizationHeader,
+  type SessionTokenGetter,
+} from "./api-client";
 import type { KleosRecord } from "./types";
 import type { AccountIdentity } from "./types/profile";
-
-export type SessionTokenGetter = () => Promise<string | null>;
 
 export class ProfileConflictError extends Error {
   constructor() {
     super("Your profile changed elsewhere. It was reloaded — try again.");
     this.name = "ProfileConflictError";
   }
-}
-
-async function authorizationHeader(
-  getToken: SessionTokenGetter,
-): Promise<Record<string, string>> {
-  const token = await getToken();
-  if (!token) throw new Error("Sign in to update your profile.");
-  return { Authorization: `Bearer ${token}` };
 }
 
 async function recordFromResponse(response: Response): Promise<KleosRecord> {
@@ -30,7 +24,7 @@ export async function getOwnProfileRecord(
   signal?: AbortSignal,
 ): Promise<KleosRecord | null> {
   const response = await fetch("/api/profiles", {
-    headers: await authorizationHeader(getToken),
+    headers: await sessionAuthorizationHeader(getToken),
     signal,
   });
   if (response.status === 404) return null;
@@ -45,7 +39,7 @@ export async function saveOwnProfileRecord(
   const response = await fetch("/api/profiles", {
     method: "PUT",
     headers: {
-      ...(await authorizationHeader(getToken)),
+      ...(await sessionAuthorizationHeader(getToken)),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(record),
