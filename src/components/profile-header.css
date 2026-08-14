@@ -160,7 +160,7 @@
 
 .profile-header__edit {
   padding: 6px 16px;
-  align-self: flex-start;
+  align-self: flex-end;
   color: var(--app-text);
   background: transparent;
   border: 1px solid var(--app-border);
@@ -184,5 +184,9 @@
 
   .profile-header__side {
     width: 100%;
+  }
+
+  .profile-header__edit {
+    align-self: flex-start;
   }
 }

@@ -1,7 +1,7 @@
 import {
-  CameraIcon,
   GithubLogoIcon,
   GlobeSimpleIcon,
+  PencilSimpleIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
 import { currentExperience } from "../profile-sections";
@@ -57,7 +57,7 @@ export function ProfileHeader({ record, onEdit }: ProfileHeaderProps) {
             onClick={onEdit}
             type="button"
           >
-            <CameraIcon aria-hidden="true" size={15} />
+            <PencilSimpleIcon aria-hidden="true" size={15} />
           </button>
         ) : null}
       </div>
@@ -114,6 +114,15 @@ export function ProfileHeader({ record, onEdit }: ProfileHeaderProps) {
         </div>
 
         <div className="profile-header__side">
+          {onEdit ? (
+            <button
+              className="profile-header__edit"
+              onClick={onEdit}
+              type="button"
+            >
+              Edit profile
+            </button>
+          ) : null}
           {currentRole ? (
             <div className="profile-header__affiliation">
               <span aria-hidden="true">
@@ -133,15 +142,6 @@ export function ProfileHeader({ record, onEdit }: ProfileHeaderProps) {
                 <small>{topEducation.degree}</small>
               </div>
             </div>
-          ) : null}
-          {onEdit ? (
-            <button
-              className="profile-header__edit"
-              onClick={onEdit}
-              type="button"
-            >
-              Edit profile
-            </button>
           ) : null}
         </div>
       </div>
