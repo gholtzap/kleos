@@ -211,6 +211,7 @@ createRoot(root).render(
     <section
       aria-label="Profile page sections"
       className="app-surface component-preview__app"
+      id="profile"
     >
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 24px 48px" }}>
         <ProfileHeader record={previewRecord} onEdit={noop} />
