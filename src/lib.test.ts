@@ -60,6 +60,10 @@ describe("Kleos domain fixtures", () => {
       person: currentPerson,
       claims: initialClaims,
       projects: [],
+      experience: [],
+      education: [],
+      certifications: [],
+      otherExperience: [],
     };
     const published = publicKleosRecord(record);
     const firstPublished = published.claims[0];
@@ -110,6 +114,10 @@ describe("Kleos domain fixtures", () => {
       person: currentPerson,
       claims: initialClaims,
       projects: [],
+      experience: [],
+      education: [],
+      certifications: [],
+      otherExperience: [],
     };
     const confirmed = initialClaims[0]?.evidence[0];
     expect(confirmed).toBeDefined();
@@ -222,6 +230,10 @@ describe("Kleos domain fixtures", () => {
       person: currentPerson,
       claims: [pendingClaim],
       projects: [],
+      experience: [],
+      education: [],
+      certifications: [],
+      otherExperience: [],
     };
     const reviewed = applyEvidenceReviewDecision(
       record,
@@ -259,6 +271,10 @@ describe("Kleos domain fixtures", () => {
         person: currentPerson,
         claims: initialClaims,
         projects: [],
+        experience: [],
+        education: [],
+        certifications: [],
+        otherExperience: [],
       }),
     ).toBeNull();
     expect(
@@ -266,6 +282,10 @@ describe("Kleos domain fixtures", () => {
         person: currentPerson,
         claims: initialClaims,
         projects: [],
+        experience: [],
+        education: [],
+        certifications: [],
+        otherExperience: [],
       }),
     ).toBeNull();
     expect(
@@ -285,6 +305,10 @@ describe("Kleos domain fixtures", () => {
       person: currentPerson,
       claims: initialClaims,
       projects: [],
+      experience: [],
+      education: [],
+      certifications: [],
+      otherExperience: [],
     };
     const projection = discoveryProjection(record);
     expect(projection.publicRecord.claims).toHaveLength(2);

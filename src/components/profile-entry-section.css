@@ -1,0 +1,125 @@
+.profile-entries {
+  padding: 24px 4px;
+  border-top: 1px solid var(--app-border);
+}
+
+.profile-entries__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.profile-entries__head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.profile-entries__head button,
+.profile-entries__edit {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  color: var(--app-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  place-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.profile-entries__head button:hover,
+.profile-entries__edit:hover {
+  color: var(--app-text);
+  background: rgb(231 233 234 / 7%);
+}
+
+.profile-entries__entry {
+  position: relative;
+  display: flex;
+  padding: 15px 0;
+  gap: 15px;
+}
+
+.profile-entries__entry + .profile-entries__entry {
+  border-top: 1px solid var(--app-border);
+}
+
+.profile-entries__logo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  color: var(--app-muted);
+  background: #16191d;
+  border-radius: 10px;
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  place-items: center;
+}
+
+.profile-entries__list--compact .profile-entries__logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+
+.profile-entries__body {
+  flex: 1;
+  min-width: 0;
+  padding-right: 30px;
+}
+
+.profile-entries__body h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.profile-entries__subtitle {
+  margin: 1px 0 0;
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.profile-entries__meta {
+  margin: 2px 0 0;
+  color: var(--app-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-entries__bullets {
+  padding-left: 16px;
+  margin: 8px 0 0;
+  color: #b8bcbe;
+  font-size: 13.5px;
+}
+
+.profile-entries__bullets li {
+  margin: 3px 0;
+}
+
+.profile-entries__edit {
+  position: absolute;
+  top: 14px;
+  right: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.profile-entries__entry:hover .profile-entries__edit,
+.profile-entries__edit:focus-visible {
+  opacity: 1;
+}
+
+.profile-entries__empty {
+  margin: 6px 0 0;
+  color: var(--app-muted);
+  font-size: 13.5px;
+}

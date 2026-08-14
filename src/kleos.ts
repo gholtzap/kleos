@@ -5,6 +5,20 @@ import {
   normalizeGithubAccount,
   validGithubRepoName,
 } from "./github.js";
+import {
+  certificationEntryIsValid,
+  educationEntryIsValid,
+  experienceEntryIsValid,
+  MAX_CERTIFICATION_ENTRIES,
+  MAX_EDUCATION_ENTRIES,
+  MAX_EXPERIENCE_ENTRIES,
+  MAX_OTHER_EXPERIENCE_ENTRIES,
+  normalizeCertificationEntry,
+  normalizeEducationEntry,
+  normalizeExperienceEntry,
+  normalizeOtherExperienceEntry,
+  otherExperienceEntryIsValid,
+} from "./profile-sections.js";
 import { ownershipLevels } from "./types.js";
 import type {
   Claim,
@@ -79,6 +93,8 @@ export function normalizePerson(value: unknown): Person | null {
       typeof value.location === "string" &&
       typeof value.summary === "string" &&
       isOptionalString(value.github) &&
+      isOptionalString(value.website) &&
+      isOptionalString(value.x) &&
       isStringArray(value.expertise) &&
       isStringArray(value.interests) &&
       isStringArray(value.availability) &&
@@ -102,6 +118,8 @@ export function normalizePerson(value: unknown): Person | null {
     location: value.location,
     summary: value.summary,
     github: value.github,
+    website: value.website,
+    x: value.x,
     expertise: value.expertise,
     interests: value.interests,
     availability: value.availability,
@@ -231,6 +249,21 @@ function normalizeClaim(value: unknown): Claim | null {
   };
 }
 
+function normalizeEntryList<Entry>(
+  raw: unknown,
+  normalizeEntry: (value: unknown) => Entry | null,
+): Entry[] | null {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) return null;
+  const entries: Entry[] = [];
+  for (const value of raw) {
+    const entry = normalizeEntry(value);
+    if (entry === null) return null;
+    entries.push(entry);
+  }
+  return entries;
+}
+
 export function normalizeKleosRecord(value: unknown): KleosRecord | null {
   if (
     !isRecord(value) ||
@@ -243,12 +276,32 @@ export function normalizeKleosRecord(value: unknown): KleosRecord | null {
   if (!person) return null;
   const claims = value.claims.map(normalizeClaim);
   if (claims.some((claim) => claim === null)) return null;
-  const rawProjects = value.projects;
-  if (rawProjects !== undefined && !Array.isArray(rawProjects)) return null;
-  const projects = Array.isArray(rawProjects)
-    ? rawProjects.map(normalizeFeaturedProject)
-    : [];
-  if (projects.some((project) => project === null)) return null;
+  const projects = normalizeEntryList(value.projects, normalizeFeaturedProject);
+  const experience = normalizeEntryList(
+    value.experience,
+    normalizeExperienceEntry,
+  );
+  const education = normalizeEntryList(
+    value.education,
+    normalizeEducationEntry,
+  );
+  const certifications = normalizeEntryList(
+    value.certifications,
+    normalizeCertificationEntry,
+  );
+  const otherExperience = normalizeEntryList(
+    value.otherExperience,
+    normalizeOtherExperienceEntry,
+  );
+  if (
+    projects === null ||
+    experience === null ||
+    education === null ||
+    certifications === null ||
+    otherExperience === null
+  ) {
+    return null;
+  }
   return {
     version: 1,
     revision:
@@ -259,9 +312,11 @@ export function normalizeKleosRecord(value: unknown): KleosRecord | null {
         : 0,
     person,
     claims: claims.filter((claim): claim is Claim => claim !== null),
-    projects: projects.filter(
-      (project): project is FeaturedProject => project !== null,
-    ),
+    projects,
+    experience,
+    education,
+    certifications,
+    otherExperience,
   };
 }
 
@@ -323,9 +378,47 @@ function featuredProjectIsValid(project: FeaturedProject): boolean {
   );
 }
 
+function entrySectionIsValid<Entry extends { id: string }>(
+  entries: readonly Entry[],
+  maxEntries: number,
+  entryIsValid: (entry: Entry) => boolean,
+): boolean {
+  return (
+    entries.length <= maxEntries &&
+    new Set(entries.map((entry) => entry.id)).size === entries.length &&
+    entries.every(entryIsValid)
+  );
+}
+
+const xHandlePattern = /^[A-Za-z0-9_]{1,15}$/;
+
 export function kleosRecordContentIsValid(record: KleosRecord): boolean {
   if (record.claims.length > 50) return false;
   if (record.projects.length > 12) return false;
+  if (
+    !entrySectionIsValid(
+      record.experience,
+      MAX_EXPERIENCE_ENTRIES,
+      experienceEntryIsValid,
+    ) ||
+    !entrySectionIsValid(
+      record.education,
+      MAX_EDUCATION_ENTRIES,
+      educationEntryIsValid,
+    ) ||
+    !entrySectionIsValid(
+      record.certifications,
+      MAX_CERTIFICATION_ENTRIES,
+      certificationEntryIsValid,
+    ) ||
+    !entrySectionIsValid(
+      record.otherExperience,
+      MAX_OTHER_EXPERIENCE_ENTRIES,
+      otherExperienceEntryIsValid,
+    )
+  ) {
+    return false;
+  }
   const github = record.person.github;
   const projectIds = record.projects.map((project) => project.id);
   if (
@@ -350,6 +443,10 @@ export function kleosRecordContentIsValid(record: KleosRecord): boolean {
     person.summary.length > 5_000 ||
     (person.github !== undefined &&
       normalizeGithubAccount(person.github) !== person.github) ||
+    (person.website !== undefined &&
+      (person.website.length > 2_000 ||
+        !validEvidenceSourceUrl(person.website))) ||
+    (person.x !== undefined && !xHandlePattern.test(person.x)) ||
     person.relationship.length > 300 ||
     person.accent.length > 100 ||
     !stringListIsValid(person.expertise, 50, 200) ||
@@ -426,6 +523,10 @@ export function mergeOwnerKleosRecord(
       employmentVerified: existing?.person.employmentVerified ?? false,
     },
     projects: submitted.projects,
+    experience: submitted.experience,
+    education: submitted.education,
+    certifications: submitted.certifications,
+    otherExperience: submitted.otherExperience,
     claims: submitted.claims.map((claim) => {
       const existingClaim = existingClaims.get(claim.id);
       const reviewContextUnchanged =
@@ -580,6 +681,20 @@ export function discoveryProjection(record: KleosRecord): DiscoveryProjection {
       project.language ?? "",
       ...project.topics,
     ]),
+    ...publicRecord.experience.flatMap((entry) => [
+      entry.title,
+      entry.organization,
+      ...entry.highlights,
+    ]),
+    ...publicRecord.education.flatMap((entry) => [entry.school, entry.degree]),
+    ...publicRecord.certifications.flatMap((entry) => [
+      entry.name,
+      entry.issuer,
+    ]),
+    ...publicRecord.otherExperience.flatMap((entry) => [
+      entry.title,
+      entry.detail ?? "",
+    ]),
     ...person.expertise,
     ...person.interests,
     ...person.availability,
@@ -622,6 +737,10 @@ export function reviewKleosRecord(
   return {
     ...record,
     projects: [],
+    experience: [],
+    education: [],
+    certifications: [],
+    otherExperience: [],
     person: {
       ...record.person,
       expertise: [],

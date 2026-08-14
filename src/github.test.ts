@@ -56,6 +56,10 @@ function sampleRecord(projects: FeaturedProject[]): KleosRecord {
     person: { ...currentPerson, github: "gholtzap" },
     claims: initialClaims,
     projects,
+    experience: [],
+    education: [],
+    certifications: [],
+    otherExperience: [],
   };
 }
 

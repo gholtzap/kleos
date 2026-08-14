@@ -67,7 +67,7 @@ export function FeaturedProjects({ projects, onEdit }: FeaturedProjectsProps) {
       aria-labelledby="featured-projects-heading"
     >
       <header className="featured-projects__header">
-        <h2 id="featured-projects-heading">Featured projects</h2>
+        <h2 id="featured-projects-heading">Pinned projects</h2>
         {onEdit ? (
           <button onClick={onEdit} type="button">
             <GithubLogoIcon aria-hidden="true" size={18} weight="bold" />
