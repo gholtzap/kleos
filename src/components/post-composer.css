@@ -35,17 +35,18 @@
 
 .post-composer__input-shell {
   display: flex;
-  height: 52px;
+  min-height: 52px;
   padding-top: 10px;
   align-items: flex-start;
 }
 
 .post-composer__input {
   width: 100%;
-  height: 28px;
+  min-height: 28px;
+  max-height: 480px;
   padding: 2px 0;
   resize: none;
-  overflow: hidden;
+  overflow-y: auto;
   color: var(--app-text, #e7e9ea);
   background: transparent;
   border: 0;
@@ -58,6 +59,19 @@
 .post-composer__input::placeholder {
   color: var(--app-muted, #71767b);
   opacity: 1;
+}
+
+.post-composer__meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.post-composer__meter-label {
+  color: var(--app-muted, #71767b);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .post-composer__toolbar {
