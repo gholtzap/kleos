@@ -3,6 +3,10 @@
     {
       "path": "/api/maintenance",
       "schedule": "17 3 * * *"
+    },
+    {
+      "path": "/api/refresh-projects",
+      "schedule": "23 * * * *"
     }
   ],
   "rewrites": [

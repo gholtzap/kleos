@@ -8,6 +8,7 @@ import {
   githubRepoFromValue,
   githubRepoUrl,
   normalizeGithubAccount,
+  refreshedProjects,
   validGithubRepoName,
 } from "./github";
 import {
@@ -146,6 +147,49 @@ describe("github module", () => {
     if (!repo) return;
     const project = featuredProjectFromRepo(repo, "2026-08-12T00:00:00.000Z");
     expect(project).toEqual(sampleProject());
+  });
+
+  it("restamps pinned projects with current repository data", () => {
+    const repo = githubRepoFromValue(apiRepo);
+    expect(repo).not.toBeNull();
+    if (!repo) return;
+    const pinned = { ...sampleProject(), stars: 1, forks: 0 };
+    const project = refreshedProjects(
+      [pinned],
+      [{ ...repo, stars: 412, forks: 37 }],
+      "2026-08-14T09:00:00.000Z",
+    )[0];
+    expect(project).toBeDefined();
+    if (!project) return;
+    expect(project.stars).toBe(412);
+    expect(project.forks).toBe(37);
+    expect(project.syncedAt).toBe("2026-08-14T09:00:00.000Z");
+    expect(project.id).toBe(pinned.id);
+  });
+
+  it("keeps pins whose repository is no longer listed", () => {
+    const pinned = sampleProject();
+    expect(
+      refreshedProjects([pinned], [], "2026-08-14T09:00:00.000Z"),
+    ).toEqual([pinned]);
+  });
+
+  it("preserves pin order across a refresh", () => {
+    const repo = githubRepoFromValue(apiRepo);
+    expect(repo).not.toBeNull();
+    if (!repo) return;
+    const first = sampleProject();
+    const second = featuredProjectFromRepo(
+      { ...repo, name: "second" },
+      "2026-08-12T00:00:00.000Z",
+    );
+    expect(
+      refreshedProjects(
+        [second, first],
+        [repo, { ...repo, name: "second" }],
+        "2026-08-14T09:00:00.000Z",
+      ).map((project) => project.name),
+    ).toEqual(["second", "kleos"]);
   });
 });
 
