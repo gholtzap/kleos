@@ -1,0 +1,51 @@
+.slop-meter {
+  --slop-meter-red: #f4212e;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.slop-meter__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* stop-color is set here rather than as an SVG presentation attribute so the custom
+   properties resolve consistently across browsers. */
+.slop-meter__stop--low {
+  stop-color: var(--app-green);
+}
+
+.slop-meter__stop--mid {
+  stop-color: #f2c94c;
+}
+
+.slop-meter__stop--high {
+  stop-color: var(--slop-meter-red);
+}
+
+.slop-meter__score {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.slop-meter__score--low {
+  color: var(--app-green);
+}
+
+.slop-meter__score--some {
+  color: #f2c94c;
+}
+
+.slop-meter__score--high {
+  color: #f2994a;
+}
+
+.slop-meter__score--peak {
+  color: var(--slop-meter-red);
+}
