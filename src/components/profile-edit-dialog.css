@@ -91,7 +91,8 @@
   gap: 20px;
 }
 
-.profile-editor__form label {
+.profile-editor__form label,
+.profile-editor__form [role="group"] {
   display: grid;
   gap: 7px;
   color: #71767b;
@@ -115,6 +116,54 @@
 .profile-editor__form textarea {
   min-height: 104px;
   resize: vertical;
+}
+
+.profile-editor__error {
+  margin: 0;
+  color: #f4212e;
+  font-size: 14px;
+}
+
+.profile-editor__delete {
+  padding: 0;
+  justify-self: start;
+  color: #f4212e;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-editor__delete:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.profile-editor__delete:disabled {
+  opacity: 0.6;
+}
+
+.profile-editor__banners {
+  display: flex;
+  gap: 10px;
+}
+
+.profile-editor__banners button {
+  width: 56px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.profile-editor__banners button[aria-pressed="true"] {
+  border-color: #1d9bf0;
+}
+
+.profile-editor__banners button:focus-visible {
+  outline: 2px solid #1d9bf0;
+  outline-offset: 2px;
 }
 
 @media (max-width: 480px) {

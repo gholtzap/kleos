@@ -8,6 +8,11 @@ import {
 } from "./public-profile";
 import { getReviewBundle, reviewTokenFromHash } from "./review-links";
 import { githubRepoUrl } from "./github";
+import {
+  compareExperience,
+  experiencePeriod,
+  yearRange,
+} from "./profile-sections";
 import { claimState } from "./kleos";
 import type { KleosRecord } from "./types";
 import { useLocationHash } from "./use-location-hash";
@@ -207,7 +212,7 @@ function KleosRecordView({ record }: { record: KleosRecord }) {
       </section>
       {record.projects.length ? (
         <section aria-labelledby="shared-projects-heading">
-          <h2 id="shared-projects-heading">Featured projects</h2>
+          <h2 id="shared-projects-heading">Pinned projects</h2>
           <div className="kleos-claims">
             {record.projects.map((project) => (
               <article className="kleos-claim" key={project.id}>
@@ -227,6 +232,84 @@ function KleosRecordView({ record }: { record: KleosRecord }) {
                   </span>
                 </header>
                 {project.description ? <p>{project.description}</p> : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {record.experience.length ? (
+        <section aria-labelledby="shared-experience-heading">
+          <h2 id="shared-experience-heading">Experience</h2>
+          <div className="kleos-claims">
+            {[...record.experience].sort(compareExperience).map((entry) => (
+              <article className="kleos-claim" key={entry.id}>
+                <header>
+                  <h3>{entry.title}</h3>
+                  <span>{experiencePeriod(entry, new Date())}</span>
+                </header>
+                <p>
+                  <strong>{entry.organization}</strong>
+                  {entry.location ? ` · ${entry.location}` : ""}
+                </p>
+                {entry.highlights.length ? (
+                  <ul>
+                    {entry.highlights.map((highlight) => (
+                      <li key={highlight}>{highlight}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {record.education.length ? (
+        <section aria-labelledby="shared-education-heading">
+          <h2 id="shared-education-heading">Education</h2>
+          <div className="kleos-claims">
+            {record.education.map((entry) => (
+              <article className="kleos-claim" key={entry.id}>
+                <header>
+                  <h3>{entry.school}</h3>
+                  <span>{yearRange(entry.start, entry.end)}</span>
+                </header>
+                <p>{entry.degree}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {record.certifications.length ? (
+        <section aria-labelledby="shared-certifications-heading">
+          <h2 id="shared-certifications-heading">Certifications</h2>
+          <div className="kleos-claims">
+            {record.certifications.map((entry) => (
+              <article className="kleos-claim" key={entry.id}>
+                <header>
+                  <h3>{entry.name}</h3>
+                  <span>
+                    {entry.expires === undefined
+                      ? `Issued ${entry.issued}`
+                      : `Issued ${entry.issued} · Expires ${entry.expires}`}
+                  </span>
+                </header>
+                <p>{entry.issuer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {record.otherExperience.length ? (
+        <section aria-labelledby="shared-other-heading">
+          <h2 id="shared-other-heading">Other experience</h2>
+          <div className="kleos-claims">
+            {record.otherExperience.map((entry) => (
+              <article className="kleos-claim" key={entry.id}>
+                <header>
+                  <h3>{entry.title}</h3>
+                  <span>{entry.period}</span>
+                </header>
+                {entry.detail ? <p>{entry.detail}</p> : null}
               </article>
             ))}
           </div>

@@ -42,6 +42,8 @@ export interface Person {
   location: string;
   summary: string;
   github?: string;
+  website?: string;
+  x?: string;
   expertise: string[];
   interests: string[];
   availability: string[];
@@ -86,6 +88,40 @@ export interface Claim {
   featured: boolean;
 }
 
+export interface ExperienceEntry {
+  id: string;
+  title: string;
+  organization: string;
+  employmentType?: string;
+  location?: string;
+  start: string;
+  end?: string;
+  highlights: string[];
+}
+
+export interface EducationEntry {
+  id: string;
+  school: string;
+  degree: string;
+  start: string;
+  end?: string;
+}
+
+export interface CertificationEntry {
+  id: string;
+  name: string;
+  issuer: string;
+  issued: string;
+  expires?: string;
+}
+
+export interface OtherExperienceEntry {
+  id: string;
+  title: string;
+  detail?: string;
+  period: string;
+}
+
 export interface FeaturedProject {
   id: string;
   owner: string;
@@ -105,6 +141,10 @@ export interface KleosRecord {
   person: Person;
   claims: Claim[];
   projects: FeaturedProject[];
+  experience: ExperienceEntry[];
+  education: EducationEntry[];
+  certifications: CertificationEntry[];
+  otherExperience: OtherExperienceEntry[];
 }
 
 export interface ReviewLinkSummary {

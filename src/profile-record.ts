@@ -82,5 +82,9 @@ export function emptyProfileRecord(account: AccountIdentity): KleosRecord {
     },
     claims: [],
     projects: [],
+    experience: [],
+    education: [],
+    certifications: [],
+    otherExperience: [],
   };
 }

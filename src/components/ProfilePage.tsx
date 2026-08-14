@@ -1,10 +1,6 @@
 import { useAuth, useUser } from "@clerk/react";
-import { useEffect, useRef, useState } from "react";
-import {
-  defaultProfileDetails,
-  loadEditableProfile,
-  saveEditableProfile,
-} from "../profile-data";
+import { CheckCircleIcon, CircleIcon } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import {
   emptyProfileRecord,
   getOwnProfileRecord,
@@ -12,30 +8,48 @@ import {
   saveOwnProfileRecord,
 } from "../profile-record";
 import type { FeaturedProject, KleosRecord } from "../types";
-import type {
-  AccountIdentity,
-  EditableProfile,
-  ProfileRecord,
-  ProfileTab,
-} from "../types/profile";
+import type { AccountIdentity } from "../types/profile";
 import "../app-surface.css";
-import { Experience } from "./Experience";
 import "./app-layout.css";
 import { FeaturedProjects } from "./FeaturedProjects";
 import { GitHubActivity } from "./GithubGraph";
 import { GithubProjectsDialog } from "./GithubProjectsDialog";
-import { ProfileEditDialog } from "./ProfileEditDialog";
-import { ProfileHero } from "./ProfileHero";
-import { ProfileTabs } from "./ProfileTabs";
+import { ProfileEditDialog, type PersonProfileUpdates } from "./ProfileEditDialog";
+import { ProfileEntryDialog } from "./ProfileEntryDialog";
+import {
+  certificationRows,
+  educationRows,
+  experienceRows,
+  otherExperienceRows,
+  ProfileEntrySection,
+} from "./ProfileEntrySection";
+import { ProfileHeader } from "./ProfileHeader";
 import { ProfileTopBar } from "./ProfileTopBar";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "./use-app-surface";
 import "./profile-page.css";
 
-function countForTab(tab: ProfileTab) {
-  if (tab === "Media") return defaultProfileDetails.mediaCount;
-  if (tab === "Likes") return defaultProfileDetails.likeCount;
-  return defaultProfileDetails.postCount;
+type EntryDialogKind = "experience" | "education" | "certification" | "other";
+
+type OpenDialog =
+  | { type: "github" }
+  | { type: "profile" }
+  | { type: EntryDialogKind; entryId: string | null }
+  | null;
+
+interface CompletenessItem {
+  label: string;
+  done: boolean;
+}
+
+function completenessItems(record: KleosRecord): CompletenessItem[] {
+  return [
+    { label: "Headline added", done: record.person.role.trim().length > 0 },
+    { label: "GitHub connected", done: record.person.github !== undefined },
+    { label: "Projects pinned", done: record.projects.length > 0 },
+    { label: "Experience added", done: record.experience.length > 0 },
+    { label: "Education added", done: record.education.length > 0 },
+  ];
 }
 
 interface ProfilePageProps {
@@ -45,24 +59,11 @@ interface ProfilePageProps {
 export function ProfilePage({ account }: ProfilePageProps) {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const [selectedTab, setSelectedTab] = useState<ProfileTab>("Posts");
-  const [editableProfile, setEditableProfile] = useState<EditableProfile>(() =>
-    loadEditableProfile(account.handle),
-  );
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editMessage, setEditMessage] = useState("");
   const [record, setRecord] = useState<KleosRecord | null>(null);
-  const [githubEditorOpen, setGithubEditorOpen] = useState(false);
-  const [githubSaving, setGithubSaving] = useState(false);
-  const [githubSaveError, setGithubSaveError] = useState("");
-  const heroRef = useRef<HTMLDivElement>(null);
-  const feedRef = useRef<HTMLDivElement>(null);
-
-  const profile: ProfileRecord = {
-    ...defaultProfileDetails,
-    ...editableProfile,
-    ...account,
-  };
+  const [dialog, setDialog] = useState<OpenDialog>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   const githubAccount = user?.externalAccounts.find(
     (external) => external.provider === "github",
@@ -86,43 +87,25 @@ export function ProfilePage({ account }: ProfilePageProps) {
     return () => controller.abort();
   }, [getToken]);
 
-  function goBack() {
-    if (window.history.length > 1) window.history.back();
-    else window.scrollTo({ top: 0, behavior: "smooth" });
+  const base = record ?? emptyProfileRecord(account);
+
+  function openDialog(next: OpenDialog) {
+    setSaveError("");
+    setDialog(next);
   }
 
-  function showProfileSummary() {
-    heroRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function saveProfile(nextProfile: EditableProfile) {
-    setEditableProfile(nextProfile);
-    saveEditableProfile(account.handle, nextProfile);
-    setEditorOpen(false);
-    setEditMessage("Profile updated.");
-  }
-
-  function openGithubEditor() {
-    setGithubSaveError("");
-    setGithubEditorOpen(true);
-  }
-
-  async function saveGithubProjects(
-    github: string,
-    projects: FeaturedProject[],
+  async function persist(
+    next: KleosRecord,
+    message: string,
+    options: { close?: boolean } = {},
   ): Promise<boolean> {
-    setGithubSaving(true);
-    setGithubSaveError("");
-    const base = record ?? emptyProfileRecord(account);
-    const next: KleosRecord = {
-      ...base,
-      person: { ...base.person, github: github || undefined },
-      projects,
-    };
+    setSaving(true);
+    setSaveError("");
     try {
       const saved = await saveOwnProfileRecord(next, getToken);
       setRecord(saved);
-      setEditMessage("Featured projects updated.");
+      if (options.close ?? true) setDialog(null);
+      setStatusMessage(message);
       return true;
     } catch (error) {
       if (error instanceof ProfileConflictError) {
@@ -132,19 +115,192 @@ export function ProfilePage({ account }: ProfilePageProps) {
           // Keep the stale record when the reload fails; the next save retries.
         }
       }
-      setGithubSaveError(
-        error instanceof Error
-          ? error.message
-          : "Could not save your featured projects.",
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save your profile.",
       );
       return false;
     } finally {
-      setGithubSaving(false);
+      setSaving(false);
     }
   }
 
-  const github = record?.person.github ?? "";
-  const projects = record?.projects ?? [];
+  function upsertEntry<Entry extends { id: string }>(
+    entries: readonly Entry[],
+    entry: Entry,
+  ): Entry[] {
+    const exists = entries.some((item) => item.id === entry.id);
+    return exists
+      ? entries.map((item) => (item.id === entry.id ? entry : item))
+      : [...entries, entry];
+  }
+
+  function removeEntry<Entry extends { id: string }>(
+    entries: readonly Entry[],
+    id: string,
+  ): Entry[] {
+    return entries.filter((item) => item.id !== id);
+  }
+
+  function saveGithubProjects(
+    github: string,
+    projects: FeaturedProject[],
+  ): Promise<boolean> {
+    return persist(
+      {
+        ...base,
+        person: { ...base.person, github: github || undefined },
+        projects,
+      },
+      "Pinned projects updated.",
+      { close: false },
+    );
+  }
+
+  function saveProfileDetails(updates: PersonProfileUpdates) {
+    void persist(
+      { ...base, person: { ...base.person, ...updates } },
+      "Profile updated.",
+    );
+  }
+
+  function entryDialogFor(kind: EntryDialogKind, entryId: string | null) {
+    const shared = {
+      saving,
+      saveError,
+      onCancel: () => setDialog(null),
+    };
+    if (kind === "experience") {
+      const entry = base.experience.find((item) => item.id === entryId) ?? null;
+      return (
+        <ProfileEntryDialog
+          {...shared}
+          entry={entry}
+          kind="experience"
+          onDelete={
+            entry
+              ? () =>
+                  void persist(
+                    {
+                      ...base,
+                      experience: removeEntry(base.experience, entry.id),
+                    },
+                    "Experience removed.",
+                  )
+              : undefined
+          }
+          onSave={(next) =>
+            void persist(
+              { ...base, experience: upsertEntry(base.experience, next) },
+              "Experience saved.",
+            )
+          }
+        />
+      );
+    }
+    if (kind === "education") {
+      const entry = base.education.find((item) => item.id === entryId) ?? null;
+      return (
+        <ProfileEntryDialog
+          {...shared}
+          entry={entry}
+          kind="education"
+          onDelete={
+            entry
+              ? () =>
+                  void persist(
+                    {
+                      ...base,
+                      education: removeEntry(base.education, entry.id),
+                    },
+                    "Education removed.",
+                  )
+              : undefined
+          }
+          onSave={(next) =>
+            void persist(
+              { ...base, education: upsertEntry(base.education, next) },
+              "Education saved.",
+            )
+          }
+        />
+      );
+    }
+    if (kind === "certification") {
+      const entry =
+        base.certifications.find((item) => item.id === entryId) ?? null;
+      return (
+        <ProfileEntryDialog
+          {...shared}
+          entry={entry}
+          kind="certification"
+          onDelete={
+            entry
+              ? () =>
+                  void persist(
+                    {
+                      ...base,
+                      certifications: removeEntry(base.certifications, entry.id),
+                    },
+                    "Certification removed.",
+                  )
+              : undefined
+          }
+          onSave={(next) =>
+            void persist(
+              {
+                ...base,
+                certifications: upsertEntry(base.certifications, next),
+              },
+              "Certification saved.",
+            )
+          }
+        />
+      );
+    }
+    const entry =
+      base.otherExperience.find((item) => item.id === entryId) ?? null;
+    return (
+      <ProfileEntryDialog
+        {...shared}
+        entry={entry}
+        kind="other"
+        onDelete={
+          entry
+            ? () =>
+                void persist(
+                  {
+                    ...base,
+                    otherExperience: removeEntry(base.otherExperience, entry.id),
+                  },
+                  "Entry removed.",
+                )
+            : undefined
+        }
+        onSave={(next) =>
+          void persist(
+            {
+              ...base,
+              otherExperience: upsertEntry(base.otherExperience, next),
+            },
+            "Entry saved.",
+          )
+        }
+      />
+    );
+  }
+
+  function goBack() {
+    if (window.history.length > 1) window.history.back();
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const github = base.person.github ?? "";
+  const profileUrl = record
+    ? `${window.location.origin}/#/p/${encodeURIComponent(record.person.id)}`
+    : null;
+  const checklist = completenessItems(base);
+  const completed = checklist.filter((item) => item.done).length;
+  const now = new Date();
 
   return (
     <div className="app-surface">
@@ -154,57 +310,174 @@ export function ProfilePage({ account }: ProfilePageProps) {
             account={account}
             activeItem="Profile"
             collapsible
-            onPost={() => feedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onPost={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           />
         </div>
 
         <main className="app-layout__timeline profile-page__timeline">
           <ProfileTopBar
-            count={countForTab(selectedTab)}
+            count={account.handle}
             name={account.name}
             onBack={goBack}
-            onProfileSummary={showProfileSummary}
+            onProfileSummary={() =>
+              window.scrollTo({ top: 0, behavior: "smooth" })
+            }
           />
-          <div ref={heroRef}>
-            <ProfileHero profile={profile} onEdit={() => setEditorOpen(true)} />
+
+          <div className="profile-page__shell">
+            <div className="profile-page__main">
+              <ProfileHeader
+                record={base}
+                onEdit={() => openDialog({ type: "profile" })}
+              />
+
+              <FeaturedProjects
+                projects={base.projects}
+                onEdit={() => openDialog({ type: "github" })}
+              />
+
+              <ProfileEntrySection
+                addLabel="Add a position"
+                emptyHint="Add the roles you have held."
+                onAdd={() =>
+                  openDialog({ type: "experience", entryId: null })
+                }
+                onEditRow={(entryId) =>
+                  openDialog({ type: "experience", entryId })
+                }
+                rows={experienceRows(base.experience, now)}
+                title="Experience"
+              />
+
+              <ProfileEntrySection
+                addLabel="Add education"
+                emptyHint="Add your schools and degrees."
+                onAdd={() => openDialog({ type: "education", entryId: null })}
+                onEditRow={(entryId) =>
+                  openDialog({ type: "education", entryId })
+                }
+                rows={educationRows(base.education)}
+                title="Education"
+              />
+
+              <ProfileEntrySection
+                addLabel="Add a certification"
+                compact
+                emptyHint="Add licenses and certifications."
+                onAdd={() =>
+                  openDialog({ type: "certification", entryId: null })
+                }
+                onEditRow={(entryId) =>
+                  openDialog({ type: "certification", entryId })
+                }
+                rows={certificationRows(base.certifications)}
+                title="Certifications"
+              />
+
+              <ProfileEntrySection
+                addLabel="Add other experience"
+                compact
+                emptyHint="Talks, open source roles, awards."
+                onAdd={() => openDialog({ type: "other", entryId: null })}
+                onEditRow={(entryId) => openDialog({ type: "other", entryId })}
+                rows={otherExperienceRows(base.otherExperience)}
+                title="Other experience"
+              />
+
+              {github ? <GitHubActivity account={github} /> : null}
+            </div>
+
+            <aside className="profile-page__aside">
+              <section aria-label="Public profile">
+                <h2>Public profile</h2>
+                {profileUrl ? (
+                  <div className="profile-page__share">
+                    <a href={profileUrl}>Open public view</a>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard
+                          ?.writeText(profileUrl)
+                          .catch(() => {});
+                        setStatusMessage("Public profile link copied.");
+                      }}
+                      type="button"
+                    >
+                      Copy link
+                    </button>
+                  </div>
+                ) : (
+                  <p>Save something to your profile to get a shareable link.</p>
+                )}
+              </section>
+
+              <section aria-label="Profile completeness">
+                <h2>
+                  Profile completeness · {completed}/{checklist.length}
+                </h2>
+                <div aria-hidden="true" className="profile-page__meter">
+                  <i
+                    style={{
+                      width: `${Math.round((completed / checklist.length) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <ul>
+                  {checklist.map((item) => (
+                    <li
+                      className={item.done ? "profile-page__check--done" : ""}
+                      key={item.label}
+                    >
+                      {item.done ? (
+                        <CheckCircleIcon
+                          aria-hidden="true"
+                          size={14}
+                          weight="fill"
+                        />
+                      ) : (
+                        <CircleIcon aria-hidden="true" size={14} />
+                      )}
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </aside>
           </div>
-          <Experience />
-          <FeaturedProjects projects={projects} onEdit={openGithubEditor} />
-          {github ? <GitHubActivity account={github} /> : null}
-          <span className="profile-page__status" role="status">{editMessage}</span>
-          <ProfileTabs selectedTab={selectedTab} onSelect={setSelectedTab} />
-          <div
-            id="profile-panel"
-            ref={feedRef}
-            role="tabpanel"
-            aria-labelledby={`profile-tab-${selectedTab.toLowerCase()}`}
-          >
-            <section className="profile-page__empty-state">
-              <h2>No {selectedTab.toLowerCase()} yet</h2>
-              <p>This part of your profile is empty.</p>
-            </section>
-          </div>
+
+          <span className="profile-page__status" role="status">
+            {statusMessage}
+          </span>
         </main>
       </div>
-      {editorOpen ? (
-        <ProfileEditDialog
-          account={account}
-          profile={editableProfile}
-          onCancel={() => setEditorOpen(false)}
-          onSave={saveProfile}
-        />
-      ) : null}
-      {githubEditorOpen ? (
+
+      {dialog?.type === "github" ? (
         <GithubProjectsDialog
           githubAccount={githubAccount}
           verifiedGithub={verifiedGithub}
-          projects={projects}
-          saving={githubSaving}
-          saveError={githubSaveError}
-          onCancel={() => setGithubEditorOpen(false)}
+          projects={base.projects}
+          saving={saving}
+          saveError={saveError}
+          onCancel={() => setDialog(null)}
           onSave={saveGithubProjects}
         />
       ) : null}
+
+      {dialog?.type === "profile" ? (
+        <ProfileEditDialog
+          account={account}
+          person={base.person}
+          saving={saving}
+          saveError={saveError}
+          onCancel={() => setDialog(null)}
+          onSave={saveProfileDetails}
+        />
+      ) : null}
+
+      {dialog &&
+      dialog.type !== "github" &&
+      dialog.type !== "profile"
+        ? entryDialogFor(dialog.type, dialog.entryId)
+        : null}
     </div>
   );
 }
