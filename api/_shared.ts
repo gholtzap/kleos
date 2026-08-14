@@ -1,6 +1,7 @@
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createClerkClient, verifyToken, type User } from "@clerk/backend";
 import { neon } from "@neondatabase/serverless";
+import { githubRepoFromValue, type GithubRepo } from "../src/github.js";
 import {
   discoveryProjection,
   isRecord,
@@ -238,6 +239,126 @@ export async function saveKleosRecord(
       expertise = EXCLUDED.expertise,
       updated_at = NOW()
     WHERE folio_records.revision = ${expectedRevision}
+    RETURNING owner_id
+  `;
+  return rows.length > 0;
+}
+
+export function cronAuthorized(request: ApiRequest): boolean {
+  const configured = process.env.CRON_SECRET;
+  const supplied = first(request.headers.authorization)?.replace(
+    /^Bearer\s+/i,
+    "",
+  );
+  if (!configured || !supplied) return false;
+  const configuredBytes = Buffer.from(configured);
+  const suppliedBytes = Buffer.from(supplied);
+  return (
+    configuredBytes.length === suppliedBytes.length &&
+    timingSafeEqual(configuredBytes, suppliedBytes)
+  );
+}
+
+const GITHUB_API_VERSION = "2022-11-28";
+
+/**
+ * Lists an owner's repositories with their own GitHub token. Returns null when
+ * the account is disconnected, the token was revoked, or GitHub declines the
+ * request — all of which callers treat as "skip this owner", not as failure.
+ */
+export async function githubReposForUser(
+  userId: string,
+): Promise<GithubRepo[] | null> {
+  const clerk = clerkClient();
+  const [user, tokens] = await Promise.all([
+    clerk.users.getUser(userId),
+    clerk.users.getUserOauthAccessToken(userId, "github"),
+  ]);
+  const account = verifiedGithubAccount(user);
+  const token = tokens.data.find(
+    (candidate) => candidate.externalAccountId === account?.id,
+  )?.token;
+  if (!account?.username || !token) return null;
+
+  const response = await fetch(
+    `https://api.github.com/users/${encodeURIComponent(account.username)}/repos?per_page=100&sort=pushed`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "kleos.bio",
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      },
+    },
+  );
+  if (!response.ok) return null;
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload)) return null;
+  return payload
+    .map(githubRepoFromValue)
+    .filter((repo): repo is GithubRepo => repo !== null);
+}
+
+export interface OwnedKleosRecord {
+  ownerId: string;
+  record: KleosRecord;
+}
+
+/**
+ * Records with pinned projects whose oldest sync predates `cutoff`, oldest
+ * first, so a capped batch drains as a queue across runs. `syncedAt` is always
+ * an ISO-8601 UTC string, so text ordering is chronological ordering.
+ */
+export async function staleProjectRecords(
+  cutoff: string,
+  limit: number,
+): Promise<OwnedKleosRecord[]> {
+  const rows = await sql`
+    SELECT owner_id, revision, record
+    FROM folio_records
+    WHERE jsonb_typeof(record->'projects') = 'array'
+      AND jsonb_array_length(record->'projects') > 0
+      AND COALESCE((
+        SELECT MIN(project->>'syncedAt')
+        FROM jsonb_array_elements(record->'projects') AS project
+      ), '') < ${cutoff}
+    ORDER BY COALESCE((
+      SELECT MIN(project->>'syncedAt')
+      FROM jsonb_array_elements(record->'projects') AS project
+    ), '') ASC
+    LIMIT ${limit}
+  `;
+  const records: OwnedKleosRecord[] = [];
+  for (const row of rows) {
+    const record = normalizeKleosRecord(row.record);
+    const revision = Number(row.revision);
+    if (!record || !Number.isSafeInteger(revision) || revision < 0) continue;
+    record.revision = revision;
+    records.push({ ownerId: String(row.owner_id), record });
+  }
+  return records;
+}
+
+/**
+ * Writes refreshed project stats without advancing the revision — a background
+ * sync is not an edit, so it must not make an open editor's next save conflict.
+ * The revision guard still means a save that landed since the read wins.
+ */
+export async function saveRefreshedRecord(
+  ownerId: string,
+  record: KleosRecord,
+): Promise<boolean> {
+  const projection = discoveryProjection(record);
+  const rows = await sql`
+    UPDATE folio_records
+    SET
+      record = ${JSON.stringify(record)},
+      public_record = ${JSON.stringify(projection.publicRecord)},
+      search_text = ${projection.searchText},
+      ownership_levels = ${projection.ownershipLevels},
+      expertise = ${projection.expertise},
+      updated_at = NOW()
+    WHERE owner_id = ${ownerId} AND revision = ${record.revision}
     RETURNING owner_id
   `;
   return rows.length > 0;

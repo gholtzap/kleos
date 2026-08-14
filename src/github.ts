@@ -138,6 +138,26 @@ export function compareReposByProminence(
   return (right.pushedAt ?? "").localeCompare(left.pushedAt ?? "");
 }
 
+/**
+ * Restamps pinned projects with current repository data. A pin whose repository
+ * is missing from `repos` — deleted, renamed, or made private since it was
+ * pinned — keeps its last known values rather than disappearing from the
+ * profile.
+ */
+export function refreshedProjects(
+  projects: readonly FeaturedProject[],
+  repos: readonly GithubRepo[],
+  syncedAt: string,
+): FeaturedProject[] {
+  const reposById = new Map(
+    repos.map((repo) => [featuredProjectId(repo.owner, repo.name), repo]),
+  );
+  return projects.map((project) => {
+    const repo = reposById.get(project.id);
+    return repo ? featuredProjectFromRepo(repo, syncedAt) : project;
+  });
+}
+
 export function featuredProjectFromRepo(
   repo: GithubRepo,
   syncedAt: string,
