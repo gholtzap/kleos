@@ -17,6 +17,7 @@ const database = vi.hoisted(() => ({
 
 const clerkDirectory = vi.hoisted(() => ({
   githubUsername: "gholtzap" as string | null,
+  xUsername: null as string | null,
   lookupCount: 0,
   listCount: 0,
   listFails: false,
@@ -30,15 +31,18 @@ function clerkUser() {
     firstName: "Kabir",
     lastName: "Dhillon",
     username: clerkDirectory.profileUsername,
-    externalAccounts: clerkDirectory.githubUsername
-      ? [
-          {
-            provider: "oauth_github",
-            username: clerkDirectory.githubUsername,
-            verification: { status: "verified" },
-          },
-        ]
-      : [],
+    externalAccounts: (
+      [
+        ["oauth_github", clerkDirectory.githubUsername],
+        ["oauth_x", clerkDirectory.xUsername],
+      ] as const
+    )
+      .filter(([, username]) => username !== null)
+      .map(([provider, username]) => ({
+        provider,
+        username,
+        verification: { status: "verified" },
+      })),
   };
 }
 
@@ -150,6 +154,7 @@ beforeEach(() => {
   database.loadedOwnerIds = [];
   database.savedOwnerIds = [];
   clerkDirectory.githubUsername = "gholtzap";
+  clerkDirectory.xUsername = null;
   clerkDirectory.lookupCount = 0;
   clerkDirectory.listCount = 0;
   clerkDirectory.listFails = false;
@@ -432,6 +437,86 @@ describe("profiles API", () => {
     expect(response.body).toEqual({
       error: "Connect this GitHub account to Kleos before adding it.",
     });
+  });
+
+  it("persists an x account the member has connected", async () => {
+    clerkDirectory.xUsername = "gholtzap";
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, x: "GHoltzap" },
+          claims: initialClaims,
+          projects: [],
+          experience: [],
+          education: [],
+          certifications: [],
+          otherExperience: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({ person: { x: "gholtzap" } });
+  });
+
+  it("refuses an x account the user has not linked and verified", async () => {
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, x: "someoneelse" },
+          claims: initialClaims,
+          projects: [],
+          experience: [],
+          education: [],
+          certifications: [],
+          otherExperience: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(403);
+    expect(response.body).toEqual({
+      error: "Connect this X account to Kleos before adding it.",
+    });
+  });
+
+  it("keeps a stored x handle that no connection proves", async () => {
+    if (database.record) database.record.person.x = "typedbyhand";
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: {},
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 5,
+          person: { ...currentPerson, x: "typedbyhand" },
+          claims: initialClaims,
+          projects: [],
+          experience: [],
+          education: [],
+          certifications: [],
+          otherExperience: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({ person: { x: "typedbyhand" } });
+    expect(clerkDirectory.lookupCount).toBe(1);
   });
 
   it("does not make a second Clerk read when the github account is unchanged", async () => {

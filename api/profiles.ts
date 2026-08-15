@@ -1,5 +1,9 @@
 import type { User } from "@clerk/backend";
 import {
+  identityFieldDefinition,
+  identityFields,
+} from "../src/connections.js";
+import {
   kleosRecordContentIsValid,
   mergeOwnerKleosRecord,
   normalizeSubmittedKleosRecord,
@@ -21,7 +25,7 @@ import {
   privateResponse,
   saveKleosRecord,
   sendRateLimit,
-  verifiedGithubAccount,
+  verifiedExternalAccount,
 } from "./_shared.js";
 
 const MAX_RECORD_BYTES = 100_000;
@@ -114,21 +118,23 @@ async function handler(
         .json({ error: "Profile identity is unavailable. Try again." });
     }
 
-    const submittedGithub = record.person.github;
-    if (
-      submittedGithub !== undefined &&
-      submittedGithub !== existing?.person.github
-    ) {
-      const verified = verifiedGithubAccount(ownerUser)?.username ?? null;
-      if (
-        !verified ||
-        verified.toLowerCase() !== submittedGithub.toLowerCase()
-      ) {
+    // A handle only reaches the profile when a live connection proves it. An
+    // unchanged handle is left alone, so an earlier value survives and a
+    // disconnect can always clear it.
+    for (const field of identityFields) {
+      const submitted = record.person[field];
+      if (submitted === undefined || submitted === existing?.person[field]) {
+        continue;
+      }
+      const { provider, label } = identityFieldDefinition(field);
+      const verified =
+        verifiedExternalAccount(ownerUser, provider)?.username ?? null;
+      if (!verified || verified.toLowerCase() !== submitted.toLowerCase()) {
         return response.status(403).json({
-          error: "Connect this GitHub account to Kleos before adding it.",
+          error: `Connect this ${label} account to Kleos before adding it.`,
         });
       }
-      record.person.github = verified;
+      record.person[field] = verified;
     }
 
     const owner = accountIdentityForUser(ownerUser);

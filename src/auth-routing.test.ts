@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   authPageFromPath,
+  clearedConnectedSearch,
+  connectedProviderFromSearch,
+  isSettingsPath,
   profileHandleFromPath,
   profilePath,
   profilePathMatchesAccount,
@@ -37,5 +40,30 @@ describe("Signed-in routes", () => {
       profileHandle: "kabirdhillon",
     });
     expect(sharedRouteFromPath("/home")).toBeNull();
+  });
+
+  it("recognizes the settings URL and nothing near it", () => {
+    expect(isSettingsPath("/settings")).toBe(true);
+    expect(isSettingsPath("/settings/")).toBe(true);
+    expect(isSettingsPath("/settings/connections")).toBe(false);
+    expect(isSettingsPath("/p/ada")).toBe(false);
+    expect(sharedRouteFromPath("/settings")).toBeNull();
+  });
+});
+
+describe("Connection redirects", () => {
+  it("only accepts a provider Kleos offers", () => {
+    expect(connectedProviderFromSearch("?connected=google")).toBe("google");
+    expect(connectedProviderFromSearch("?connected=x&from=profile")).toBe("x");
+    expect(connectedProviderFromSearch("?connected=myspace")).toBeNull();
+    expect(connectedProviderFromSearch("")).toBeNull();
+  });
+
+  it("takes the return marker back out of the URL", () => {
+    expect(clearedConnectedSearch("?connected=google")).toBe("");
+    expect(clearedConnectedSearch("?connected=google&tab=account")).toBe(
+      "?tab=account",
+    );
+    expect(clearedConnectedSearch("")).toBe("");
   });
 });

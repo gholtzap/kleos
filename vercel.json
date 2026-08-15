@@ -25,6 +25,10 @@
     {
       "source": "/p/:handle",
       "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
     }
   ]
 }

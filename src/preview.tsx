@@ -7,6 +7,8 @@ import {
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
 import "./app-surface.css";
+import { accountConnection } from "./connections";
+import { ConnectionRow } from "./components/ConnectionRow";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
 import { GitHubActivity } from "./components/GithubGraph";
@@ -193,6 +195,39 @@ function noop() {
   // Preview affordances render without page-level handlers.
 }
 
+const previewConnections = [
+  {
+    connection: accountConnection(
+      [
+        {
+          provider: "github",
+          username: "fakeperson",
+          verification: { status: "verified" },
+        },
+      ],
+      "github",
+    ),
+    canDisconnect: true,
+  },
+  {
+    connection: accountConnection([], "google"),
+    canDisconnect: true,
+  },
+  {
+    connection: accountConnection(
+      [
+        {
+          provider: "x",
+          username: "fakeperson",
+          verification: { status: "unverified" },
+        },
+      ],
+      "x",
+    ),
+    canDisconnect: false,
+  },
+];
+
 const previewNow = new Date();
 
 const root = document.getElementById("root");
@@ -214,6 +249,24 @@ createRoot(root).render(
       id="profile"
     >
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 24px 48px" }}>
+        <section
+          aria-label="Connected accounts"
+          className="settings-page__section"
+        >
+          <h2>Connected accounts</h2>
+          <ul className="settings-page__connections">
+            {previewConnections.map(({ connection, canDisconnect }) => (
+              <ConnectionRow
+                busy={false}
+                canDisconnect={canDisconnect}
+                connection={connection}
+                key={connection.provider}
+                onConnect={noop}
+                onDisconnect={noop}
+              />
+            ))}
+          </ul>
+        </section>
         <ProfileHeader record={previewRecord} onEdit={noop} />
         <FeaturedProjects projects={previewRecord.projects} onEdit={noop} />
         <ProfileEntrySection

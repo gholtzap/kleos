@@ -13,6 +13,7 @@ describe("Vercel routes", () => {
         { source: "/sign-up/:path*", destination: "/index.html" },
         { source: "/home", destination: "/index.html" },
         { source: "/p/:handle", destination: "/index.html" },
+        { source: "/settings", destination: "/index.html" },
       ],
     });
   });

@@ -1,0 +1,222 @@
+.settings-page__layout {
+  width: min(100%, 1249px);
+  grid-template-columns: 267px minmax(0, 1fr);
+}
+
+.settings-page__layout:has(.sidebar--collapsed) {
+  grid-template-columns: 68px minmax(0, 1fr);
+}
+
+.settings-page__timeline {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.settings-page__shell {
+  display: flex;
+  width: min(100%, 700px);
+  padding: 8px 24px 64px;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.settings-page__section {
+  display: flex;
+  padding: 20px 0 0;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--app-border);
+}
+
+.settings-page__section:first-child {
+  border-top: 0;
+}
+
+.settings-page__section h2 {
+  margin: 0;
+  color: var(--app-text);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.settings-page__hint {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.settings-page__facts {
+  display: grid;
+  margin: 4px 0 0;
+  gap: 12px;
+}
+
+.settings-page__facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.settings-page__facts dt {
+  width: 90px;
+  flex: none;
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.settings-page__facts dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-page__sign-out {
+  display: inline-flex;
+  height: 34px;
+  padding: 0 16px;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 4px;
+  gap: 8px;
+  color: var(--app-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-page__sign-out:hover {
+  background: rgb(239 243 244 / 10%);
+}
+
+.settings-page__connections {
+  display: flex;
+  margin: 4px 0 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+}
+
+.settings-page__connections li {
+  display: flex;
+  padding: 14px 12px;
+  align-items: flex-start;
+  gap: 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+}
+
+.settings-page__connection-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  color: var(--app-text);
+  background: rgb(239 243 244 / 10%);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.settings-page__connection-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-page__connection-body strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.settings-page__connection-body strong svg {
+  color: var(--app-blue);
+}
+
+.settings-page__connection-status {
+  color: var(--app-text);
+  font-size: 13px;
+}
+
+.settings-page__connection-purpose {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.settings-page__connection-actions {
+  flex: none;
+  padding-top: 2px;
+}
+
+.settings-page__connection-actions button {
+  height: 32px;
+  padding: 0 16px;
+  color: var(--app-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.settings-page__connection-actions button:hover:not(:disabled) {
+  background: rgb(239 243 244 / 10%);
+}
+
+.settings-page__connection-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-page__connection-actions .settings-page__connect {
+  color: #000;
+  background: var(--app-text);
+  border-color: var(--app-text);
+}
+
+.settings-page__connection-actions .settings-page__connect:hover:not(:disabled) {
+  background: #fff;
+}
+
+.settings-page__error {
+  margin: 0;
+  color: var(--app-pink);
+  font-size: 13px;
+}
+
+.settings-page__status {
+  display: block;
+  padding: 0 24px 32px;
+  color: var(--app-muted);
+  font-size: 13px;
+  min-height: 18px;
+}
+
+@media (width <= 900px) {
+  .settings-page__shell {
+    padding: 8px 16px 48px;
+  }
+
+  .settings-page__connections li {
+    flex-wrap: wrap;
+  }
+}

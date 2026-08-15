@@ -1,4 +1,4 @@
-.profile-top-bar {
+.app-top-bar {
   position: sticky;
   z-index: 10;
   top: 0;
@@ -11,7 +11,7 @@
   backdrop-filter: blur(12px);
 }
 
-.profile-top-bar button {
+.app-top-bar button {
   appearance: none;
   display: grid;
   width: 36px;
@@ -26,22 +26,22 @@
   transition: background-color 0.2s;
 }
 
-.profile-top-bar button:hover {
+.app-top-bar button:hover {
   background: rgba(239, 243, 244, 0.1);
 }
 
-.profile-top-bar button:focus-visible {
+.app-top-bar button:focus-visible {
   outline: 2px solid var(--app-blue, #1d9bf0);
   outline-offset: 2px;
 }
 
-.profile-top-bar .profile-top-bar__back {
+.app-top-bar .app-top-bar__back {
   width: 56px;
   height: 53px;
   border-radius: 0;
 }
 
-.profile-top-bar__back svg {
+.app-top-bar__back svg {
   padding: 8px;
   overflow: visible;
   border-radius: 50%;
@@ -49,15 +49,15 @@
   transition: background-color 0.2s;
 }
 
-.profile-top-bar__back:hover {
+.app-top-bar__back:hover {
   background: transparent !important;
 }
 
-.profile-top-bar__back:hover svg {
+.app-top-bar__back:hover svg {
   background: rgba(239, 243, 244, 0.1);
 }
 
-.profile-top-bar__copy {
+.app-top-bar__copy {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -65,7 +65,7 @@
   padding-left: 16px;
 }
 
-.profile-top-bar__copy strong {
+.app-top-bar__copy strong {
   overflow: hidden;
   font-size: 20px;
   font-weight: 700;
@@ -74,7 +74,7 @@
   white-space: nowrap;
 }
 
-.profile-top-bar__copy span {
+.app-top-bar__copy span {
   overflow: hidden;
   color: #71767b;
   font-size: 13px;
@@ -83,7 +83,7 @@
   white-space: nowrap;
 }
 
-.profile-top-bar__actions {
+.app-top-bar__actions {
   display: flex;
   align-items: center;
   padding-right: 16px;

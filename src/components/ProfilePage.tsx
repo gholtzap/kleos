@@ -1,17 +1,11 @@
-import { useAuth, useUser } from "@clerk/react";
-import { CheckCircleIcon, CircleIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import {
-  emptyProfileRecord,
-  getOwnProfileRecord,
-  ProfileConflictError,
-  saveOwnProfileRecord,
-} from "../profile-record";
+import { CheckCircleIcon, CircleIcon, PlanetIcon } from "@phosphor-icons/react";
+import { useState } from "react";
 import { profilePath } from "../lib";
 import type { FeaturedProject, KleosRecord } from "../types";
 import type { AccountIdentity } from "../types/profile";
 import "../app-surface.css";
 import "./app-layout.css";
+import { AppTopBar } from "./AppTopBar";
 import { FeaturedProjects } from "./FeaturedProjects";
 import { GitHubActivity } from "./GithubGraph";
 import { GithubProjectsDialog } from "./GithubProjectsDialog";
@@ -25,9 +19,9 @@ import {
   ProfileEntrySection,
 } from "./ProfileEntrySection";
 import { ProfileHeader } from "./ProfileHeader";
-import { ProfileTopBar } from "./ProfileTopBar";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "./use-app-surface";
+import { useProfileRecord } from "./use-profile-record";
 import "./profile-page.css";
 
 type EntryDialogKind = "experience" | "education" | "certification" | "other";
@@ -58,39 +52,15 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ account }: ProfilePageProps) {
-  const { getToken } = useAuth();
-  const { user } = useUser();
-  const [record, setRecord] = useState<KleosRecord | null>(null);
+  const profile = useProfileRecord(account);
+  const { base, saving, saveError } = profile;
   const [dialog, setDialog] = useState<OpenDialog>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
-  const githubAccount = user?.externalAccounts.find(
-    (external) => external.provider === "github",
-  );
-  const verifiedGithub =
-    githubAccount?.verification?.status === "verified"
-      ? githubAccount.username
-      : undefined;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    getOwnProfileRecord(getToken, controller.signal)
-      .then((loaded) => {
-        if (!controller.signal.aborted && loaded) setRecord(loaded);
-      })
-      .catch(() => {
-        // The page still renders without the stored record; saving retries the load.
-      });
-    return () => controller.abort();
-  }, [getToken]);
-
-  const base = record ?? emptyProfileRecord(account);
   useAppSurface(`${account.name} (${account.handle}) / Kleos`);
 
   function openDialog(next: OpenDialog) {
-    setSaveError("");
+    profile.clearSaveError();
     setDialog(next);
   }
 
@@ -99,29 +69,10 @@ export function ProfilePage({ account }: ProfilePageProps) {
     message: string,
     options: { close?: boolean } = {},
   ): Promise<boolean> {
-    setSaving(true);
-    setSaveError("");
-    try {
-      const saved = await saveOwnProfileRecord(next, getToken);
-      setRecord(saved);
-      if (options.close ?? true) setDialog(null);
-      setStatusMessage(message);
-      return true;
-    } catch (error) {
-      if (error instanceof ProfileConflictError) {
-        try {
-          setRecord(await getOwnProfileRecord(getToken));
-        } catch {
-          // Keep the stale record when the reload fails; the next save retries.
-        }
-      }
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save your profile.",
-      );
-      return false;
-    } finally {
-      setSaving(false);
-    }
+    if (!(await profile.save(next))) return false;
+    if (options.close ?? true) setDialog(null);
+    setStatusMessage(message);
+    return true;
   }
 
   function upsertEntry<Entry extends { id: string }>(
@@ -289,11 +240,6 @@ export function ProfilePage({ account }: ProfilePageProps) {
     );
   }
 
-  function goBack() {
-    if (window.history.length > 1) window.history.back();
-    else window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   const github = base.person.github ?? "";
   const profileUrl = `${window.location.origin}${profilePath(account.handle)}`;
   const checklist = completenessItems(base);
@@ -313,13 +259,18 @@ export function ProfilePage({ account }: ProfilePageProps) {
         </div>
 
         <main className="app-layout__timeline profile-page__timeline">
-          <ProfileTopBar
-            count={account.handle}
-            name={account.name}
-            onBack={goBack}
-            onProfileSummary={() =>
-              window.scrollTo({ top: 0, behavior: "smooth" })
+          <AppTopBar
+            actions={
+              <button
+                aria-label="Profile Summary"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                type="button"
+              >
+                <PlanetIcon aria-hidden="true" size={20} />
+              </button>
             }
+            subtitle={account.handle}
+            title={account.name}
           />
 
           <div className="profile-page__shell">
@@ -446,8 +397,6 @@ export function ProfilePage({ account }: ProfilePageProps) {
 
       {dialog?.type === "github" ? (
         <GithubProjectsDialog
-          githubAccount={githubAccount}
-          verifiedGithub={verifiedGithub}
           projects={base.projects}
           saving={saving}
           saveError={saveError}

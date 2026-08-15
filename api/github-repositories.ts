@@ -8,7 +8,7 @@ import {
   observed,
   privateResponse,
   sendRateLimit,
-  verifiedGithubAccount,
+  verifiedExternalAccount,
 } from "./_shared.js";
 
 const GITHUB_API_VERSION = "2022-11-28";
@@ -36,7 +36,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
     clerk.users.getUser(userId),
     clerk.users.getUserOauthAccessToken(userId, "github"),
   ]);
-  const account = verifiedGithubAccount(user);
+  const account = verifiedExternalAccount(user, "github");
   const token = tokens.data.find(
     (candidate) => candidate.externalAccountId === account?.id,
   )?.token;
