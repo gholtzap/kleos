@@ -1,4 +1,5 @@
 import { HomePage } from "./HomePage";
+import { previewPosts } from "../post-data";
 import "./offline-preview.css";
 
 const PREVIEW_ACCOUNT = {
@@ -14,7 +15,12 @@ export function OfflinePreview() {
         Auth disabled locally — set VITE_CLERK_PUBLISHABLE_KEY in .env.local to sign in. Showing a
         static preview.
       </div>
-      <HomePage account={PREVIEW_ACCOUNT} />
+      <HomePage
+        account={PREVIEW_ACCOUNT}
+        feedEnabled={false}
+        getToken={async () => null}
+        initialPosts={previewPosts}
+      />
     </>
   );
 }

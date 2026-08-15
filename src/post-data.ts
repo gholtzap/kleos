@@ -1,4 +1,15 @@
-import type { AccountIdentity, Post } from "./types/profile";
+import type { FeedPost } from "./types";
+import type { AccountIdentity } from "./types/profile";
+
+interface FixturePost {
+  id: string;
+  author: AccountIdentity;
+  text: string;
+  postedAt: string;
+  replyCount: number;
+  repostCount: number;
+  likeCount: number;
+}
 
 export const gavinAccount = {
   id: "user_gavinholtzapple",
@@ -276,4 +287,17 @@ export const testPosts = [
     repostCount: 0,
     likeCount: 1,
   },
-] satisfies readonly Post[];
+] satisfies readonly FixturePost[];
+
+const previewTime = Date.parse("2026-08-15T16:00:00.000Z");
+
+export const previewPosts: readonly FeedPost[] = testPosts.map((post, index) => ({
+  id: post.id,
+  author: post.author,
+  body: post.text,
+  media: [],
+  postedAt: new Date(previewTime - index * 60 * 60 * 1_000).toISOString(),
+  replyCount: post.replyCount,
+  repostCount: post.repostCount,
+  likeCount: post.likeCount,
+}));

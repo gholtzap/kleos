@@ -14,7 +14,6 @@ import {
   enforceRateLimit,
   first,
   isoDate,
-  isRecord,
   methodNotAllowed,
   observed,
   parseBody,
@@ -25,6 +24,10 @@ import {
   type ApiRequest,
   type ApiResponse,
 } from "./_shared.js";
+import {
+  decodeDescendingCursor,
+  encodeDescendingCursor,
+} from "./_cursor.js";
 
 const PAGE_SIZE = 20;
 const MAX_ACTIVE_REQUESTS = 100;
@@ -34,32 +37,9 @@ interface RequestCursor {
   id: string;
 }
 
-function encodeCursor(cursor: RequestCursor): string {
-  return Buffer.from(JSON.stringify(cursor)).toString("base64url");
-}
-
 export function decodeRequestCursor(value: string): RequestCursor | null {
-  if (!value || value.length > 500) return null;
-  try {
-    const decoded = JSON.parse(
-      Buffer.from(value, "base64url").toString("utf8"),
-    ) as unknown;
-    if (
-      !isRecord(decoded) ||
-      typeof decoded.postedAt !== "string" ||
-      Number.isNaN(Date.parse(decoded.postedAt)) ||
-      typeof decoded.id !== "string" ||
-      decoded.id.length > 200
-    ) {
-      return null;
-    }
-    return {
-      postedAt: new Date(decoded.postedAt).toISOString(),
-      id: decoded.id,
-    };
-  } catch {
-    return null;
-  }
+  const cursor = decodeDescendingCursor(value);
+  return cursor ? { postedAt: cursor.at, id: cursor.id } : null;
 }
 
 function requestKind(value: string | undefined): RequestKind | null {
@@ -187,7 +167,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
       items,
       nextCursor:
         extra && lastPostedAt && lastId
-          ? encodeCursor({ postedAt: lastPostedAt, id: lastId })
+          ? encodeDescendingCursor({ at: lastPostedAt, id: lastId })
           : undefined,
     };
     return privateResponse(response).status(200).json(page);

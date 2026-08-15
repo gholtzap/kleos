@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { initialClaims, currentPerson } from "../src/data";
 import type { ApiRequest } from "./_shared";
 import { TestResponse } from "./test-response";
@@ -7,15 +7,91 @@ import { TestResponse } from "./test-response";
 const runDatabaseTests = process.env.RUN_KLEOS_DB_TESTS === "1";
 const ownerId = `folio-test-${randomUUID()}`;
 
+vi.mock("@neondatabase/serverless", async () => {
+  const { default: postgres } = await import("postgres");
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required.");
+  const client = postgres(databaseUrl, { idle_timeout: 1 });
+  type TestJson =
+    | null
+    | boolean
+    | number
+    | string
+    | readonly TestJson[]
+    | { readonly [key: string]: TestJson };
+  type TestSqlValue =
+    | null
+    | boolean
+    | number
+    | string
+    | Date
+    | Uint8Array
+    | readonly TestSqlValue[]
+    | ReturnType<typeof client.json>;
+  const query = (
+    strings: TemplateStringsArray,
+    ...values: readonly TestSqlValue[]
+  ) => client(
+    strings,
+    ...values.map((value) => {
+      if (typeof value !== "string" || !/^[{\[]/.test(value)) return value;
+      try {
+        return client.json(JSON.parse(value) as TestJson);
+      } catch {
+        return value;
+      }
+    }),
+  );
+  return { neon: () => query };
+});
+
 describe.runIf(runDatabaseTests)("Kleos database integration", () => {
   afterEach(async () => {
     const { sql } = await import("./_shared");
+    await sql`DELETE FROM folio_posts WHERE owner_id = ${ownerId}`;
+    await sql`DELETE FROM folio_accounts WHERE id = ${ownerId}`;
     await sql`DELETE FROM folio_review_links WHERE owner_id = ${ownerId}`;
     await sql`DELETE FROM folio_records WHERE owner_id = ${ownerId}`;
     await sql`
       DELETE FROM folio_rate_limits
       WHERE scope IN ('public-profile', 'discovery', 'review-link')
     `;
+  });
+
+  it("keeps feed posts attached to durable account rows", async () => {
+    const { sql } = await import("./_shared");
+    await sql`
+      INSERT INTO folio_accounts (id, name, handle)
+      VALUES (${ownerId}, 'Database User', '@database-user')
+    `;
+    const [post] = await sql`
+      INSERT INTO folio_posts (id, owner_id, body)
+      VALUES (${randomUUID()}::UUID, ${ownerId}, 'Persistent post')
+      RETURNING id::TEXT
+    `;
+    expect(typeof post?.id).toBe("string");
+    await sql`
+      INSERT INTO folio_post_media (
+        id, post_id, position, kind, public_id, url, width, height, alt
+      ) VALUES (
+        'asset-test', ${post?.id}::UUID, 0, 'image',
+        ${`kleos/posts/${ownerId}/asset-test`}, 'https://example.com/image.webp',
+        1200, 800, 'Database image'
+      )
+    `;
+    const [stored] = await sql`
+      SELECT post.body, account.id AS owner_id, COUNT(media.id)::INTEGER AS media_count
+      FROM folio_posts AS post
+      JOIN folio_accounts AS account ON account.id = post.owner_id
+      LEFT JOIN folio_post_media AS media ON media.post_id = post.id
+      WHERE post.id = ${post?.id}::UUID
+      GROUP BY post.id, account.id
+    `;
+    expect(stored).toMatchObject({
+      body: "Persistent post",
+      media_count: 1,
+      owner_id: ownerId,
+    });
   });
 
   it("persists private evidence and enforces selected, expiring review access", async () => {

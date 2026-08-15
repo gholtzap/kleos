@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 
 describe("Kleos storage migration", () => {
   it("defines the durable tables and query indexes outside request handlers", async () => {
-    const [migration, sharedApi] = await Promise.all([
+    const [migration, postMigration, sharedApi] = await Promise.all([
       readFile("migrations/0001_folio_storage.sql", "utf8"),
+      readFile("migrations/0003_post_feed.sql", "utf8"),
       readFile("api/_shared.ts", "utf8"),
     ]);
     for (const contract of [
@@ -18,6 +19,16 @@ describe("Kleos storage migration", () => {
       "folio_requests_active_kind_idx",
     ]) {
       expect(migration).toContain(contract);
+    }
+    for (const contract of [
+      "CREATE TABLE IF NOT EXISTS folio_accounts",
+      "CREATE TABLE IF NOT EXISTS folio_posts",
+      "CREATE TABLE IF NOT EXISTS folio_post_media",
+      "folio_posts_feed_idx",
+      "folio_post_media_post_idx",
+      "REFERENCES folio_accounts(id)",
+    ]) {
+      expect(postMigration).toContain(contract);
     }
     expect(sharedApi).not.toContain("CREATE TABLE");
     expect(sharedApi).not.toContain("CREATE INDEX");

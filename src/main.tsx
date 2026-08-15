@@ -25,7 +25,7 @@ const root = createRoot(rootElement);
 const CLERK_LOAD_TIMEOUT_MS = 6000;
 
 function ClerkApplication() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
   const hash = useLocationHash();
   const [timedOut, setTimedOut] = useState(false);
@@ -55,6 +55,7 @@ function ClerkApplication() {
           user.primaryEmailAddress?.emailAddress ||
           user.id,
         handle: accountHandle(user.username, user.id),
+        avatarUrl: user.imageUrl || undefined,
       }
     : null;
   const pathRoute = sharedRouteFromPath(window.location.pathname);
@@ -70,7 +71,7 @@ function ClerkApplication() {
   }
 
   if (account) {
-    return <HomePage account={account} />;
+    return <HomePage account={account} getToken={getToken} />;
   }
 
   return <App />;

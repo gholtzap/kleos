@@ -1,20 +1,41 @@
-import { useRef, useState } from "react";
-import { testPosts } from "../post-data";
-import type { AccountIdentity, Post } from "../types/profile";
+import { useEffect, useRef, useState } from "react";
+import type { SessionTokenGetter } from "../api-client";
+import {
+  createPost,
+  deleteUnattachedUpload,
+  getPostFeed,
+  uploadPostFile,
+  type UploadedPostFile,
+} from "../post-feed";
+import type { FeedPost } from "../types";
+import type { AccountIdentity } from "../types/profile";
 import "../app-surface.css";
-import { PostComposer } from "./PostComposer";
 import { DiscoveryRail } from "./DiscoveryRail";
+import { PostComposer, type ComposerPost } from "./PostComposer";
 import { PostList } from "./PostList";
+import { PostPlaceholderList } from "./PostPlaceholderList";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "./use-app-surface";
 import "./app-layout.css";
 
 interface HomePageProps {
   account: AccountIdentity;
+  feedEnabled?: boolean;
+  getToken: SessionTokenGetter;
+  initialPosts?: readonly FeedPost[];
 }
 
-export function HomePage({ account }: HomePageProps) {
-  const [posts, setPosts] = useState<readonly Post[]>(testPosts);
+export function HomePage({
+  account,
+  feedEnabled = true,
+  getToken,
+  initialPosts = [],
+}: HomePageProps) {
+  const [posts, setPosts] = useState<FeedPost[]>([...initialPosts]);
+  const [nextCursor, setNextCursor] = useState<string>();
+  const [loading, setLoading] = useState(feedEnabled);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [feedError, setFeedError] = useState("");
   const composerRegion = useRef<HTMLDivElement>(null);
 
   useAppSurface("Home / Kleos");
@@ -25,38 +46,94 @@ export function HomePage({ account }: HomePageProps) {
       ?.focus();
   }
 
-  function addPost(text: string) {
-    setPosts((currentPosts) => [
-      {
-        id: crypto.randomUUID(),
-        author: account,
-        text,
-        postedAt: "Now",
-        replyCount: 0,
-        repostCount: 0,
-        likeCount: 0,
-      },
-      ...currentPosts,
-    ]);
+  useEffect(() => {
+    if (!feedEnabled) return;
+    const controller = new AbortController();
+    getPostFeed(getToken, undefined, controller.signal)
+      .then((page) => {
+        setPosts(page.items);
+        setNextCursor(page.nextCursor);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setFeedError(error instanceof Error ? error.message : "Could not load posts.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [feedEnabled, getToken]);
+
+  async function publishPost(draft: ComposerPost) {
+    if (!feedEnabled) throw new Error("Sign in to publish this post.");
+    const results = await Promise.allSettled(
+      draft.media.map(({ file }) => uploadPostFile(file, getToken)),
+    );
+    const uploaded: UploadedPostFile[] = results.flatMap((result) =>
+      result.status === "fulfilled" ? [result.value] : [],
+    );
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed?.status === "rejected") {
+      await Promise.allSettled(uploaded.map(deleteUnattachedUpload));
+      throw failed.reason;
+    }
+    try {
+      const ordered = draft.media.map(({ alt }, index) => {
+        const upload = uploaded[index];
+        if (!upload) throw new Error("Could not match an uploaded file.");
+        return { publicId: upload.publicId, kind: upload.kind, alt };
+      });
+      const created = await createPost({ body: draft.body, media: ordered }, getToken);
+      setPosts((current) => [created, ...current]);
+      setFeedError("");
+    } catch (error) {
+      await Promise.allSettled(uploaded.map(deleteUnattachedUpload));
+      throw error;
+    }
+  }
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await getPostFeed(getToken, nextCursor);
+      setPosts((current) => [...current, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (error) {
+      setFeedError(error instanceof Error ? error.message : "Could not load more posts.");
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   return (
     <div className="app-surface">
       <div className="app-layout">
         <div className="app-layout__sidebar">
-          <Sidebar
-            account={account}
-            activeItem="Home"
-            onPost={focusComposer}
-          />
+          <Sidebar account={account} activeItem="Home" onPost={focusComposer} />
         </div>
 
         <main className="app-layout__timeline">
           <section aria-label="Home feed">
             <div ref={composerRegion}>
-              <PostComposer onPost={addPost} />
+              <PostComposer onPost={publishPost} />
             </div>
-            <PostList posts={posts} />
+            {feedError ? <p className="app-layout__feed-error" role="alert">{feedError}</p> : null}
+            {loading ? <PostPlaceholderList count={3} /> : (
+              <>
+                <PostList account={account} posts={posts} />
+                {nextCursor ? (
+                  <button
+                    className="app-layout__load-more"
+                    disabled={loadingMore}
+                    onClick={() => void loadMore()}
+                    type="button"
+                  >
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </button>
+                ) : null}
+              </>
+            )}
           </section>
         </main>
 
