@@ -26,9 +26,13 @@ proves a public username, on profiles.
 | GitHub | `oauth_github` | `person.github`, and the projects it can pin |
 | Google | `oauth_google` | none — sign-in only |
 | X | `oauth_x` | `person.x` |
+| Apple | `oauth_apple` | none — sign-in only |
+
+Each provider's mark lives in `public/provider-logos/`, named for the provider.
 
 Each provider must be enabled as a **social connection** in the Clerk instance
-before members can use it; an unconfigured provider fails at the point where
+before members can use it — separately per instance, so enabling one in
+production does not enable it for local development; an unconfigured provider fails at the point where
 its OAuth flow would start, and settings reports that.
 
 `github` and `x` are proven, never typed. `PUT /api/profiles` accepts a change

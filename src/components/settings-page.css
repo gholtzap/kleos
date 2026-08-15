@@ -127,6 +127,18 @@
   place-items: center;
 }
 
+/* Brand marks ship in their own colors; a one-color mark takes the row's. */
+.settings-page__connection-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.settings-page__connection-logo--native {
+  filter: none;
+}
+
 .settings-page__connection-body {
   display: flex;
   min-width: 0;

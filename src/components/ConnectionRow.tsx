@@ -1,18 +1,20 @@
-import {
-  GithubLogoIcon,
-  GoogleLogoIcon,
-  SealCheckIcon,
-  XLogoIcon,
-  type Icon,
-} from "@phosphor-icons/react";
+import { SealCheckIcon } from "@phosphor-icons/react";
 import type { AccountConnection, ConnectionProvider } from "../connections";
 import "./settings-page.css";
 
-const providerIcons: Record<ConnectionProvider, Icon> = {
-  github: GithubLogoIcon,
-  google: GoogleLogoIcon,
-  x: XLogoIcon,
+/**
+ * Each provider's own mark, so a row is recognizable at a glance. Typing the
+ * map by provider means a new connection cannot ship without one.
+ */
+const providerLogos: Record<ConnectionProvider, string> = {
+  github: "/provider-logos/github.svg",
+  google: "/provider-logos/google.svg",
+  x: "/provider-logos/x.svg",
+  apple: "/provider-logos/apple.svg",
 };
+
+/** Marks that carry required brand colors, rather than taking the row's. */
+const fullColorLogos: readonly ConnectionProvider[] = ["google"];
 
 export function connectionStatus(connection: AccountConnection): string {
   if (!connection.connected) return "Not connected";
@@ -39,12 +41,16 @@ export function ConnectionRow({
   onConnect,
   onDisconnect,
 }: ConnectionRowProps) {
-  const ProviderIcon = providerIcons[connection.provider];
+  const fullColor = fullColorLogos.includes(connection.provider);
 
   return (
     <li>
       <span aria-hidden="true" className="settings-page__connection-icon">
-        <ProviderIcon size={20} />
+        <img
+          alt=""
+          className={`settings-page__connection-logo${fullColor ? " settings-page__connection-logo--native" : ""}`}
+          src={providerLogos[connection.provider]}
+        />
       </span>
       <span className="settings-page__connection-body">
         <strong>

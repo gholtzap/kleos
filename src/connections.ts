@@ -6,7 +6,7 @@ import type { KleosRecord, Person } from "./types.js";
  * connection that carries a public identity also proves the matching profile
  * field. See `identityField`.
  */
-export const connectionProviders = ["github", "google", "x"] as const;
+export const connectionProviders = ["github", "google", "x", "apple"] as const;
 
 export type ConnectionProvider = (typeof connectionProviders)[number];
 
@@ -57,6 +57,14 @@ const definitions: Record<ConnectionProvider, ConnectionDefinition> = {
     identityField: "x",
     // Clerk names the current connection `x` and the retired v1 one `twitter`.
     clerkProviders: ["x", "twitter"],
+  },
+  apple: {
+    provider: "apple",
+    label: "Apple",
+    strategy: "oauth_apple",
+    purpose:
+      "Sign in to Kleos with Apple. Nothing from Apple appears on your profile.",
+    clerkProviders: ["apple"],
   },
 };
 

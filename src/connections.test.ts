@@ -48,9 +48,12 @@ describe("Connection providers", () => {
       "github",
       "google",
       "x",
+      "apple",
     ]);
     expect(connectionDefinition("google").strategy).toBe("oauth_google");
     expect(connectionDefinition("google").identityField).toBeUndefined();
+    expect(connectionDefinition("apple").identityField).toBeUndefined();
+    expect(connectionDefinition("apple").strategy).toBe("oauth_apple");
     expect(connectionDefinition("x").identityField).toBe("x");
     expect(isConnectionProvider("github")).toBe(true);
     expect(isConnectionProvider("linkedin")).toBe(false);
@@ -78,6 +81,7 @@ describe("Account connections", () => {
       true,
       true,
       true,
+      false,
     ]);
     expect(connections[0]?.username).toBe("ada");
     expect(connections[1]?.emailAddress).toBe("ada@example.com");
