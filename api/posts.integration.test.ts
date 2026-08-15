@@ -96,4 +96,29 @@ describe.runIf(runDatabaseTests)("posts PostgreSQL integration", () => {
       }],
     });
   });
+
+  it("rolls back the account and post when a media insert fails", async () => {
+    const response = new TestResponse();
+    await postsHandler({
+      method: "POST",
+      query: {},
+      headers: { authorization: "Bearer token" },
+      body: {
+        body: "This transaction must fail",
+        media: [
+          { publicId: "first-upload", kind: "image", alt: "First chart" },
+          { publicId: "second-upload", kind: "image", alt: "Second chart" },
+        ],
+      },
+    }, response);
+    expect(response.code).toBe(409);
+
+    const { sql } = await import("./_shared");
+    const [stored] = await sql`
+      SELECT
+        EXISTS(SELECT 1 FROM folio_accounts WHERE id = ${identity.ownerId}) AS account_exists,
+        EXISTS(SELECT 1 FROM folio_posts WHERE owner_id = ${identity.ownerId}) AS post_exists
+    `;
+    expect(stored).toEqual({ account_exists: false, post_exists: false });
+  });
 });

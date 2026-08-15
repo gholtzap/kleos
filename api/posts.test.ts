@@ -5,20 +5,21 @@ import { TestResponse } from "./test-response";
 const database = vi.hoisted(() => ({
   statements: [] as string[],
 }));
+const clerkUser = vi.hoisted(() => ({
+  emailAddresses: [{ id: "email-1", emailAddress: "owner@example.com" }],
+  firstName: "Real" as string | null,
+  id: "owner-1",
+  imageUrl: "https://img.example.com/owner.jpg",
+  lastName: "Owner" as string | null,
+  primaryEmailAddressId: "email-1",
+  username: "realowner" as string | null,
+}));
 
 vi.mock("@clerk/backend", () => ({
   verifyToken: vi.fn(async () => ({ sub: "owner-1" })),
   createClerkClient: () => ({
     users: {
-      getUser: async () => ({
-        emailAddresses: [{ id: "email-1", emailAddress: "owner@example.com" }],
-        firstName: "Real",
-        id: "owner-1",
-        imageUrl: "https://img.example.com/owner.jpg",
-        lastName: "Owner",
-        primaryEmailAddressId: "email-1",
-        username: "realowner",
-      }),
+      getUser: async () => clerkUser,
     },
   }),
 }));
@@ -86,6 +87,9 @@ beforeAll(async () => {
 
 beforeEach(() => {
   database.statements = [];
+  clerkUser.firstName = "Real";
+  clerkUser.lastName = "Owner";
+  clerkUser.username = "realowner";
 });
 
 describe("posts API", () => {
@@ -128,5 +132,22 @@ describe("posts API", () => {
       .toBe(true);
     expect(database.statements.some((text) => text.includes("INSERT INTO folio_post_media")))
       .toBe(true);
+  });
+
+  it("does not publish a private email address as the account name", async () => {
+    clerkUser.firstName = null;
+    clerkUser.lastName = null;
+    clerkUser.username = null;
+    const response = new TestResponse();
+    await postsHandler({
+      method: "POST",
+      query: {},
+      headers: { authorization: "Bearer token" },
+      body: { body: "Account-safe post", media: [] },
+    }, response);
+    expect(response.code).toBe(201);
+    expect(response.body).toMatchObject({
+      author: { id: "owner-1", name: "owner-1", handle: "@owner-1" },
+    });
   });
 });

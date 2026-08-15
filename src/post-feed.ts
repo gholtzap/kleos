@@ -101,8 +101,7 @@ export async function deleteUnattachedUpload(upload: UploadedPostFile): Promise<
   if (!upload.deleteToken) return;
   await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(upload.cloudName)}/delete_by_token`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: upload.deleteToken }),
+    body: new URLSearchParams({ token: upload.deleteToken }),
   });
 }
 

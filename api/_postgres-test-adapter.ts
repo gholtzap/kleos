@@ -19,7 +19,7 @@ type TestSqlValue =
   | ReturnType<ReturnType<typeof postgres>["json"]>;
 
 export function postgresTestAdapter(databaseUrl: string) {
-  const client = postgres(databaseUrl, { idle_timeout: 1 });
+  const client = postgres(databaseUrl, { idle_timeout: 1, max: 1 });
   const query = (
     strings: TemplateStringsArray,
     ...values: readonly TestSqlValue[]
@@ -36,9 +36,16 @@ export function postgresTestAdapter(databaseUrl: string) {
   );
   return Object.assign(query, {
     async transaction(queries: readonly PromiseLike<Record<string, unknown>[]>[]) {
-      const results: Record<string, unknown>[][] = [];
-      for (const pending of queries) results.push(await pending);
-      return results;
+      await client.unsafe("BEGIN");
+      try {
+        const results: Record<string, unknown>[][] = [];
+        for (const pending of queries) results.push(await pending);
+        await client.unsafe("COMMIT");
+        return results;
+      } catch (error) {
+        await client.unsafe("ROLLBACK");
+        throw error;
+      }
     },
   });
 }

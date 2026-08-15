@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { accountHandle } from "../src/profile-identity.js";
 import { normalizeFeedPost, normalizeLinkPreview, normalizeNewPost } from "../src/posts.js";
 import type { FeedPost, LinkPreview, PostAuthor, PostMedia, ResultPage } from "../src/types.js";
 import { decodeDescendingCursor, encodeDescendingCursor } from "./_cursor.js";
 import { linkPreviewForText } from "./_link-preview.js";
 import { verifiedPostMedia } from "./_media.js";
 import {
+  accountIdentityForUser,
   authenticatedUserId,
   clerkClient,
   enforceRateLimit,
@@ -38,25 +38,6 @@ function postFromRow(row: Record<string, unknown>): FeedPost | null {
     repostCount: row.repost_count,
     likeCount: row.like_count,
   });
-}
-
-async function accountForUser(userId: string): Promise<PostAuthor> {
-  const user = await clerkClient().users.getUser(userId);
-  const primaryEmail = user.emailAddresses.find(
-    (email) => email.id === user.primaryEmailAddressId,
-  )?.emailAddress;
-  const name = (
-    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
-    user.username?.trim() ||
-    primaryEmail ||
-    user.id
-  ).slice(0, 200);
-  return {
-    id: user.id,
-    name,
-    handle: accountHandle(user.username, user.id).slice(0, 200),
-    avatarUrl: user.imageUrl || undefined,
-  };
 }
 
 async function listPosts(
@@ -201,7 +182,9 @@ async function handler(request: ApiRequest, response: ApiResponse) {
     const verifiedMedia = media.filter((item): item is PostMedia => item !== null);
     let linkPreview: LinkPreview | null = null;
     if (!verifiedMedia.length && input.body) linkPreview = await linkPreviewForText(input.body);
-    const account = await accountForUser(userId);
+    const account: PostAuthor = accountIdentityForUser(
+      await clerkClient().users.getUser(userId),
+    );
     const postId = randomUUID();
     const linkPreviewJson = linkPreview ? JSON.stringify(linkPreview) : null;
     const queries = [

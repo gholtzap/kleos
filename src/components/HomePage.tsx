@@ -77,19 +77,16 @@ export function HomePage({
       await Promise.allSettled(uploaded.map(deleteUnattachedUpload));
       throw failed.reason;
     }
-    try {
-      const ordered = draft.media.map(({ alt }, index) => {
-        const upload = uploaded[index];
-        if (!upload) throw new Error("Could not match an uploaded file.");
-        return { publicId: upload.publicId, kind: upload.kind, alt };
-      });
-      const created = await createPost({ body: draft.body, media: ordered }, getToken);
-      setPosts((current) => [created, ...current]);
-      setFeedError("");
-    } catch (error) {
-      await Promise.allSettled(uploaded.map(deleteUnattachedUpload));
-      throw error;
-    }
+    const ordered = uploaded.map((upload, index) => ({
+      publicId: upload.publicId,
+      kind: upload.kind,
+      alt: draft.media[index]?.alt ?? "",
+    }));
+    // A failed response can follow a successful commit. Do not delete media
+    // after the create request starts because it can already belong to a post.
+    const created = await createPost({ body: draft.body, media: ordered }, getToken);
+    setPosts((current) => [created, ...current]);
+    setFeedError("");
   }
 
   async function loadMore() {
