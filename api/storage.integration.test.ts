@@ -35,7 +35,11 @@ describe.runIf(runDatabaseTests)("Kleos database integration", () => {
     const record = {
       version: 1 as const,
       revision: 0,
-      person: { ...currentPerson, id: ownerId },
+      person: {
+        ...currentPerson,
+        id: ownerId,
+        handle: `db-${ownerId.toLowerCase()}`,
+      },
       claims: [claim],
       projects: [],
       experience: [],
@@ -62,6 +66,20 @@ describe.runIf(runDatabaseTests)("Kleos database integration", () => {
     expect(publicResponse.headers.get("Vercel-CDN-Cache-Control")).toBe(
       "public, s-maxage=300, stale-while-revalidate=300",
     );
+    const handleResponse = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: record.person.handle },
+        headers: { "x-forwarded-for": "127.0.0.2" },
+        body: undefined,
+      },
+      handleResponse,
+    );
+    expect(handleResponse.code).toBe(200);
+    expect(handleResponse.body).toMatchObject({
+      person: { id: ownerId, handle: record.person.handle },
+    });
     const revisedRecord = { ...record, revision: 1 };
     expect(await saveKleosRecord(ownerId, revisedRecord, 0)).toBe(true);
     expect(

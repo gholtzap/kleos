@@ -1,21 +1,41 @@
+import { normalizeProfileHandle } from "./profile-identity";
+
 export type AuthPage = "sign-in" | "sign-up";
 export type SignedInPage = "home" | "profile";
-export function sharedRouteFromHash(hash: string) {
+export type SharedRoute =
+  | { kind: "profile-id"; profileId: string; revision?: number }
+  | { kind: "profile-handle"; profileHandle: string }
+  | { kind: "review"; reviewToken: string };
+
+export function sharedRouteFromHash(hash: string): SharedRoute | null {
   const profile = hash.match(/^#\/p\/([^/?]+)(?:\?v=([0-9]+))?$/);
   if (profile?.[1]) {
-    const revision = Number(profile[2]);
-    return {
-      profileId: decodeURIComponent(profile[1]),
-      revision: Number.isSafeInteger(revision) ? revision : undefined,
-    };
+    try {
+      const revision = Number(profile[2]);
+      return {
+        kind: "profile-id",
+        profileId: decodeURIComponent(profile[1]),
+        revision: Number.isSafeInteger(revision) ? revision : undefined,
+      };
+    } catch {
+      return null;
+    }
   }
   const reviewToken = hash.match(/^#\/r\/([^/]+)$/)?.[1];
-  return reviewToken
-    ? { reviewToken: decodeURIComponent(reviewToken) }
-    : null;
+  if (!reviewToken) return null;
+  try {
+    return { kind: "review", reviewToken: decodeURIComponent(reviewToken) };
+  } catch {
+    return null;
+  }
 }
 
-export type SharedRoute = NonNullable<ReturnType<typeof sharedRouteFromHash>>;
+export function sharedRouteFromPath(pathname: string): SharedRoute | null {
+  const profileHandle = profileHandleFromPath(pathname);
+  return profileHandle === null
+    ? null
+    : { kind: "profile-handle", profileHandle };
+}
 
 export function authPageFromPath(pathname: string): AuthPage | null {
   const path = pathname.replace(/\/+$/, "");
@@ -32,7 +52,7 @@ export function profileHandleFromPath(pathname: string): string | null {
   const encodedHandle = pathname.match(/^\/p\/([^/]+)\/?$/)?.[1];
   if (!encodedHandle) return null;
   try {
-    return decodeURIComponent(encodedHandle);
+    return normalizeProfileHandle(decodeURIComponent(encodedHandle));
   } catch {
     return null;
   }
@@ -43,21 +63,11 @@ export function profilePathMatchesAccount(
   accountHandle: string,
 ): boolean {
   const profileHandle = profileHandleFromPath(pathname);
-  if (profileHandle === null) return false;
-  return profileHandle.replace(/^@+/, "").toLowerCase() ===
-    accountHandle.replace(/^@+/, "").toLowerCase();
+  const normalizedAccount = normalizeProfileHandle(accountHandle);
+  return profileHandle !== null && profileHandle === normalizedAccount;
 }
 
 export function profilePath(handle: string): string {
-  return `/p/${encodeURIComponent(handle.replace(/^@+/, ""))}`;
-}
-
-export function accountHandle(
-  username: string | null | undefined,
-  email: string | null | undefined,
-  userId: string,
-): string {
-  const emailName = email?.split("@")[0];
-  const identifier = username?.trim() || emailName?.trim() || userId;
-  return `@${identifier.replace(/^@+/, "")}`;
+  const normalized = normalizeProfileHandle(handle);
+  return normalized ? `/p/${encodeURIComponent(normalized)}` : "/home";
 }

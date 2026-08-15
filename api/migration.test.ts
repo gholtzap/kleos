@@ -22,4 +22,13 @@ describe("Kleos storage migration", () => {
     expect(sharedApi).not.toContain("CREATE TABLE");
     expect(sharedApi).not.toContain("CREATE INDEX");
   });
+
+  it("indexes canonical public profile handles", async () => {
+    const migration = await readFile(
+      "migrations/0002_public_profile_handles.sql",
+      "utf8",
+    );
+    expect(migration).toContain("folio_records_public_handle_idx");
+    expect(migration).toContain("lower(public_record #>> '{person,handle}')");
+  });
 });

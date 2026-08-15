@@ -4,6 +4,7 @@ import {
   profileHandleFromPath,
   profilePath,
   profilePathMatchesAccount,
+  sharedRouteFromPath,
   signedInPageFromPath,
 } from "./lib";
 
@@ -26,10 +27,15 @@ describe("Signed-in routes", () => {
     expect(signedInPageFromPath("/home")).toBe("home");
     expect(signedInPageFromPath("/")).toBe("home");
     expect(profilePath("@ada")).toBe("/p/ada");
-    expect(profilePath("Ada Lovelace")).toBe("/p/Ada%20Lovelace");
-    expect(profileHandleFromPath("/p/Ada%20Lovelace")).toBe("Ada Lovelace");
+    expect(profilePath("Ada Lovelace")).toBe("/p/ada%20lovelace");
+    expect(profileHandleFromPath("/p/Ada%20Lovelace")).toBe("ada lovelace");
     expect(profileHandleFromPath("/p/%")).toBeNull();
     expect(profilePathMatchesAccount("/p/ADA", "@ada")).toBe(true);
     expect(profilePathMatchesAccount("/p/grace", "@ada")).toBe(false);
+    expect(sharedRouteFromPath("/p/KabirDhillon")).toEqual({
+      kind: "profile-handle",
+      profileHandle: "kabirdhillon",
+    });
+    expect(sharedRouteFromPath("/home")).toBeNull();
   });
 });

@@ -19,6 +19,7 @@ import {
   normalizeOtherExperienceEntry,
   otherExperienceEntryIsValid,
 } from "./profile-sections.js";
+import { normalizeProfileHandle } from "./profile-identity.js";
 import { ownershipLevels } from "./types.js";
 import type {
   Claim,
@@ -87,6 +88,8 @@ export function normalizePerson(value: unknown): Person | null {
     !(
       isRecord(value) &&
       typeof value.id === "string" &&
+      isOptionalString(value.handle) &&
+      (value.handle === undefined || normalizeProfileHandle(value.handle) !== null) &&
       typeof value.name === "string" &&
       typeof value.initials === "string" &&
       typeof value.role === "string" &&
@@ -112,6 +115,10 @@ export function normalizePerson(value: unknown): Person | null {
   }
   return {
     id: value.id,
+    handle:
+      value.handle === undefined
+        ? undefined
+        : normalizeProfileHandle(value.handle) ?? undefined,
     name: value.name,
     initials: value.initials,
     role: value.role,
@@ -509,6 +516,7 @@ export function mergeOwnerKleosRecord(
   existing: KleosRecord | null,
   submitted: KleosRecord,
   ownerId: string,
+  ownerHandle?: string,
 ): KleosRecord {
   const existingClaims = new Map(
     existing?.claims.map((claim) => [claim.id, claim]) ?? [],
@@ -519,6 +527,10 @@ export function mergeOwnerKleosRecord(
     person: {
       ...submitted.person,
       id: ownerId,
+      handle:
+        normalizeProfileHandle(ownerHandle ?? "") ??
+        existing?.person.handle ??
+        undefined,
       identityVerified: existing?.person.identityVerified ?? false,
       employmentVerified: existing?.person.employmentVerified ?? false,
     },

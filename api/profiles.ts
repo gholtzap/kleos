@@ -1,23 +1,27 @@
+import type { User } from "@clerk/backend";
 import {
   kleosRecordContentIsValid,
   mergeOwnerKleosRecord,
   normalizeSubmittedKleosRecord,
 } from "../src/kleos.js";
 import {
+  accountIdentityForUser,
   authenticatedUserId,
+  clerkClient,
   enforceRateLimit,
   type ApiRequest,
   type ApiResponse,
   first,
   loadKleosRecord,
   loadPublicKleosRecord,
+  loadPublicKleosRecordByHandle,
   methodNotAllowed,
   observed,
   parseBody,
   privateResponse,
   saveKleosRecord,
   sendRateLimit,
-  verifiedGithubUsername,
+  verifiedGithubAccount,
 } from "./_shared.js";
 
 const MAX_RECORD_BYTES = 100_000;
@@ -28,8 +32,15 @@ async function handler(
 ) {
   if (request.method === "GET") {
     const publicId = first(request.query.id);
-    if (publicId) {
-      if (publicId.length > 200) {
+    const publicHandle = first(request.query.handle);
+    const publicRead =
+      request.query.id !== undefined || request.query.handle !== undefined;
+    if (publicRead) {
+      if (
+        Boolean(publicId) === Boolean(publicHandle) ||
+        (publicId?.length ?? 0) > 200 ||
+        (publicHandle?.length ?? 0) > 200
+      ) {
         return response.status(404).json({ error: "Profile not found." });
       }
       const limit = await enforceRateLimit(
@@ -39,15 +50,17 @@ async function handler(
         60,
       );
       if (!limit.allowed) return sendRateLimit(response, limit);
+      const record = publicHandle
+        ? await loadPublicKleosRecordByHandle(publicHandle)
+        : await loadPublicKleosRecord(publicId ?? "");
+      if (!record) {
+        return response.status(404).json({ error: "Profile not found." });
+      }
       response.setHeader("Cache-Control", "public, max-age=60");
       response.setHeader(
         "Vercel-CDN-Cache-Control",
         "public, s-maxage=300, stale-while-revalidate=300",
       );
-      const record = await loadPublicKleosRecord(publicId);
-      if (!record) {
-        return response.status(404).json({ error: "Profile not found." });
-      }
       response.setHeader("ETag", `W/"kleos-${record.revision}"`);
       return response.status(200).json(record);
     }
@@ -92,19 +105,21 @@ async function handler(
         .json({ error: "Kleos changed. Reload and try again." });
     }
 
+    let ownerUser: User;
+    try {
+      ownerUser = await clerkClient().users.getUser(userId);
+    } catch {
+      return response
+        .status(503)
+        .json({ error: "Profile identity is unavailable. Try again." });
+    }
+
     const submittedGithub = record.person.github;
     if (
       submittedGithub !== undefined &&
       submittedGithub !== existing?.person.github
     ) {
-      let verified: string | null;
-      try {
-        verified = await verifiedGithubUsername(userId);
-      } catch {
-        return response
-          .status(503)
-          .json({ error: "GitHub verification is unavailable. Try again." });
-      }
+      const verified = verifiedGithubAccount(ownerUser)?.username ?? null;
       if (
         !verified ||
         verified.toLowerCase() !== submittedGithub.toLowerCase()
@@ -116,7 +131,13 @@ async function handler(
       record.person.github = verified;
     }
 
-    const safeRecord = mergeOwnerKleosRecord(existing, record, userId);
+    const owner = accountIdentityForUser(ownerUser);
+    const safeRecord = mergeOwnerKleosRecord(
+      existing,
+      record,
+      userId,
+      owner.handle,
+    );
     safeRecord.revision = currentRevision + 1;
     const serialized = JSON.stringify(safeRecord);
     if (Buffer.byteLength(serialized, "utf8") > MAX_RECORD_BYTES) {

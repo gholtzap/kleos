@@ -8,14 +8,39 @@ import { TestResponse } from "./test-response";
 
 const database = vi.hoisted(() => ({
   record: null as KleosRecord | null,
+  handleBindCount: 0,
+  loadedOwnerIds: [] as string[],
   rateCount: 1,
   saveAllowed: true,
+  savedOwnerIds: [] as string[],
 }));
 
 const clerkDirectory = vi.hoisted(() => ({
   githubUsername: "gholtzap" as string | null,
   lookupCount: 0,
+  listCount: 0,
+  listFails: false,
+  profileExists: true,
+  profileUsername: "kabirdhillon" as string | null,
 }));
+
+function clerkUser() {
+  return {
+    id: "owner-1",
+    firstName: "Kabir",
+    lastName: "Dhillon",
+    username: clerkDirectory.profileUsername,
+    externalAccounts: clerkDirectory.githubUsername
+      ? [
+          {
+            provider: "oauth_github",
+            username: clerkDirectory.githubUsername,
+            verification: { status: "verified" },
+          },
+        ]
+      : [],
+  };
+}
 
 vi.mock("@clerk/backend", () => ({
   verifyToken: vi.fn(async () => ({ sub: "owner-1" })),
@@ -23,16 +48,15 @@ vi.mock("@clerk/backend", () => ({
     users: {
       getUser: async () => {
         clerkDirectory.lookupCount += 1;
+        if (!clerkDirectory.profileExists) throw new Error("Not found");
+        return clerkUser();
+      },
+      getUserList: async () => {
+        clerkDirectory.listCount += 1;
+        if (clerkDirectory.listFails) throw new Error("Directory unavailable");
         return {
-          externalAccounts: clerkDirectory.githubUsername
-            ? [
-                {
-                  provider: "oauth_github",
-                  username: clerkDirectory.githubUsername,
-                  verification: { status: "verified" },
-                },
-              ]
-            : [],
+          data: clerkDirectory.profileExists ? [clerkUser()] : [],
+          totalCount: clerkDirectory.profileExists ? 1 : 0,
         };
       },
     },
@@ -48,12 +72,28 @@ vi.mock("@neondatabase/serverless", () => {
     if (text.includes("INSERT INTO folio_rate_limits")) {
       return [{ request_count: database.rateCount }];
     }
+    if (text.includes("WHERE lower(public_record")) {
+      const requestedHandle = _values[0];
+      const record = database.record;
+      if (!record || record.person.handle !== requestedHandle) return [];
+      return [{ public_record: publicKleosRecord(record) }];
+    }
+    if (text.includes("UPDATE folio_records") && text.includes("jsonb_set")) {
+      database.handleBindCount += 1;
+      if (database.record && typeof _values[0] === "string") {
+        database.record.person.handle = _values[0];
+      }
+      return [];
+    }
     if (text.includes("SELECT public_record")) {
       return database.record
         ? [{ public_record: publicKleosRecord(database.record) }]
         : [];
     }
     if (text.includes("SELECT revision, record")) {
+      if (typeof _values[0] === "string") {
+        database.loadedOwnerIds.push(_values[0]);
+      }
       return database.record
         ? [
             {
@@ -64,6 +104,9 @@ vi.mock("@neondatabase/serverless", () => {
         : [];
     }
     if (text.includes("INSERT INTO folio_records")) {
+      if (typeof _values[0] === "string") {
+        database.savedOwnerIds.push(_values[0]);
+      }
       return database.saveAllowed ? [{ owner_id: "owner-1" }] : [];
     }
     return [];
@@ -89,7 +132,11 @@ beforeEach(() => {
   database.record = {
     version: 1,
     revision: 5,
-    person: { ...currentPerson, id: "owner-1" },
+    person: {
+      ...currentPerson,
+      id: "owner-1",
+      handle: "kabirdhillon",
+    },
     claims: initialClaims,
     projects: [],
     experience: [],
@@ -99,8 +146,15 @@ beforeEach(() => {
   };
   database.rateCount = 1;
   database.saveAllowed = true;
+  database.handleBindCount = 0;
+  database.loadedOwnerIds = [];
+  database.savedOwnerIds = [];
   clerkDirectory.githubUsername = "gholtzap";
   clerkDirectory.lookupCount = 0;
+  clerkDirectory.listCount = 0;
+  clerkDirectory.listFails = false;
+  clerkDirectory.profileExists = true;
+  clerkDirectory.profileUsername = "kabirdhillon";
 });
 
 describe("profiles API", () => {
@@ -128,6 +182,120 @@ describe("profiles API", () => {
         { id: "incident-console" },
       ],
     });
+  });
+
+  it("loads an indexed public profile by canonical handle", async () => {
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "KabirDhillon" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({
+      person: { id: "owner-1", handle: "kabirdhillon" },
+    });
+    expect(clerkDirectory.listCount).toBe(0);
+  });
+
+  it("binds an existing legacy record after its first exact Clerk lookup", async () => {
+    if (database.record) database.record.person.handle = undefined;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "kabirdhillon" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({
+      person: { id: "owner-1", handle: "kabirdhillon" },
+    });
+    expect(clerkDirectory.listCount).toBe(1);
+    expect(database.handleBindCount).toBe(1);
+  });
+
+  it("serves a public blank profile for an account without a saved record", async () => {
+    database.record = null;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "kabirdhillon" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({
+      revision: 0,
+      person: {
+        id: "owner-1",
+        handle: "kabirdhillon",
+        name: "Kabir Dhillon",
+      },
+      claims: [],
+    });
+  });
+
+  it("returns not found only when the profile directory has no exact account", async () => {
+    database.record = null;
+    clerkDirectory.profileExists = false;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "kabirdhillon" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(404);
+    expect(response.body).toEqual({ error: "Profile not found." });
+  });
+
+  it("does not cache a directory outage as a missing profile", async () => {
+    database.record = null;
+    clerkDirectory.listFails = true;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "kabirdhillon" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(500);
+    expect(response.body).toEqual({
+      error: "The server could not complete this request.",
+    });
+    expect(response.headers.get("Vercel-CDN-Cache-Control")).toBeUndefined();
+  });
+
+  it("rejects an invalid public handle before a directory lookup", async () => {
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "GET",
+        query: { handle: "bad/handle" },
+        headers: { "x-forwarded-for": "127.0.0.1" },
+        body: undefined,
+      },
+      response,
+    );
+    expect(response.code).toBe(404);
+    expect(clerkDirectory.listCount).toBe(0);
   });
 
   it("stops an over-limit public caller before the profile read", async () => {
@@ -164,6 +332,40 @@ describe("profiles API", () => {
     );
     expect(response.code).toBe(400);
     expect(response.body).toEqual({ error: "Invalid Kleos record." });
+  });
+
+  it("writes only the authenticated profile when the client forges a target", async () => {
+    database.record = null;
+    const response = new TestResponse();
+    await profilesHandler(
+      {
+        method: "PUT",
+        query: { id: "other-owner", handle: "someone-else" },
+        headers: { authorization: "Bearer token" },
+        body: {
+          version: 1,
+          revision: 0,
+          person: {
+            ...currentPerson,
+            id: "other-owner",
+            handle: "someone-else",
+          },
+          claims: [],
+          projects: [],
+          experience: [],
+          education: [],
+          certifications: [],
+          otherExperience: [],
+        },
+      },
+      response,
+    );
+    expect(response.code).toBe(200);
+    expect(response.body).toMatchObject({
+      person: { id: "owner-1", handle: "kabirdhillon" },
+    });
+    expect(database.loadedOwnerIds).toEqual(["owner-1"]);
+    expect(database.savedOwnerIds).toEqual(["owner-1"]);
   });
 
   it("persists a connected github account and featured projects", async () => {
@@ -232,7 +434,7 @@ describe("profiles API", () => {
     });
   });
 
-  it("skips verification when the stored github account is unchanged", async () => {
+  it("does not make a second Clerk read when the github account is unchanged", async () => {
     if (database.record) database.record.person.github = "gholtzap";
     const response = new TestResponse();
     await profilesHandler(
@@ -255,7 +457,7 @@ describe("profiles API", () => {
       response,
     );
     expect(response.code).toBe(200);
-    expect(clerkDirectory.lookupCount).toBe(0);
+    expect(clerkDirectory.lookupCount).toBe(1);
   });
 
   it("rejects featured projects that are not owned by the connected account", async () => {
