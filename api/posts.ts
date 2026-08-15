@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { accountHandle } from "../src/lib.js";
+import { accountHandle } from "../src/profile-identity.js";
 import { normalizeFeedPost, normalizeLinkPreview, normalizeNewPost } from "../src/posts.js";
 import type { FeedPost, LinkPreview, PostAuthor, PostMedia, ResultPage } from "../src/types.js";
 import { decodeDescendingCursor, encodeDescendingCursor } from "./_cursor.js";
@@ -54,7 +54,7 @@ async function accountForUser(userId: string): Promise<PostAuthor> {
   return {
     id: user.id,
     name,
-    handle: accountHandle(user.username, primaryEmail, user.id).slice(0, 200),
+    handle: accountHandle(user.username, user.id).slice(0, 200),
     avatarUrl: user.imageUrl || undefined,
   };
 }
