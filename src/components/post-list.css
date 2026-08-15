@@ -1,0 +1,86 @@
+.feed-post {
+  display: flex;
+  padding: 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--app-border);
+  font-family: var(--font-marketing);
+}
+
+.feed-post__avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  color: #111;
+  background: #e7e9ea;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.feed-post__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.feed-post__header,
+.feed-post__header a {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.feed-post__header > span,
+.feed-post__header a span {
+  color: var(--app-muted);
+}
+
+.feed-post__header a span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-post__header strong {
+  color: var(--app-text);
+  white-space: nowrap;
+}
+
+.feed-post p {
+  margin: 4px 0 14px;
+  color: var(--app-text);
+  font-size: 15px;
+  line-height: 21px;
+  white-space: pre-wrap;
+}
+
+.feed-post__activity {
+  display: flex;
+  max-width: 390px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--app-muted);
+}
+
+.feed-post__activity span {
+  display: inline-flex;
+  min-width: 42px;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.feed-post__activity svg {
+  width: 18px;
+  height: 18px;
+}
+
+.feed-post a:hover strong {
+  text-decoration: underline;
+}
+
+.feed-post a:focus-visible {
+  outline-offset: 3px;
+}
