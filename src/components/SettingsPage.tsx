@@ -1,5 +1,4 @@
 import { useClerk, useUser } from "@clerk/react";
-import { SignOutIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import {
   connectionDefinition,
@@ -14,15 +13,10 @@ import {
   settingsPath,
 } from "../lib";
 import type { AccountIdentity } from "../types/profile";
-import "../app-surface.css";
-import "./app-layout.css";
-import { AppTopBar } from "./AppTopBar";
-import { ConnectionRow } from "./ConnectionRow";
-import { Sidebar } from "./Sidebar";
+import { SettingsView } from "./SettingsView";
 import { useAccountConnections } from "./use-account-connections";
 import { useAppSurface } from "./use-app-surface";
 import { useProfileRecord } from "./use-profile-record";
-import "./settings-page.css";
 
 interface SettingsPageProps {
   account: AccountIdentity;
@@ -116,94 +110,22 @@ export function SettingsPage({ account }: SettingsPageProps) {
   const verifiedConnections = connections.connections.filter(
     (connection) => connection.verified,
   ).length;
-  const hasOtherSignIn = user?.passwordEnabled === true || verifiedConnections > 1;
-  const error = connectionError || saveError;
+  const hasOtherSignIn =
+    user?.passwordEnabled === true || verifiedConnections > 1;
 
   return (
-    <div className="app-surface">
-      <div className="app-layout settings-page__layout">
-        <div className="app-layout__sidebar">
-          <Sidebar
-            account={account}
-            activeItem="Settings"
-            collapsible
-            onPost={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          />
-        </div>
-
-        <main className="app-layout__timeline settings-page__timeline">
-          <AppTopBar subtitle={account.handle} title="Settings" />
-
-          <div className="settings-page__shell">
-            <section
-              aria-labelledby="settings-account-heading"
-              className="settings-page__section"
-            >
-              <h2 id="settings-account-heading">Account</h2>
-              <p className="settings-page__hint">
-                Your name and username come from the account you signed in with.
-              </p>
-              <dl className="settings-page__facts">
-                <div>
-                  <dt>Name</dt>
-                  <dd>{account.name}</dd>
-                </div>
-                <div>
-                  <dt>Username</dt>
-                  <dd>{account.handle}</dd>
-                </div>
-                <div>
-                  <dt>Email</dt>
-                  <dd>{email ?? "No email on this account"}</dd>
-                </div>
-              </dl>
-              <button
-                className="settings-page__sign-out"
-                onClick={() => void signOut()}
-                type="button"
-              >
-                <SignOutIcon aria-hidden="true" size={16} />
-                Sign out
-              </button>
-            </section>
-
-            <section
-              aria-labelledby="settings-connections-heading"
-              className="settings-page__section"
-            >
-              <h2 id="settings-connections-heading">Connected accounts</h2>
-              <p className="settings-page__hint">
-                Connect as many as you like. Every connected account can sign
-                you in, and the ones with a public username prove the links on
-                your profile.
-              </p>
-
-              {error ? (
-                <p className="settings-page__error" role="alert">
-                  {error}
-                </p>
-              ) : null}
-
-              <ul className="settings-page__connections">
-                {connections.connections.map((connection) => (
-                  <ConnectionRow
-                    busy={saving || connections.pending === connection.provider}
-                    canDisconnect={hasOtherSignIn}
-                    connection={connection}
-                    key={connection.provider}
-                    onConnect={() => void startConnect(connection.provider)}
-                    onDisconnect={() => void removeConnection(connection)}
-                  />
-                ))}
-              </ul>
-            </section>
-          </div>
-
-          <span className="settings-page__status" role="status">
-            {statusMessage}
-          </span>
-        </main>
-      </div>
-    </div>
+    <SettingsView
+      account={account}
+      canDisconnect={hasOtherSignIn}
+      connections={connections.connections}
+      email={email}
+      error={connectionError || saveError}
+      onConnect={(provider) => void startConnect(provider)}
+      onDisconnect={(connection) => void removeConnection(connection)}
+      onSignOut={() => void signOut()}
+      pending={connections.pending}
+      saving={saving}
+      statusMessage={statusMessage}
+    />
   );
 }

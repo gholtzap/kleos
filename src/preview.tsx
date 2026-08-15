@@ -7,8 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
 import "./app-surface.css";
-import { accountConnection } from "./connections";
-import { ConnectionRow } from "./components/ConnectionRow";
+import { accountConnections } from "./connections";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
 import { GitHubActivity } from "./components/GithubGraph";
@@ -20,6 +19,7 @@ import {
   ProfileEntrySection,
 } from "./components/ProfileEntrySection";
 import { ProfileHeader } from "./components/ProfileHeader";
+import { SettingsView } from "./components/SettingsView";
 import { SkillsSection } from "./components/SkillsSection";
 import {
   SocialHoverCards,
@@ -195,38 +195,31 @@ function noop() {
   // Preview affordances render without page-level handlers.
 }
 
-const previewConnections = [
+const previewAccount = {
+  id: "user-fakeperson",
+  name: "Fake Person",
+  handle: "@fakeperson",
+};
+
+// One connection of every state: proven by username, proven by email, started
+// but unfinished, and absent.
+const previewConnections = accountConnections([
   {
-    connection: accountConnection(
-      [
-        {
-          provider: "github",
-          username: "fakeperson",
-          verification: { status: "verified" },
-        },
-      ],
-      "github",
-    ),
-    canDisconnect: true,
+    provider: "github",
+    username: "fakeperson",
+    verification: { status: "verified" },
   },
   {
-    connection: accountConnection([], "google"),
-    canDisconnect: true,
+    provider: "google",
+    emailAddress: "fake.person@example.com",
+    verification: { status: "verified" },
   },
   {
-    connection: accountConnection(
-      [
-        {
-          provider: "x",
-          username: "fakeperson",
-          verification: { status: "unverified" },
-        },
-      ],
-      "x",
-    ),
-    canDisconnect: false,
+    provider: "x",
+    username: "fakeperson",
+    verification: { status: "unverified" },
   },
-];
+]);
 
 const previewNow = new Date();
 
@@ -243,30 +236,27 @@ createRoot(root).render(
     <Experience />
     <SkillsSection />
     <GitHubActivity account="gholtzap" showLegend />
+    <section aria-label="Settings page" id="settings">
+      <SettingsView
+        account={previewAccount}
+        canDisconnect={false}
+        connections={previewConnections}
+        email="fake.person@example.com"
+        error=""
+        onConnect={noop}
+        onDisconnect={noop}
+        onSignOut={noop}
+        pending={null}
+        saving={false}
+        statusMessage="Google connected."
+      />
+    </section>
     <section
       aria-label="Profile page sections"
       className="app-surface component-preview__app"
       id="profile"
     >
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 24px 48px" }}>
-        <section
-          aria-label="Connected accounts"
-          className="settings-page__section"
-        >
-          <h2>Connected accounts</h2>
-          <ul className="settings-page__connections">
-            {previewConnections.map(({ connection, canDisconnect }) => (
-              <ConnectionRow
-                busy={false}
-                canDisconnect={canDisconnect}
-                connection={connection}
-                key={connection.provider}
-                onConnect={noop}
-                onDisconnect={noop}
-              />
-            ))}
-          </ul>
-        </section>
         <ProfileHeader record={previewRecord} onEdit={noop} />
         <FeaturedProjects projects={previewRecord.projects} onEdit={noop} />
         <ProfileEntrySection
