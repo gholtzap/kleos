@@ -14,14 +14,7 @@ import {
   publicKleosRecord,
   reviewKleosRecord,
 } from "./kleos";
-import {
-  accountHandle,
-} from "./lib";
-import {
-  publicProfileIdFromHash,
-  publicProfileRevisionFromHash,
-} from "./public-profile";
-import { reviewTokenFromHash } from "./review-links";
+import { accountHandle, sharedRouteFromHash } from "./lib";
 import { normalizeNewProfessionalRequest } from "./requests";
 
 describe("Kleos domain fixtures", () => {
@@ -36,10 +29,9 @@ describe("Kleos domain fixtures", () => {
     expect(accountHandle("ada", "ada@example.com", "user-1")).toBe("@ada");
     expect(accountHandle(null, "ada@example.com", "user-1")).toBe("@ada");
     expect(accountHandle(null, null, "user-1")).toBe("@user-1");
-    expect(publicProfileIdFromHash("#/p/user%2F1")).toBe("user/1");
-    expect(publicProfileIdFromHash("#/p/user%2F1?v=7")).toBe("user/1");
-    expect(publicProfileRevisionFromHash("#/p/user%2F1?v=7")).toBe(7);
-    expect(reviewTokenFromHash("#/r/token%2Fvalue")).toBe("token/value");
+    expect(sharedRouteFromHash("#/p/user%2F1")).toEqual({ profileId: "user/1", revision: undefined });
+    expect(sharedRouteFromHash("#/p/user%2F1?v=7")).toEqual({ profileId: "user/1", revision: 7 });
+    expect(sharedRouteFromHash("#/r/token%2Fvalue")).toEqual({ reviewToken: "token/value" });
     expect(new Set(evidence.map((item) => item.id)).size).toBe(evidence.length);
     expect(initialClaims.map(claimState)).toEqual([
       "Confirmed",

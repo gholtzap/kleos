@@ -1,11 +1,6 @@
 import { isRecord, normalizeKleosRecord } from "./kleos";
 import type { ReviewBundle } from "./types";
 
-export function reviewTokenFromHash(hash: string) {
-  const match = hash.match(/^#\/r\/([^/]+)$/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-}
-
 async function responseJson(response: Response): Promise<unknown> {
   if (!response.ok) throw new Error("Review link request failed.");
   return response.json() as Promise<unknown>;
