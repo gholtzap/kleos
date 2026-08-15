@@ -55,6 +55,32 @@
   outline-offset: -2px;
 }
 
+.app-layout__feed-error {
+  margin: 0;
+  padding: 12px 16px;
+  color: #f4212e;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.app-layout__load-more {
+  width: 100%;
+  min-height: 52px;
+  color: var(--app-blue);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--app-border);
+  cursor: pointer;
+}
+
+.app-layout__load-more:hover {
+  background: rgb(231 233 234 / 3%);
+}
+
+.app-layout__load-more:disabled {
+  color: var(--app-muted);
+  cursor: default;
+}
+
 .app-layout__discovery {
   width: 100%;
   grid-column: 4;

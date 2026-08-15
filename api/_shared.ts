@@ -156,8 +156,9 @@ export function accountIdentityForUser(user: User): AccountIdentity {
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
   return {
     id: user.id,
-    name: name || user.username?.trim() || user.id,
+    name: (name || user.username?.trim() || user.id).slice(0, 200),
     handle: accountHandle(user.username, user.id),
+    avatarUrl: user.imageUrl || undefined,
   };
 }
 

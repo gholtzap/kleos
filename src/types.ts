@@ -218,3 +218,72 @@ export interface ResultPage<Item> {
   items: Item[];
   nextCursor?: string;
 }
+
+export interface PostAuthor {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl?: string;
+}
+
+export interface PostImage {
+  id: string;
+  kind: "image";
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+  animated: boolean;
+}
+
+export interface PostVideo {
+  id: string;
+  kind: "video";
+  url: string;
+  posterUrl: string;
+  width: number;
+  height: number;
+  durationSeconds: number;
+}
+
+export type PostMedia = PostImage | PostVideo;
+
+export interface LinkPreview {
+  url: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  siteName?: string;
+}
+
+export interface FeedPost {
+  id: string;
+  author: PostAuthor;
+  body: string;
+  media: PostMedia[];
+  linkPreview?: LinkPreview;
+  postedAt: string;
+  replyCount: number;
+  repostCount: number;
+  likeCount: number;
+}
+
+export interface NewPostMedia {
+  publicId: string;
+  kind: "image" | "video";
+  alt: string;
+}
+
+export interface NewPost {
+  body: string;
+  media: NewPostMedia[];
+}
+
+export interface MediaUploadTicket {
+  apiKey: string;
+  cloudName: string;
+  publicId: string;
+  resourceType: "image" | "video";
+  signature: string;
+  signedParameters: Record<string, string>;
+}
