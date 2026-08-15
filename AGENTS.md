@@ -30,3 +30,13 @@ Do not refactor for its own sake. Refactor only when it makes the current task s
 The goal is to continuously turn repeated patterns and implicit concepts into simple, reliable, well-tested building blocks.
 
 Never use loose types - 
+
+## Database and deployment changes
+
+- Put each schema change in a new ordered file in `migrations/`.
+- Add a PostgreSQL integration test for each schema or persistence change.
+- Run `npm run test:db` against a disposable PostgreSQL database before merge.
+- Keep migrations transaction-safe and compatible with the deployed application. Use separate expand, backfill, and contract releases for destructive changes.
+- Run production migrations before the production build. Do not run migrations from request handlers or application startup.
+- Treat a failed migration as a failed deployment. Do not bypass the migration or required CI checks.
+- Verify the exact production deployment and its affected API routes before you report completion.

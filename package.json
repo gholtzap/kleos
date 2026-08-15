@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "db:migrate": "tsx scripts/migrate.mjs",
+    "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run api/storage.integration.test.ts api/posts.integration.test.ts",
+    "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run scripts/migrate.integration.test.ts api/storage.integration.test.ts api/posts.integration.test.ts",
+    "release:build": "tsx scripts/release-build.ts",
     "test:load": "node scripts/load-test.mjs"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "ipaddr.js": "^2.5.0",
     "motion": "^13.1.0",
     "node-html-parser": "^9.0.1",
+    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -31,7 +33,6 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^26.1.0",
-    "postgres": "^3.4.9",
     "tsx": "^4.23.12",
     "typescript": "~5.8.3",
     "vite": "^7.0.6",
