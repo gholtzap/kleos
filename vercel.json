@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm run release:build",
   "crons": [
     {
       "path": "/api/maintenance",
