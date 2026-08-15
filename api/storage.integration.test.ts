@@ -8,41 +8,10 @@ const runDatabaseTests = process.env.RUN_KLEOS_DB_TESTS === "1";
 const ownerId = `folio-test-${randomUUID()}`;
 
 vi.mock("@neondatabase/serverless", async () => {
-  const { default: postgres } = await import("postgres");
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required.");
-  const client = postgres(databaseUrl, { idle_timeout: 1 });
-  type TestJson =
-    | null
-    | boolean
-    | number
-    | string
-    | readonly TestJson[]
-    | { readonly [key: string]: TestJson };
-  type TestSqlValue =
-    | null
-    | boolean
-    | number
-    | string
-    | Date
-    | Uint8Array
-    | readonly TestSqlValue[]
-    | ReturnType<typeof client.json>;
-  const query = (
-    strings: TemplateStringsArray,
-    ...values: readonly TestSqlValue[]
-  ) => client(
-    strings,
-    ...values.map((value) => {
-      if (typeof value !== "string" || !/^[{\[]/.test(value)) return value;
-      try {
-        return client.json(JSON.parse(value) as TestJson);
-      } catch {
-        return value;
-      }
-    }),
-  );
-  return { neon: () => query };
+  const { postgresTestAdapter } = await import("./_postgres-test-adapter");
+  return { neon: () => postgresTestAdapter(databaseUrl) };
 });
 
 describe.runIf(runDatabaseTests)("Kleos database integration", () => {
