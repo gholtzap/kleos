@@ -333,6 +333,11 @@ svg {
   text-align: center;
 }
 
+/* The same message, waiting on the dark surface the app is about to paint. */
+:root[data-surface="app"] .kleos-message {
+  color: #71767b;
+}
+
 .kleos-record {
   padding: 64px 0;
 }
