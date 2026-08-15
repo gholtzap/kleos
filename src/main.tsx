@@ -6,7 +6,12 @@ import App from "./App";
 import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
-import { accountHandle, sharedRouteFromHash, signedInPageFromPath } from "./lib";
+import {
+  accountHandle,
+  profilePathMatchesAccount,
+  sharedRouteFromHash,
+  signedInPageFromPath,
+} from "./lib";
 import { useLocationHash } from "./use-location-hash";
 import "./styles.css";
 
@@ -52,11 +57,20 @@ function ClerkApplication() {
       handle: accountHandle(user.username, email, user.id),
     };
 
-    return signedInPageFromPath(window.location.pathname) === "profile" ? (
-      <ProfilePage account={account} />
-    ) : (
-      <HomePage account={account} />
-    );
+    if (signedInPageFromPath(window.location.pathname) === "profile") {
+      return profilePathMatchesAccount(
+        window.location.pathname,
+        account.handle,
+      ) ? (
+        <ProfilePage account={account} />
+      ) : (
+        <main className="kleos-message" role="alert">
+          Profile unavailable.
+        </main>
+      );
+    }
+
+    return <HomePage account={account} />;
   }
 
   return <App />;

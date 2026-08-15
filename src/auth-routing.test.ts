@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { authPageFromPath, profilePath, signedInPageFromPath } from "./lib";
+import {
+  authPageFromPath,
+  profileHandleFromPath,
+  profilePath,
+  profilePathMatchesAccount,
+  signedInPageFromPath,
+} from "./lib";
 
 describe("Authentication routes", () => {
   it("recognizes the authentication flows", () => {
@@ -21,5 +27,9 @@ describe("Signed-in routes", () => {
     expect(signedInPageFromPath("/")).toBe("home");
     expect(profilePath("@ada")).toBe("/p/ada");
     expect(profilePath("Ada Lovelace")).toBe("/p/Ada%20Lovelace");
+    expect(profileHandleFromPath("/p/Ada%20Lovelace")).toBe("Ada Lovelace");
+    expect(profileHandleFromPath("/p/%")).toBeNull();
+    expect(profilePathMatchesAccount("/p/ADA", "@ada")).toBe(true);
+    expect(profilePathMatchesAccount("/p/grace", "@ada")).toBe(false);
   });
 });

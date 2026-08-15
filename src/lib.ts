@@ -28,6 +28,26 @@ export function signedInPageFromPath(pathname: string): SignedInPage {
   return /^\/p\/[^/]+\/?$/.test(pathname) ? "profile" : "home";
 }
 
+export function profileHandleFromPath(pathname: string): string | null {
+  const encodedHandle = pathname.match(/^\/p\/([^/]+)\/?$/)?.[1];
+  if (!encodedHandle) return null;
+  try {
+    return decodeURIComponent(encodedHandle);
+  } catch {
+    return null;
+  }
+}
+
+export function profilePathMatchesAccount(
+  pathname: string,
+  accountHandle: string,
+): boolean {
+  const profileHandle = profileHandleFromPath(pathname);
+  if (profileHandle === null) return false;
+  return profileHandle.replace(/^@+/, "").toLowerCase() ===
+    accountHandle.replace(/^@+/, "").toLowerCase();
+}
+
 export function profilePath(handle: string): string {
   return `/p/${encodeURIComponent(handle.replace(/^@+/, ""))}`;
 }
