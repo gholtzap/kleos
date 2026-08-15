@@ -6,11 +6,9 @@ import {
 } from "@phosphor-icons/react";
 import { profilePath } from "../lib";
 import type { FeedPost, PostMedia } from "../types";
-import type { AccountIdentity } from "../types/profile";
 import "./post-list.css";
 
 interface PostListProps {
-  account: AccountIdentity;
   posts: readonly FeedPost[];
 }
 
@@ -50,7 +48,7 @@ function MediaGrid({ media }: { media: PostMedia[] }) {
   );
 }
 
-export function PostList({ account, posts }: PostListProps) {
+export function PostList({ posts }: PostListProps) {
   if (!posts.length) {
     return (
       <div className="post-list__empty">
@@ -63,9 +61,7 @@ export function PostList({ account, posts }: PostListProps) {
   return (
     <div className="post-list">
       {posts.map((post) => {
-        const authorUrl = post.author.id === account.id
-          ? profilePath(account.handle)
-          : `/#/p/${encodeURIComponent(post.author.id)}`;
+        const authorUrl = profilePath(post.author.handle);
         return (
           <article className="feed-post" key={post.id}>
             <a

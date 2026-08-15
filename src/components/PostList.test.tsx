@@ -2,13 +2,13 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { gavinAccount, previewPosts, testAccounts, testPosts } from "../post-data";
+import { previewPosts, testAccounts, testPosts } from "../post-data";
 import { PostList } from "./PostList";
 
 describe("PostList", () => {
   it("renders every realistic fixture with its account identity", () => {
     document.body.innerHTML = renderToStaticMarkup(
-      <PostList account={gavinAccount} posts={previewPosts} />,
+      <PostList posts={previewPosts} />,
     );
     expect(document.querySelectorAll("article")).toHaveLength(testPosts.length);
     expect(document.querySelector('a[href="/p/gavinholtzapple"]')?.textContent).toBe("G");
@@ -28,7 +28,6 @@ describe("PostList", () => {
     };
     const html = renderToStaticMarkup(
       <PostList
-        account={{ id: "viewer", name: "Viewer", handle: "@viewer" }}
         posts={[
           {
             ...base,
@@ -64,7 +63,7 @@ describe("PostList", () => {
         ]}
       />,
     );
-    expect(html).toContain('href="/#/p/author"');
+    expect(html).toContain('href="/p/author"');
     expect(html).toContain('alt="A launch photo"');
     expect(html).toContain('src="https://cdn.example.com/video.mp4"');
     expect(html).toContain("Example story");

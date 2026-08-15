@@ -291,11 +291,25 @@ export const testPosts = [
 
 const previewTime = Date.parse("2026-08-15T16:00:00.000Z");
 
-export const previewPosts: readonly FeedPost[] = testPosts.map((post, index) => ({
+export const previewPosts: readonly FeedPost[] = testPosts.map((post, index): FeedPost => ({
   id: post.id,
   author: post.author,
   body: post.text,
-  media: [],
+  media: post.id === "gavin-evidence-review" ? [{
+    id: "preview-workspace",
+    kind: "image",
+    url: "/kleos-bg-dithered.png",
+    width: 1232,
+    height: 928,
+    alt: "A team working together in a studio",
+    animated: false,
+  }] : [],
+  linkPreview: post.id === "priya-research-code" ? {
+    url: "https://example.org/priya/retrieval-evaluation",
+    title: "Retrieval evaluation code and data",
+    description: "Methods, evaluation data, and failed approaches from the study.",
+    siteName: "Example research",
+  } : undefined,
   postedAt: new Date(previewTime - index * 60 * 60 * 1_000).toISOString(),
   replyCount: post.replyCount,
   repostCount: post.repostCount,

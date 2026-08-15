@@ -121,7 +121,7 @@ export function HomePage({
             {feedError ? <p className="app-layout__feed-error" role="alert">{feedError}</p> : null}
             {loading ? <PostPlaceholderList count={3} /> : (
               <>
-                <PostList account={account} posts={posts} />
+                <PostList posts={posts} />
                 {nextCursor ? (
                   <button
                     className="app-layout__load-more"
