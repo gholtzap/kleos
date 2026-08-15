@@ -1,8 +1,4 @@
-import {
-  useAuth,
-  useReverification,
-  useUser,
-} from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   GitForkIcon,
@@ -21,6 +17,7 @@ import {
   type GithubRepo,
 } from "../github";
 import type { FeaturedProject } from "../types";
+import { useAccountConnections } from "./use-account-connections";
 import "./github-projects-dialog.css";
 
 type RepoResource =
@@ -29,14 +26,7 @@ type RepoResource =
   | { status: "ready"; repos: GithubRepo[] }
   | { status: "error"; message: string };
 
-type GithubAccountConnection = Pick<
-  NonNullable<ReturnType<typeof useUser>["user"]>["externalAccounts"][number],
-  "destroy" | "reauthorize"
->;
-
 interface GithubProjectsDialogProps {
-  githubAccount?: GithubAccountConnection;
-  verifiedGithub?: string;
   projects: readonly FeaturedProject[];
   saving: boolean;
   saveError: string;
@@ -45,8 +35,6 @@ interface GithubProjectsDialogProps {
 }
 
 export function GithubProjectsDialog({
-  githubAccount,
-  verifiedGithub,
   projects,
   saving,
   saveError,
@@ -54,19 +42,9 @@ export function GithubProjectsDialog({
   onSave,
 }: GithubProjectsDialogProps) {
   const { getToken } = useAuth();
-  const { user } = useUser();
-  const connectExternalAccount = useReverification(
-    (redirectUrl: string) =>
-      githubAccount
-        ? githubAccount.reauthorize({ redirectUrl })
-        : user?.createExternalAccount({
-            strategy: "oauth_github",
-            redirectUrl,
-          }),
-  );
-  const destroyExternalAccount = useReverification(() =>
-    githubAccount?.destroy(),
-  );
+  const connections = useAccountConnections();
+  const github = connections.connectionFor("github");
+  const verifiedGithub = github.verified ? github.username : undefined;
   const [resource, setResource] = useState<RepoResource>({ status: "idle" });
   const [selected, setSelected] = useState<readonly FeaturedProject[]>(projects);
   const [formError, setFormError] = useState("");
@@ -107,17 +85,16 @@ export function GithubProjectsDialog({
   }, []);
 
   async function verifyWithGithub() {
-    if (!user || verifying) return;
+    if (verifying) return;
     setVerifying(true);
     setFormError("");
     try {
-      const external = await connectExternalAccount(window.location.href);
-      const redirect = external?.verification?.externalVerificationRedirectURL;
-      if (!redirect) throw new Error("Missing verification redirect.");
-      window.location.href = redirect.toString();
-    } catch {
+      await connections.connect("github", window.location.href);
+    } catch (error) {
       setFormError(
-        "Could not start GitHub verification. The GitHub connection may not be enabled for this app yet.",
+        error instanceof Error
+          ? error.message
+          : "Could not start GitHub verification.",
       );
       setVerifying(false);
     }
@@ -153,7 +130,7 @@ export function GithubProjectsDialog({
   }
 
   async function disconnect() {
-    if (!githubAccount || disconnecting) return;
+    if (!github.connected || disconnecting) return;
     setDisconnecting(true);
     setFormError("");
     if (!(await onSave("", []))) {
@@ -161,7 +138,7 @@ export function GithubProjectsDialog({
       return;
     }
     try {
-      await destroyExternalAccount();
+      await connections.disconnect("github");
       onCancel();
     } catch {
       setFormError(
@@ -313,7 +290,7 @@ export function GithubProjectsDialog({
               </ul>
             ) : null}
 
-            {githubAccount ? (
+            {github.connected ? (
               <button
                 className="github-projects__disconnect"
                 disabled={saving || disconnecting}

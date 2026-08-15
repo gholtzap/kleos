@@ -1,15 +1,20 @@
 import { XIcon } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState, type FormEvent } from "react";
+import { settingsPath } from "../lib";
 import type { Person } from "../types";
 import type { AccountIdentity } from "../types/profile";
 import { bannerPreset, bannerPresetList } from "./ProfileHeader";
 import "./profile-edit-dialog.css";
 import "./profile-header.css";
 
+/**
+ * The profile fields a member types. Handles a connection proves — GitHub and
+ * X — are not among them; those are set by connecting the account.
+ */
 export type PersonProfileUpdates = Pick<
   Person,
-  "role" | "location" | "website" | "x" | "accent"
+  "role" | "location" | "website" | "accent"
 >;
 
 interface ProfileEditDialogProps {
@@ -20,8 +25,6 @@ interface ProfileEditDialogProps {
   onCancel: () => void;
   onSave: (updates: PersonProfileUpdates) => void;
 }
-
-const xHandlePattern = /^[A-Za-z0-9_]{1,15}$/;
 
 function normalizedWebsite(value: string): string | undefined {
   const trimmed = value.trim();
@@ -40,27 +43,17 @@ export function ProfileEditDialog({
   const [role, setRole] = useState(person.role);
   const [location, setLocation] = useState(person.location);
   const [website, setWebsite] = useState(person.website ?? "");
-  const [xHandle, setXHandle] = useState(person.x ?? "");
   const [accent, setAccent] = useState(bannerPreset(person.accent));
-  const [formError, setFormError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const handle = xHandle.trim().replace(/^@+/, "");
-    if (handle && !xHandlePattern.test(handle)) {
-      setFormError("X usernames are 1–15 letters, numbers, or underscores.");
-      return;
-    }
     onSave({
       role: role.trim(),
       location: location.trim(),
       website: normalizedWebsite(website),
-      x: handle || undefined,
       accent,
     });
   }
-
-  const error = formError || saveError;
 
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onCancel()}>
@@ -79,7 +72,8 @@ export function ProfileEditDialog({
 
           <Dialog.Description className="profile-editor__description">
             The name and username come from the signed-in account for{" "}
-            {account.handle}.
+            {account.handle}. Your GitHub and X links come from{" "}
+            <a href={settingsPath}>connected accounts</a>.
           </Dialog.Description>
 
           <form
@@ -124,18 +118,6 @@ export function ProfileEditDialog({
               />
             </label>
 
-            <label htmlFor="profile-editor-x">
-              <span>X username</span>
-              <input
-                id="profile-editor-x"
-                maxLength={16}
-                onChange={(event) => setXHandle(event.currentTarget.value)}
-                placeholder="fakeperson"
-                type="text"
-                value={xHandle}
-              />
-            </label>
-
             <div aria-label="Banner" role="group">
               <span>Banner</span>
               <div className="profile-editor__banners">
@@ -152,9 +134,9 @@ export function ProfileEditDialog({
               </div>
             </div>
 
-            {error ? (
+            {saveError ? (
               <p className="profile-editor__error" role="alert">
-                {error}
+                {saveError}
               </p>
             ) : null}
           </form>

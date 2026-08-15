@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
 import "./app-surface.css";
+import { accountConnections } from "./connections";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
 import { GitHubActivity } from "./components/GithubGraph";
@@ -18,6 +19,7 @@ import {
   ProfileEntrySection,
 } from "./components/ProfileEntrySection";
 import { ProfileHeader } from "./components/ProfileHeader";
+import { SettingsView } from "./components/SettingsView";
 import { SkillsSection } from "./components/SkillsSection";
 import {
   SocialHoverCards,
@@ -193,6 +195,32 @@ function noop() {
   // Preview affordances render without page-level handlers.
 }
 
+const previewAccount = {
+  id: "user-fakeperson",
+  name: "Fake Person",
+  handle: "@fakeperson",
+};
+
+// One connection of every state: proven by username, proven by email, started
+// but unfinished, and absent.
+const previewConnections = accountConnections([
+  {
+    provider: "github",
+    username: "fakeperson",
+    verification: { status: "verified" },
+  },
+  {
+    provider: "google",
+    emailAddress: "fake.person@example.com",
+    verification: { status: "verified" },
+  },
+  {
+    provider: "x",
+    username: "fakeperson",
+    verification: { status: "unverified" },
+  },
+]);
+
 const previewNow = new Date();
 
 const root = document.getElementById("root");
@@ -208,6 +236,21 @@ createRoot(root).render(
     <Experience />
     <SkillsSection />
     <GitHubActivity account="gholtzap" showLegend />
+    <section aria-label="Settings page" id="settings">
+      <SettingsView
+        account={previewAccount}
+        canDisconnect={false}
+        connections={previewConnections}
+        email="fake.person@example.com"
+        error=""
+        onConnect={noop}
+        onDisconnect={noop}
+        onSignOut={noop}
+        pending={null}
+        saving={false}
+        statusMessage="Google connected."
+      />
+    </section>
     <section
       aria-label="Profile page sections"
       className="app-surface component-preview__app"

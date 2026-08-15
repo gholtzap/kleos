@@ -1,6 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createClerkClient, verifyToken, type User } from "@clerk/backend";
 import { neon } from "@neondatabase/serverless";
+import {
+  matchesConnectionProvider,
+  type ConnectionProvider,
+} from "../src/connections.js";
 import { githubRepoFromValue, type GithubRepo } from "../src/github.js";
 import {
   discoveryProjection,
@@ -135,10 +139,17 @@ export async function authenticatedUserId(
   }
 }
 
-export function verifiedGithubAccount(user: User) {
+/**
+ * The account that proves a member owns a username on `provider`. A connection
+ * that never finished verifying, or that carries no username, proves nothing.
+ */
+export function verifiedExternalAccount(
+  user: User,
+  provider: ConnectionProvider,
+) {
   return user.externalAccounts.find(
     (external) =>
-      external.provider.endsWith("github") &&
+      matchesConnectionProvider(external.provider, provider) &&
       external.verification?.status === "verified" &&
       external.username,
   );
@@ -343,7 +354,7 @@ export async function githubReposForUser(
     clerk.users.getUser(userId),
     clerk.users.getUserOauthAccessToken(userId, "github"),
   ]);
-  const account = verifiedGithubAccount(user);
+  const account = verifiedExternalAccount(user, "github");
   const token = tokens.data.find(
     (candidate) => candidate.externalAccountId === account?.id,
   )?.token;

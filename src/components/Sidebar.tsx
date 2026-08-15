@@ -2,6 +2,7 @@ import {
   CaretDoubleLeftIcon,
   CaretDoubleRightIcon,
   DotsThreeIcon,
+  GearIcon,
   HouseIcon,
   NotePencilIcon,
   UserIcon,
@@ -9,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { AccountIdentity } from "../types/profile";
-import { profilePath } from "../lib";
+import { profilePath, settingsPath } from "../lib";
 import "./sidebar.css";
 
 interface SidebarProps {
@@ -36,6 +37,7 @@ export function Sidebar({
   const navigationItems: readonly NavigationItem[] = [
     { label: "Home", icon: HouseIcon, href: "/home" },
     { label: "Profile", icon: UserIcon, href: accountProfilePath },
+    { label: "Settings", icon: GearIcon, href: settingsPath },
   ];
 
   return (

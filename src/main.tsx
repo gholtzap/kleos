@@ -6,7 +6,9 @@ import App from "./App";
 import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
+import { SettingsPage } from "./components/SettingsPage";
 import {
+  isSettingsPath,
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
@@ -71,7 +73,11 @@ function ClerkApplication() {
   }
 
   if (account) {
-    return <HomePage account={account} getToken={getToken} />;
+    return isSettingsPath(window.location.pathname) ? (
+      <SettingsPage account={account} />
+    ) : (
+      <HomePage account={account} getToken={getToken} />
+    );
   }
 
   return <App />;

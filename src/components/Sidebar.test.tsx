@@ -37,6 +37,10 @@ describe("Sidebar", () => {
     expect(sidebar?.classList.contains("sidebar--collapsed")).toBe(false);
     expect(container.querySelector('a[aria-label="Home"]')).not.toBeNull();
     expect(container.querySelector('a[aria-label="Profile"]')).not.toBeNull();
+    expect(
+      container.querySelector<HTMLAnchorElement>('a[aria-label="Settings"]')
+        ?.pathname,
+    ).toBe("/settings");
     expect(container.querySelector('button[aria-label="Create post"]')).not.toBeNull();
     act(() => collapseButton?.click());
     expect(sidebar?.classList.contains("sidebar--collapsed")).toBe(true);
