@@ -1,7 +1,11 @@
 import { HomePage } from "./HomePage";
 import "./offline-preview.css";
 
-const PREVIEW_ACCOUNT = { name: "Preview User", handle: "@preview" };
+const PREVIEW_ACCOUNT = {
+  id: "preview",
+  name: "Preview User",
+  handle: "@preview",
+};
 
 export function OfflinePreview() {
   return (

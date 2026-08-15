@@ -1,41 +1,49 @@
 import type { AccountIdentity, Post } from "./types/profile";
 
 export const gavinAccount = {
+  id: "user_gavinholtzapple",
   name: "Gavin Holtzapple",
   handle: "@gavinholtzapple",
 } satisfies AccountIdentity;
 
 export const testAccount = {
+  id: "user_kleostest26029053",
   name: "Kleos Test",
   handle: "@kleostest26029053",
 } satisfies AccountIdentity;
 
 export const mayaAccount = {
+  id: "fixture_maya_chen",
   name: "Maya Chen",
   handle: "@mayamakes",
 } satisfies AccountIdentity;
 
 export const dariusAccount = {
+  id: "fixture_darius_okafor",
   name: "Darius Okafor",
   handle: "@dariusbuilds",
 } satisfies AccountIdentity;
 
 export const priyaAccount = {
+  id: "fixture_priya_raman",
   name: "Priya Raman",
   handle: "@priyaraman",
 } satisfies AccountIdentity;
 
 export const elenaAccount = {
+  id: "fixture_elena_morales",
   name: "Elena Morales",
   handle: "@elenam",
 } satisfies AccountIdentity;
 
 export const marcusAccount = {
+  id: "fixture_marcus_reed",
   name: "Marcus Reed",
   handle: "@marcusreed",
 } satisfies AccountIdentity;
 
 export const aishaAccount = {
+  id: "fixture_aisha_bello",
   name: "Aisha Bello",
   handle: "@aishabello",
 } satisfies AccountIdentity;

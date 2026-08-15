@@ -7,6 +7,7 @@ import {
   ProfileConflictError,
   saveOwnProfileRecord,
 } from "../profile-record";
+import { profilePath } from "../lib";
 import type { FeaturedProject, KleosRecord } from "../types";
 import type { AccountIdentity } from "../types/profile";
 import "../app-surface.css";
@@ -73,8 +74,6 @@ export function ProfilePage({ account }: ProfilePageProps) {
       ? githubAccount.username
       : undefined;
 
-  useAppSurface(`${account.name} (${account.handle}) / Kleos`);
-
   useEffect(() => {
     const controller = new AbortController();
     getOwnProfileRecord(getToken, controller.signal)
@@ -88,6 +87,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
   }, [getToken]);
 
   const base = record ?? emptyProfileRecord(account);
+  useAppSurface(`${account.name} (${account.handle}) / Kleos`);
 
   function openDialog(next: OpenDialog) {
     setSaveError("");
@@ -295,9 +295,7 @@ export function ProfilePage({ account }: ProfilePageProps) {
   }
 
   const github = base.person.github ?? "";
-  const profileUrl = record
-    ? `${window.location.origin}/#/p/${encodeURIComponent(record.person.id)}`
-    : null;
+  const profileUrl = `${window.location.origin}${profilePath(account.handle)}`;
   const checklist = completenessItems(base);
   const completed = checklist.filter((item) => item.done).length;
   const now = new Date();
@@ -390,24 +388,20 @@ export function ProfilePage({ account }: ProfilePageProps) {
             <aside className="profile-page__aside">
               <section aria-label="Public profile">
                 <h2>Public profile</h2>
-                {profileUrl ? (
-                  <div className="profile-page__share">
-                    <a href={profileUrl}>Open public view</a>
-                    <button
-                      onClick={() => {
-                        void navigator.clipboard
-                          ?.writeText(profileUrl)
-                          .catch(() => {});
-                        setStatusMessage("Public profile link copied.");
-                      }}
-                      type="button"
-                    >
-                      Copy link
-                    </button>
-                  </div>
-                ) : (
-                  <p>Save something to your profile to get a shareable link.</p>
-                )}
+                <div className="profile-page__share">
+                  <a href={profileUrl}>Open public view</a>
+                  <button
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(profileUrl)
+                        .catch(() => {});
+                      setStatusMessage("Public profile link copied.");
+                    }}
+                    type="button"
+                  >
+                    Copy link
+                  </button>
+                </div>
               </section>
 
               <section aria-label="Profile completeness">

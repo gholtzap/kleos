@@ -7,11 +7,11 @@ import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
 import {
-  accountHandle,
   profilePathMatchesAccount,
   sharedRouteFromHash,
-  signedInPageFromPath,
+  sharedRouteFromPath,
 } from "./lib";
+import { accountHandle } from "./profile-identity";
 import { useLocationHash } from "./use-location-hash";
 import "./styles.css";
 
@@ -46,30 +46,30 @@ function ClerkApplication() {
     return <p className="kleos-message">Loading Kleos…</p>;
   }
 
-  if (isSignedIn && user) {
-    const email = user.primaryEmailAddress?.emailAddress;
-    const account = {
-      name:
-        user.fullName?.trim() ||
-        user.username?.trim() ||
-        email ||
-        user.id,
-      handle: accountHandle(user.username, email, user.id),
-    };
+  const account = isSignedIn && user
+    ? {
+        id: user.id,
+        name:
+          user.fullName?.trim() ||
+          user.username?.trim() ||
+          user.primaryEmailAddress?.emailAddress ||
+          user.id,
+        handle: accountHandle(user.username, user.id),
+      }
+    : null;
+  const pathRoute = sharedRouteFromPath(window.location.pathname);
 
-    if (signedInPageFromPath(window.location.pathname) === "profile") {
-      return profilePathMatchesAccount(
-        window.location.pathname,
-        account.handle,
-      ) ? (
-        <ProfilePage account={account} />
-      ) : (
-        <main className="kleos-message" role="alert">
-          Profile unavailable.
-        </main>
-      );
+  if (pathRoute) {
+    if (
+      account &&
+      profilePathMatchesAccount(window.location.pathname, account.handle)
+    ) {
+      return <ProfilePage account={account} />;
     }
+    return <App sharedRoute={pathRoute} />;
+  }
 
+  if (account) {
     return <HomePage account={account} />;
   }
 

@@ -4,7 +4,7 @@ import {
   type SessionTokenGetter,
 } from "./api-client";
 import type { KleosRecord } from "./types";
-import type { AccountIdentity } from "./types/profile";
+export { emptyProfileRecord, initialsFromName } from "./profile-identity";
 
 export class ProfileConflictError extends Error {
   constructor() {
@@ -47,44 +47,4 @@ export async function saveOwnProfileRecord(
   if (response.status === 409) throw new ProfileConflictError();
   if (!response.ok) throw new Error("Could not save your profile.");
   return recordFromResponse(response);
-}
-
-export function initialsFromName(name: string): string {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-  return initials || "K";
-}
-
-export function emptyProfileRecord(account: AccountIdentity): KleosRecord {
-  const name = account.name.trim().slice(0, 200) || "Kleos member";
-  return {
-    version: 1,
-    revision: 0,
-    person: {
-      id: account.handle.replace(/^@+/, "").slice(0, 200),
-      name,
-      initials: initialsFromName(name),
-      role: "",
-      location: "",
-      summary: "",
-      expertise: [],
-      interests: [],
-      availability: [],
-      notOpenTo: [],
-      identityVerified: false,
-      employmentVerified: false,
-      relationship: "You",
-      accent: "graphite",
-    },
-    claims: [],
-    projects: [],
-    experience: [],
-    education: [],
-    certifications: [],
-    otherExperience: [],
-  };
 }

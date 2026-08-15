@@ -8,7 +8,14 @@ import {
   normalizeKleosRecord,
   publicKleosRecord,
 } from "../src/kleos.js";
+import {
+  accountHandle,
+  emptyProfileRecord,
+  normalizeProfileHandle,
+  profileHandle,
+} from "../src/profile-identity.js";
 import type { KleosRecord } from "../src/types.js";
+import type { AccountIdentity } from "../src/types/profile.js";
 
 export { isRecord };
 
@@ -128,14 +135,6 @@ export async function authenticatedUserId(
   }
 }
 
-export async function verifiedGithubUsername(
-  userId: string,
-): Promise<string | null> {
-  const clerk = clerkClient();
-  const user = await clerk.users.getUser(userId);
-  return verifiedGithubAccount(user)?.username ?? null;
-}
-
 export function verifiedGithubAccount(user: User) {
   return user.externalAccounts.find(
     (external) =>
@@ -151,6 +150,15 @@ export function clerkClient() {
     throw new Error("CLERK_SECRET_KEY is required.");
   }
   return createClerkClient({ secretKey });
+}
+
+export function accountIdentityForUser(user: User): AccountIdentity {
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+  return {
+    id: user.id,
+    name: name || user.username?.trim() || user.id,
+    handle: accountHandle(user.username, user.id),
+  };
 }
 
 export async function loadKleosRecord(
@@ -201,6 +209,66 @@ export async function loadPublicKleosRecord(
   if (projected) return projected;
   const record = await loadKleosRecord(ownerId);
   return record ? publicKleosRecord(record) : null;
+}
+
+async function clerkUserForProfileHandle(handle: string): Promise<User | null> {
+  const users = clerkClient().users;
+  const result = await users.getUserList(
+    handle.startsWith("user_")
+      ? { userId: [handle], limit: 1 }
+      : { username: [handle], limit: 10 },
+  );
+  return result.data.find(
+    (user) => profileHandle(user.username, user.id) === handle,
+  ) ?? null;
+}
+
+async function bindProfileHandle(
+  ownerId: string,
+  handle: string,
+): Promise<void> {
+  await sql`
+    UPDATE folio_records
+    SET
+      record = jsonb_set(record, '{person,handle}', to_jsonb(${handle}::TEXT)),
+      public_record = jsonb_set(
+        public_record,
+        '{person,handle}',
+        to_jsonb(${handle}::TEXT)
+      ),
+      updated_at = NOW()
+    WHERE owner_id = ${ownerId}
+  `;
+}
+
+export async function loadPublicKleosRecordByHandle(
+  value: string,
+): Promise<KleosRecord | null> {
+  const handle = normalizeProfileHandle(value);
+  if (!handle) return null;
+  const [row] = await sql`
+    SELECT public_record
+    FROM folio_records
+    WHERE lower(public_record #>> '{person,handle}') = ${handle}
+    LIMIT 1
+  `;
+  if (row) {
+    const record = normalizeKleosRecord(row.public_record);
+    if (!record) throw new Error("Stored public Kleos record is invalid.");
+    return record;
+  }
+
+  const user = await clerkUserForProfileHandle(handle);
+  if (!user) return null;
+  const stored = await loadPublicKleosRecord(user.id);
+  if (!stored) {
+    return publicKleosRecord(emptyProfileRecord(accountIdentityForUser(user)));
+  }
+  await bindProfileHandle(user.id, handle);
+  return {
+    ...stored,
+    person: { ...stored.person, handle },
+  };
 }
 
 export async function saveKleosRecord(

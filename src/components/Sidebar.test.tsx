@@ -18,7 +18,11 @@ describe("Sidebar", () => {
 
     act(() => root.render(
       <Sidebar
-        account={{ name: "Gavin Holtzapple", handle: "@gavinholtzapple" }}
+        account={{
+          id: "user-gavin",
+          name: "Gavin Holtzapple",
+          handle: "@gavinholtzapple",
+        }}
         activeItem="Profile"
         collapsible
         onPost={vi.fn()}

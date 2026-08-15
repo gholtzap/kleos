@@ -19,3 +19,13 @@ export async function getPublicProfile(
     await fetch(`/api/profiles?${parameters}`, { signal }),
   );
 }
+
+export async function getPublicProfileByHandle(
+  handle: string,
+  signal?: AbortSignal,
+) {
+  const parameters = new URLSearchParams({ handle });
+  return recordFromResponse(
+    await fetch(`/api/profiles?${parameters}`, { signal }),
+  );
+}

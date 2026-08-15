@@ -1,7 +1,7 @@
 import { SignIn, SignUp } from "@clerk/react";
 import { useEffect, useState, type ComponentProps } from "react";
 import { authPageFromPath, type SharedRoute } from "./lib";
-import { getPublicProfile } from "./public-profile";
+import { getPublicProfile, getPublicProfileByHandle } from "./public-profile";
 import { getReviewBundle } from "./review-links";
 import { githubRepoUrl } from "./github";
 import {
@@ -29,7 +29,7 @@ const clerkAppearance = {
 } satisfies NonNullable<ComponentProps<typeof SignIn>["appearance"]>;
 
 export default function App({ sharedRoute }: { sharedRoute?: SharedRoute }) {
-  if (sharedRoute) return <SharedKleosPage {...sharedRoute} />;
+  if (sharedRoute) return <SharedKleosPage route={sharedRoute} />;
 
   const authPage = authPageFromPath(window.location.pathname);
   if (authPage) {
@@ -107,17 +107,14 @@ function KleosLanding() {
   );
 }
 
-function SharedKleosPage({
-  profileId,
-  revision,
-  reviewToken,
-}: {
-  profileId?: string;
-  revision?: number;
-  reviewToken?: string;
-}) {
+function SharedKleosPage({ route }: { route: SharedRoute }) {
   const [record, setRecord] = useState<KleosRecord | null>(null);
   const [error, setError] = useState("");
+  const profileId = route.kind === "profile-id" ? route.profileId : undefined;
+  const profileHandle =
+    route.kind === "profile-handle" ? route.profileHandle : undefined;
+  const revision = route.kind === "profile-id" ? route.revision : undefined;
+  const reviewToken = route.kind === "review" ? route.reviewToken : undefined;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -125,6 +122,8 @@ function SharedKleosPage({
     setError("");
     const request = reviewToken
       ? getReviewBundle(reviewToken, controller.signal).then((bundle) => bundle.record)
+      : profileHandle
+        ? getPublicProfileByHandle(profileHandle, controller.signal)
       : profileId
         ? getPublicProfile(profileId, revision, controller.signal)
         : Promise.reject(new Error("Missing shared Kleos reference."));
@@ -137,7 +136,7 @@ function SharedKleosPage({
         setError("This shared Kleos profile is unavailable.");
       });
     return () => controller.abort();
-  }, [profileId, reviewToken, revision]);
+  }, [profileHandle, profileId, reviewToken, revision]);
 
   return (
     <main className="kleos-shared-shell">

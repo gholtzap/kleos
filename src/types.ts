@@ -36,6 +36,7 @@ export type EvidenceReviewStatus =
 
 export interface Person {
   id: string;
+  handle?: string;
   name: string;
   initials: string;
   role: string;
