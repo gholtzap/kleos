@@ -1,12 +1,8 @@
 import { SignIn, SignUp } from "@clerk/react";
 import { useEffect, useState, type ComponentProps } from "react";
-import { authPageFromPath } from "./lib";
-import {
-  getPublicProfile,
-  publicProfileIdFromHash,
-  publicProfileRevisionFromHash,
-} from "./public-profile";
-import { getReviewBundle, reviewTokenFromHash } from "./review-links";
+import { authPageFromPath, type SharedRoute } from "./lib";
+import { getPublicProfile } from "./public-profile";
+import { getReviewBundle } from "./review-links";
 import { githubRepoUrl } from "./github";
 import {
   compareExperience,
@@ -15,7 +11,6 @@ import {
 } from "./profile-sections";
 import { claimState } from "./kleos";
 import type { KleosRecord } from "./types";
-import { useLocationHash } from "./use-location-hash";
 
 const clerkAppearance = {
   variables: {
@@ -33,20 +28,8 @@ const clerkAppearance = {
   },
 } satisfies NonNullable<ComponentProps<typeof SignIn>["appearance"]>;
 
-export default function App() {
-  const hash = useLocationHash();
-
-  const profileId = publicProfileIdFromHash(hash);
-  const reviewToken = reviewTokenFromHash(hash);
-  if (profileId) {
-    return (
-      <SharedKleosPage
-        profileId={profileId}
-        revision={publicProfileRevisionFromHash(hash)}
-      />
-    );
-  }
-  if (reviewToken) return <SharedKleosPage reviewToken={reviewToken} />;
+export default function App({ sharedRoute }: { sharedRoute?: SharedRoute }) {
+  if (sharedRoute) return <SharedKleosPage {...sharedRoute} />;
 
   const authPage = authPageFromPath(window.location.pathname);
   if (authPage) {

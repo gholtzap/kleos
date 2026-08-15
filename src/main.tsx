@@ -6,9 +6,7 @@ import App from "./App";
 import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
-import { accountHandle, signedInPageFromPath } from "./lib";
-import { publicProfileIdFromHash } from "./public-profile";
-import { reviewTokenFromHash } from "./review-links";
+import { accountHandle, sharedRouteFromHash, signedInPageFromPath } from "./lib";
 import { useLocationHash } from "./use-location-hash";
 import "./styles.css";
 
@@ -26,9 +24,7 @@ function ClerkApplication() {
   const { isLoaded: userLoaded, user } = useUser();
   const hash = useLocationHash();
   const [timedOut, setTimedOut] = useState(false);
-  const sharedPage =
-    publicProfileIdFromHash(hash) !== null ||
-    reviewTokenFromHash(hash) !== null;
+  const sharedRoute = sharedRouteFromHash(hash);
   const clerkLoaded = isLoaded && userLoaded;
 
   useEffect(() => {
@@ -37,7 +33,7 @@ function ClerkApplication() {
     return () => window.clearTimeout(timer);
   }, [clerkLoaded]);
 
-  if (sharedPage) return <App />;
+  if (sharedRoute) return <App sharedRoute={sharedRoute} />;
 
   if (timedOut && !clerkLoaded) return <OfflinePreview />;
 
