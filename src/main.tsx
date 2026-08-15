@@ -7,14 +7,17 @@ import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
 import { SettingsPage } from "./components/SettingsPage";
+import { forgetAppSurface } from "./components/use-app-surface";
 import {
   isSettingsPath,
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
 } from "./lib";
+import { interceptLinkClicks } from "./navigation";
 import { accountHandle } from "./profile-identity";
 import { useLocationHash } from "./use-location-hash";
+import { usePathname } from "./use-pathname";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");
@@ -30,6 +33,7 @@ function ClerkApplication() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
   const hash = useLocationHash();
+  const pathname = usePathname();
   const [timedOut, setTimedOut] = useState(false);
   const sharedRoute = sharedRouteFromHash(hash);
   const clerkLoaded = isLoaded && userLoaded;
@@ -48,6 +52,7 @@ function ClerkApplication() {
     return <p className="kleos-message">Loading Kleos…</p>;
   }
 
+
   const account = isSignedIn && user
     ? {
         id: user.id,
@@ -60,12 +65,14 @@ function ClerkApplication() {
         avatarUrl: user.imageUrl || undefined,
       }
     : null;
-  const pathRoute = sharedRouteFromPath(window.location.pathname);
+  // A signed-out browser must not paint the dark surface on its next load.
+  if (!account) forgetAppSurface();
+  const pathRoute = sharedRouteFromPath(pathname);
 
   if (pathRoute) {
     if (
       account &&
-      profilePathMatchesAccount(window.location.pathname, account.handle)
+      profilePathMatchesAccount(pathname, account.handle)
     ) {
       return <ProfilePage account={account} />;
     }
@@ -73,7 +80,7 @@ function ClerkApplication() {
   }
 
   if (account) {
-    return isSettingsPath(window.location.pathname) ? (
+    return isSettingsPath(pathname) ? (
       <SettingsPage account={account} />
     ) : (
       <HomePage account={account} getToken={getToken} />
@@ -95,6 +102,10 @@ function RootApplication() {
     </ClerkProvider>
   );
 }
+
+// Same-origin links move between screens without reloading the page, which
+// keeps Clerk warm and removes the interstitial that a reload forces.
+interceptLinkClicks();
 
 root.render(
   <StrictMode>

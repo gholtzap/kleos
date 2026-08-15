@@ -13,6 +13,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Paints the dark app surface before the bundle parses, for a browser
+      // that was last signed in. Without it the first frame is the light
+      // landing background and every load into the app starts with a white
+      // flash. src/components/use-app-surface.ts writes and clears the hint.
+      try {
+        if (localStorage.getItem("kleos.surface") === "app") {
+          document.documentElement.dataset.surface = "app";
+          document.querySelector('meta[name="theme-color"]').content = "#000000";
+        }
+      } catch (error) {
+        // Storage can be unavailable; the light first paint is the fallback.
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
