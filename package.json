@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "db:migrate": "tsx scripts/migrate.mjs",
+    "ranker:dev": "cargo run -p kleos-feed-ranker",
+    "ranker:test": "cargo test --workspace",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run api/storage.integration.test.ts api/posts.integration.test.ts",

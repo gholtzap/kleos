@@ -8,6 +8,10 @@
 4. Run `npm run db:migrate`.
 5. Run `npm run dev`.
 
+The optional Rust feed-ranker scaffold lives in `services/feed-rank`. It is a
+separate process in the same repository and is not yet called by the web API.
+See `services/feed-rank/README.md` for its contract and local commands.
+
 Production must set `CLERK_JWT_KEY`, `CLERK_AUTHORIZED_PARTIES`,
 `CLERK_SECRET_KEY` (connected account verification), `RATE_LIMIT_SECRET`, and
 `CRON_SECRET`. Run the database migration before you deploy code that uses the
@@ -60,6 +64,7 @@ Clerk. It does not send that token to the browser or store it in the profile.
 - `npm run typecheck`
 - `npm test`
 - `npm run build`
+- `npm run ranker:test`
 - `npm run test:db` with a disposable PostgreSQL database
 
 For a controlled capacity check, set `KLEOS_BASE_URL` and
