@@ -7,7 +7,7 @@ import { HomePage } from "./components/HomePage";
 import { OfflinePreview } from "./components/OfflinePreview";
 import { ProfilePage } from "./components/ProfilePage";
 import { SettingsPage } from "./components/SettingsPage";
-import { forgetAppSurface } from "./components/use-app-surface";
+import { forgetAppSurface } from "./hooks/use-app-surface";
 import {
   isSettingsPath,
   profilePathMatchesAccount,
@@ -16,8 +16,8 @@ import {
 } from "./lib";
 import { interceptLinkClicks } from "./navigation";
 import { accountHandle } from "./profile-identity";
-import { useLocationHash } from "./use-location-hash";
-import { usePathname } from "./use-pathname";
+import { useLocationHash } from "./hooks/use-location-hash";
+import { usePathname } from "./hooks/use-pathname";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");

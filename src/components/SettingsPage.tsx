@@ -14,9 +14,9 @@ import {
 } from "../lib";
 import type { AccountIdentity } from "../types";
 import { SettingsView } from "./SettingsView";
-import { useAccountConnections } from "./use-account-connections";
-import { useAppSurface } from "./use-app-surface";
-import { useProfileRecord } from "./use-profile-record";
+import { useAccountConnections } from "../hooks/use-account-connections";
+import { useAppSurface } from "../hooks/use-app-surface";
+import { useProfileRecord } from "../hooks/use-profile-record";
 
 interface SettingsPageProps {
   account: AccountIdentity;

@@ -19,8 +19,8 @@ import {
 } from "./ProfileEntrySection";
 import { ProfileHeader } from "./ProfileHeader";
 import { Sidebar } from "./Sidebar";
-import { useAppSurface } from "./use-app-surface";
-import { useProfileRecord } from "./use-profile-record";
+import { useAppSurface } from "../hooks/use-app-surface";
+import { useProfileRecord } from "../hooks/use-profile-record";
 import "./profile-page.css";
 
 type EntryDialogKind = "experience" | "education" | "certification" | "other";

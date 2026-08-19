@@ -17,7 +17,7 @@ import {
   type GithubRepo,
 } from "../github";
 import type { FeaturedProject } from "../types";
-import { useAccountConnections } from "./use-account-connections";
+import { useAccountConnections } from "../hooks/use-account-connections";
 import "./github-projects-dialog.css";
 
 type RepoResource =

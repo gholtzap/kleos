@@ -14,7 +14,7 @@ import { PostComposer, type ComposerPost } from "./PostComposer";
 import { PostList } from "./PostList";
 import { PostPlaceholderList } from "./PostPlaceholderList";
 import { Sidebar } from "./Sidebar";
-import { useAppSurface } from "./use-app-surface";
+import { useAppSurface } from "../hooks/use-app-surface";
 import "./app-layout.css";
 
 interface HomePageProps {
