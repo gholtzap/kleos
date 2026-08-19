@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentPerson, initialClaims } from "../data";
+import { currentPerson, initialClaims } from "../fixtures/data";
 import {
   claimState,
   applyEvidenceReviewDecision,

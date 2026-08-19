@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { initialClaims, currentPerson } from "../src/data";
+import { initialClaims, currentPerson } from "../src/fixtures/data";
 import type { ApiRequest } from "./_shared";
 import { TestResponse } from "./test-response";
 

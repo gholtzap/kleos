@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { currentPerson } from "../data";
+import { currentPerson } from "../fixtures/data";
 import { getPublicProfileByHandle } from "./public-profile";
 
 describe("public profile client", () => {

@@ -2,7 +2,7 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { previewPosts, testAccounts, testPosts } from "../post-data";
+import { previewPosts, testAccounts, testPosts } from "../fixtures/post-data";
 import { PostList } from "./PostList";
 
 describe("PostList", () => {

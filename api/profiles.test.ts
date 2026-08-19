@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { verifyToken } from "@clerk/backend";
-import { currentPerson, initialClaims } from "../src/data";
+import { currentPerson, initialClaims } from "../src/fixtures/data";
 import { publicKleosRecord } from "../src/lib/kleos";
 import type { KleosRecord } from "../src/types";
 import type { ApiRequest, ApiResponse } from "./_shared";

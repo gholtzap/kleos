@@ -1,4 +1,4 @@
-import type { AccountIdentity, FeedPost } from "./types";
+import type { AccountIdentity, FeedPost } from "../types";
 
 interface FixturePost {
   id: string;
