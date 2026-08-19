@@ -3,7 +3,7 @@ import {
   sessionAuthorizationHeader,
   type SessionTokenGetter,
 } from "./api-client";
-import type { KleosRecord } from "./types";
+import type { KleosRecord } from "../types";
 export { emptyProfileRecord, initialsFromName } from "./profile-identity";
 
 export class ProfileConflictError extends Error {

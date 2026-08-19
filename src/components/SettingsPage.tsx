@@ -6,12 +6,12 @@ import {
   recordWithVerifiedIdentities,
   type AccountConnection,
   type ConnectionProvider,
-} from "../connections";
+} from "../lib/connections";
 import {
   connectedProviderFromSearch,
   clearedConnectedSearch,
   settingsPath,
-} from "../lib";
+} from "../lib/lib";
 import type { AccountIdentity } from "../types";
 import { SettingsView } from "./SettingsView";
 import { useAccountConnections } from "../hooks/use-account-connections";

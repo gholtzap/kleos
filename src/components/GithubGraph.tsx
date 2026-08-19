@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { normalizeGithubAccount } from "../github";
+import { normalizeGithubAccount } from "../lib/github";
 import "./github-graph.css";
 
 export { normalizeGithubAccount };

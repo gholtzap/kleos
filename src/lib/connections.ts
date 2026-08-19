@@ -1,4 +1,4 @@
-import type { KleosRecord, Person } from "./types/index.js";
+import type { KleosRecord, Person } from "../types/index.js";
 
 /**
  * Third-party accounts a member can link to their Kleos account. Connecting is

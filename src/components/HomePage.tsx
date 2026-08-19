@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { SessionTokenGetter } from "../api-client";
+import type { SessionTokenGetter } from "../lib/api-client";
 import {
   createPost,
   deleteUnattachedUpload,
   getPostFeed,
   uploadPostFile,
   type UploadedPostFile,
-} from "../post-feed";
+} from "../lib/post-feed";
 import type { AccountIdentity, FeedPost } from "../types";
 import "../app-surface.css";
 import { DiscoveryRail } from "./DiscoveryRail";

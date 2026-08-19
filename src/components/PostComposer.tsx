@@ -7,8 +7,8 @@ import {
   MAX_POST_IMAGES,
   postImageMimeTypes,
   postVideoMimeTypes,
-} from "../posts";
-import { scoreSlop, slopLabel } from "../slop-score";
+} from "../lib/posts";
+import { scoreSlop, slopLabel } from "../lib/slop-score";
 import { SlopMeter } from "./SlopMeter";
 
 import "./post-composer.css";

@@ -1,12 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
-import { includesValue, isRecord } from "../src/kleos.js";
+import { includesValue, isRecord } from "../src/lib/kleos.js";
 import {
   MAX_IMAGE_BYTES,
   MAX_VIDEO_BYTES,
   MAX_VIDEO_DURATION_SECONDS,
   postImageMimeTypes,
   postMediaKindForMimeType,
-} from "../src/posts.js";
+} from "../src/lib/posts.js";
 import type { MediaUploadTicket, NewPostMedia, PostMedia } from "../src/types/index.js";
 
 interface MediaConfiguration {

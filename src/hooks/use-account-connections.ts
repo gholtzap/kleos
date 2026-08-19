@@ -8,7 +8,7 @@ import {
   type AccountConnection,
   type ConnectionProvider,
   type ConnectionStrategy,
-} from "../connections";
+} from "../lib/connections";
 
 type ClerkUser = NonNullable<ReturnType<typeof useUser>["user"]>;
 

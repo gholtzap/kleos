@@ -5,7 +5,7 @@ import {
   getOwnProfileRecord,
   ProfileConflictError,
   saveOwnProfileRecord,
-} from "../profile-record";
+} from "../lib/profile-record";
 import type { AccountIdentity, KleosRecord } from "../types";
 
 export interface ProfileRecordStore {

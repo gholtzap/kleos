@@ -1,7 +1,7 @@
 import {
   applyEvidenceReviewDecision,
   normalizeEvidence,
-} from "../src/kleos.js";
+} from "../src/lib/kleos.js";
 import type { EvidenceReviewItem } from "../src/types/index.js";
 import {
   authenticatedUserId,

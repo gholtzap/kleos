@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { includesValue, normalizePerson } from "../src/kleos.js";
+import { includesValue, normalizePerson } from "../src/lib/kleos.js";
 import {
   normalizeNewProfessionalRequest,
   requestKinds,
-} from "../src/requests.js";
+} from "../src/lib/requests.js";
 import type {
   ProfessionalRequest,
   RequestKind,

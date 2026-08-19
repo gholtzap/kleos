@@ -1,4 +1,4 @@
-import { isOwnership, normalizeKleosRecord } from "../src/kleos.js";
+import { isOwnership, normalizeKleosRecord } from "../src/lib/kleos.js";
 import type {
   Claim,
   DiscoveryResult,

@@ -10,7 +10,7 @@ import type {
   MediaUploadTicket,
   NewPost,
   ResultPage,
-} from "./types/index.js";
+} from "../types/index.js";
 
 export interface UploadedPostFile {
   cloudName: string;

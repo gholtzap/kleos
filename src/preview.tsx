@@ -7,7 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
 import "./app-surface.css";
-import { accountConnections } from "./connections";
+import { accountConnections } from "./lib/connections";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
 import { GitHubActivity } from "./components/GithubGraph";

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { currentPerson, initialClaims } from "./data";
+import { currentPerson, initialClaims } from "../data";
 import {
   compareReposByProminence,
   featuredProjectFromRepo,
@@ -19,7 +19,7 @@ import {
   publicKleosRecord,
   reviewKleosRecord,
 } from "./kleos";
-import type { FeaturedProject, KleosRecord } from "./types";
+import type { FeaturedProject, KleosRecord } from "../types";
 
 const apiRepo = {
   name: "kleos",

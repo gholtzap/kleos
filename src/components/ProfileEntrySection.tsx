@@ -3,7 +3,7 @@ import {
   compareExperience,
   experiencePeriod,
   yearRange,
-} from "../profile-sections";
+} from "../lib/profile-sections";
 import type {
   CertificationEntry,
   EducationEntry,

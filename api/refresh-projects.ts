@@ -1,4 +1,4 @@
-import { refreshedProjects } from "../src/github.js";
+import { refreshedProjects } from "../src/lib/github.js";
 import {
   cronAuthorized,
   githubReposForUser,

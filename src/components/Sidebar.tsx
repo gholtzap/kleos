@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { AccountIdentity } from "../types";
-import { profilePath, settingsPath } from "../lib";
+import { profilePath, settingsPath } from "../lib/lib";
 import "./sidebar.css";
 
 interface SidebarProps {

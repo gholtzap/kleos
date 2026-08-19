@@ -4,7 +4,7 @@ import {
   PencilSimpleIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
-import { currentExperience } from "../profile-sections";
+import { currentExperience } from "../lib/profile-sections";
 import type { KleosRecord } from "../types";
 import "./profile-header.css";
 

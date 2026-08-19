@@ -15,7 +15,7 @@ import {
   fetchGithubRepos,
   MAX_FEATURED_PROJECTS,
   type GithubRepo,
-} from "../github";
+} from "../lib/github";
 import type { FeaturedProject } from "../types";
 import { useAccountConnections } from "../hooks/use-account-connections";
 import "./github-projects-dialog.css";

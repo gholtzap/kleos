@@ -1,5 +1,5 @@
 import { SealCheckIcon } from "@phosphor-icons/react";
-import type { AccountConnection, ConnectionProvider } from "../connections";
+import type { AccountConnection, ConnectionProvider } from "../lib/connections";
 import "./settings-page.css";
 
 /**

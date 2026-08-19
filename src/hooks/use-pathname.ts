@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { navigationEvent } from "../navigation";
+import { navigationEvent } from "../lib/navigation";
 
 /** The active path, following both history buttons and in-app navigation. */
 export function usePathname() {

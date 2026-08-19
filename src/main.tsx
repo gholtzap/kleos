@@ -13,9 +13,9 @@ import {
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
-} from "./lib";
-import { interceptLinkClicks } from "./navigation";
-import { accountHandle } from "./profile-identity";
+} from "./lib/lib";
+import { interceptLinkClicks } from "./lib/navigation";
+import { accountHandle } from "./lib/profile-identity";
 import { useLocationHash } from "./hooks/use-location-hash";
 import { usePathname } from "./hooks/use-pathname";
 import "./styles.css";

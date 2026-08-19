@@ -4,7 +4,7 @@ import {
   PushPinIcon,
   StarIcon,
 } from "@phosphor-icons/react";
-import { githubRepoUrl } from "../github";
+import { githubRepoUrl } from "../lib/github";
 import type { FeaturedProject } from "../types";
 import "./featured-projects.css";
 
