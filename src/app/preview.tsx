@@ -6,27 +6,27 @@ import {
   UserIcon,
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
-import "./styles/app-surface.css";
-import { accountConnections } from "./lib/connections";
-import { Experience } from "./components/Experience";
-import { FeaturedProjects } from "./components/FeaturedProjects";
-import { GitHubActivity } from "./components/GithubGraph";
+import "../styles/app-surface.css";
+import { accountConnections } from "../lib/connections";
+import { Experience } from "../components/Experience";
+import { FeaturedProjects } from "../components/FeaturedProjects";
+import { GitHubActivity } from "../components/GithubGraph";
 import {
   certificationRows,
   educationRows,
   experienceRows,
   otherExperienceRows,
   ProfileEntrySection,
-} from "./components/ProfileEntrySection";
-import { ProfileHeader } from "./components/ProfileHeader";
-import { SettingsView } from "./components/SettingsView";
-import { SkillsSection } from "./components/SkillsSection";
+} from "../components/ProfileEntrySection";
+import { ProfileHeader } from "../components/ProfileHeader";
+import { SettingsView } from "../components/SettingsView";
+import { SkillsSection } from "../components/SkillsSection";
 import {
   SocialHoverCards,
   type SocialHoverCardItem,
-} from "./components/SocialHoverCards";
-import type { KleosRecord } from "./types";
-import "./styles/component-preview.css";
+} from "../components/SocialHoverCards";
+import type { KleosRecord } from "../types";
+import "../styles/component-preview.css";
 
 const socialItems: readonly SocialHoverCardItem[] = [
   {

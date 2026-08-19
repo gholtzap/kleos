@@ -3,22 +3,22 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/manrope";
 import App from "./App";
-import { HomePage } from "./components/HomePage";
-import { OfflinePreview } from "./components/OfflinePreview";
-import { ProfilePage } from "./components/ProfilePage";
-import { SettingsPage } from "./components/SettingsPage";
-import { forgetAppSurface } from "./hooks/use-app-surface";
+import { HomePage } from "../components/HomePage";
+import { OfflinePreview } from "../components/OfflinePreview";
+import { ProfilePage } from "../components/ProfilePage";
+import { SettingsPage } from "../components/SettingsPage";
+import { forgetAppSurface } from "../hooks/use-app-surface";
 import {
   isSettingsPath,
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
-} from "./lib/lib";
-import { interceptLinkClicks } from "./lib/navigation";
-import { accountHandle } from "./lib/profile-identity";
-import { useLocationHash } from "./hooks/use-location-hash";
-import { usePathname } from "./hooks/use-pathname";
-import "./styles/styles.css";
+} from "../lib/lib";
+import { interceptLinkClicks } from "../lib/navigation";
+import { accountHandle } from "../lib/profile-identity";
+import { useLocationHash } from "../hooks/use-location-hash";
+import { usePathname } from "../hooks/use-pathname";
+import "../styles/styles.css";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Missing root element.");

@@ -1,16 +1,16 @@
 import { SignIn, SignUp } from "@clerk/react";
 import { useEffect, useState, type ComponentProps } from "react";
-import { authPageFromPath, type SharedRoute } from "./lib/lib";
-import { getPublicProfile, getPublicProfileByHandle } from "./lib/public-profile";
-import { getReviewBundle } from "./lib/review-links";
-import { githubRepoUrl } from "./lib/github";
+import { authPageFromPath, type SharedRoute } from "../lib/lib";
+import { getPublicProfile, getPublicProfileByHandle } from "../lib/public-profile";
+import { getReviewBundle } from "../lib/review-links";
+import { githubRepoUrl } from "../lib/github";
 import {
   compareExperience,
   experiencePeriod,
   yearRange,
-} from "./lib/profile-sections";
-import { claimState } from "./lib/kleos";
-import type { KleosRecord } from "./types";
+} from "../lib/profile-sections";
+import { claimState } from "../lib/kleos";
+import type { KleosRecord } from "../types";
 
 const clerkAppearance = {
   variables: {
