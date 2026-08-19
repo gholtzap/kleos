@@ -3,14 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.21.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "db:migrate": "tsx scripts/migrate.mjs",
+    "db:migrate": "tsx --env-file=.env scripts/migrate.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:db": "npm run db:migrate && RUN_KLEOS_DB_TESTS=1 vitest run api/storage.integration.test.ts api/posts.integration.test.ts",
-    "test:load": "node scripts/load-test.mjs"
+    "test:load": "node --env-file=.env scripts/load-test.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^3.13.2",
