@@ -8,14 +8,14 @@ import {
   type UploadedPostFile,
 } from "../lib/post-feed";
 import type { AccountIdentity, FeedPost } from "../types";
-import "../app-surface.css";
+import "../styles/app-surface.css";
 import { DiscoveryRail } from "./DiscoveryRail";
 import { PostComposer, type ComposerPost } from "./PostComposer";
 import { PostList } from "./PostList";
 import { PostPlaceholderList } from "./PostPlaceholderList";
 import { Sidebar } from "./Sidebar";
 import { useAppSurface } from "../hooks/use-app-surface";
-import "./app-layout.css";
+import "../styles/app-layout.css";
 
 interface HomePageProps {
   account: AccountIdentity;

@@ -18,7 +18,7 @@ import { interceptLinkClicks } from "./lib/navigation";
 import { accountHandle } from "./lib/profile-identity";
 import { useLocationHash } from "./hooks/use-location-hash";
 import { usePathname } from "./hooks/use-pathname";
-import "./styles.css";
+import "./styles/styles.css";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Missing root element.");

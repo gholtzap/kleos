@@ -6,7 +6,7 @@ import {
   UserIcon,
 } from "@phosphor-icons/react";
 import { createRoot } from "react-dom/client";
-import "./app-surface.css";
+import "./styles/app-surface.css";
 import { accountConnections } from "./lib/connections";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
@@ -26,7 +26,7 @@ import {
   type SocialHoverCardItem,
 } from "./components/SocialHoverCards";
 import type { KleosRecord } from "./types";
-import "./component-preview.css";
+import "./styles/component-preview.css";
 
 const socialItems: readonly SocialHoverCardItem[] = [
   {
