@@ -12,7 +12,7 @@ const feed = vi.hoisted(() => ({
   uploadPostFile: vi.fn(),
 }));
 
-vi.mock("../post-feed", () => feed);
+vi.mock("../lib/post-feed", () => feed);
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;

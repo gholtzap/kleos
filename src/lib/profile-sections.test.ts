@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentPerson, initialClaims } from "./data";
+import { currentPerson, initialClaims } from "../fixtures/data";
 import {
   discoveryProjection,
   kleosRecordContentIsValid,
@@ -20,7 +20,7 @@ import type {
   ExperienceEntry,
   KleosRecord,
   OtherExperienceEntry,
-} from "./types";
+} from "../types";
 
 const experienceEntry: ExperienceEntry = {
   id: "exp-1",

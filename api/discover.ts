@@ -1,11 +1,11 @@
-import { isOwnership, normalizeKleosRecord } from "../src/kleos.js";
+import { isOwnership, normalizeKleosRecord } from "../src/lib/kleos.js";
 import type {
   Claim,
   DiscoveryResult,
   KleosRecord,
   Ownership,
   ResultPage,
-} from "../src/types.js";
+} from "../src/types/index.js";
 import {
   enforceRateLimit,
   first,

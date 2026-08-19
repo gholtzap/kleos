@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { currentPerson } from "../src/data";
+import { currentPerson } from "../src/fixtures/data";
 import type { ApiRequest, ApiResponse } from "./_shared";
 import { TestResponse } from "./test-response";
 

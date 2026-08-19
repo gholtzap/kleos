@@ -6,7 +6,7 @@ import {
 import type {
   NewProfessionalRequest,
   RequestKind,
-} from "./types.js";
+} from "../types/index.js";
 
 export const requestKinds: readonly RequestKind[] = [
   "Hiring",

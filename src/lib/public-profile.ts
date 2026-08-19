@@ -1,5 +1,5 @@
 import { normalizeKleosRecord } from "./kleos";
-import type { KleosRecord } from "./types";
+import type { KleosRecord } from "../types";
 
 async function recordFromResponse(response: Response): Promise<KleosRecord> {
   if (!response.ok) throw new Error("Kleos record not found.");

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("Vercel routes", () => {
   it("serves every client-side route through the app", () => {
     const config = JSON.parse(
-      readFileSync(new URL("../vercel.json", import.meta.url), "utf8"),
+      readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"),
     ) as unknown;
 
     expect(config).toMatchObject({

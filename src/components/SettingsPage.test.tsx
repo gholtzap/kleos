@@ -3,7 +3,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { emptyProfileRecord } from "../profile-record";
+import { emptyProfileRecord } from "../lib/profile-record";
 import type { KleosRecord } from "../types";
 import { SettingsPage } from "./SettingsPage";
 

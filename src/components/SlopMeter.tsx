@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useId } from "react";
-import { slopTier } from "../slop-score";
+import { slopTier } from "../lib/slop-score";
 import "./slop-meter.css";
 
 interface SlopMeterProps {

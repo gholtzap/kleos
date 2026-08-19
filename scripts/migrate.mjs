@@ -4,7 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import {
   discoveryProjection,
   normalizeKleosRecord,
-} from "../src/kleos.ts";
+} from "../src/lib/kleos.ts";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");

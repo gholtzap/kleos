@@ -1,5 +1,4 @@
-import type { KleosRecord } from "./types.js";
-import type { AccountIdentity } from "./types/profile.js";
+import type { AccountIdentity, KleosRecord } from "../types/index.js";
 
 const MAX_PROFILE_HANDLE_LENGTH = 200;
 

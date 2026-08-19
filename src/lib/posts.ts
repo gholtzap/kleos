@@ -8,7 +8,7 @@ import type {
   PostAuthor,
   PostMedia,
   ResultPage,
-} from "./types.js";
+} from "../types/index.js";
 
 export const postMediaKinds = ["image", "video"] as const;
 export const postImageMimeTypes = [

@@ -4,22 +4,21 @@ import { neon } from "@neondatabase/serverless";
 import {
   matchesConnectionProvider,
   type ConnectionProvider,
-} from "../src/connections.js";
-import { githubRepoFromValue, type GithubRepo } from "../src/github.js";
+} from "../src/lib/connections.js";
+import { githubRepoFromValue, type GithubRepo } from "../src/lib/github.js";
 import {
   discoveryProjection,
   isRecord,
   normalizeKleosRecord,
   publicKleosRecord,
-} from "../src/kleos.js";
+} from "../src/lib/kleos.js";
 import {
   accountHandle,
   emptyProfileRecord,
   normalizeProfileHandle,
   profileHandle,
-} from "../src/profile-identity.js";
-import type { KleosRecord } from "../src/types.js";
-import type { AccountIdentity } from "../src/types/profile.js";
+} from "../src/lib/profile-identity.js";
+import type { AccountIdentity, KleosRecord } from "../src/types/index.js";
 
 export { isRecord };
 

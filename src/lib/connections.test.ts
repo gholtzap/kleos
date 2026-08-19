@@ -12,7 +12,7 @@ import {
   type ExternalAccountLike,
 } from "./connections";
 import { emptyProfileRecord } from "./profile-record";
-import type { FeaturedProject, KleosRecord } from "./types";
+import type { FeaturedProject, KleosRecord } from "../types";
 
 function verifiedAccount(
   provider: string,

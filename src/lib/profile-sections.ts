@@ -3,7 +3,7 @@ import type {
   EducationEntry,
   ExperienceEntry,
   OtherExperienceEntry,
-} from "./types.js";
+} from "../types/index.js";
 
 export const MAX_EXPERIENCE_ENTRIES = 30;
 export const MAX_EXPERIENCE_HIGHLIGHTS = 8;

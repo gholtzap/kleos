@@ -1,9 +1,8 @@
 import { XIcon } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState, type FormEvent } from "react";
-import { settingsPath } from "../lib";
-import type { Person } from "../types";
-import type { AccountIdentity } from "../types/profile";
+import { settingsPath } from "../lib/lib";
+import type { AccountIdentity, Person } from "../types";
 import { bannerPreset, bannerPresetList } from "./ProfileHeader";
 import "./profile-edit-dialog.css";
 import "./profile-header.css";

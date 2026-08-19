@@ -1,10 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { reviewKleosRecord } from "../src/kleos.js";
+import { reviewKleosRecord } from "../src/lib/kleos.js";
 import type {
   CreatedReviewLink,
   ReviewBundle,
   ReviewLinkSummary,
-} from "../src/types.js";
+} from "../src/types/index.js";
 import {
   authenticatedUserId,
   enforceRateLimit,

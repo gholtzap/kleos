@@ -1,4 +1,4 @@
-import type { Claim, Person, ProfessionalRequest } from "./types";
+import type { Claim, Person, ProfessionalRequest } from "../types";
 
 export const currentPerson: Person = {
   id: "mara-voss",

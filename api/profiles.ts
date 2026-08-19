@@ -2,12 +2,12 @@ import type { User } from "@clerk/backend";
 import {
   identityFieldDefinition,
   identityFields,
-} from "../src/connections.js";
+} from "../src/lib/connections.js";
 import {
   kleosRecordContentIsValid,
   mergeOwnerKleosRecord,
   normalizeSubmittedKleosRecord,
-} from "../src/kleos.js";
+} from "../src/lib/kleos.js";
 import {
   accountIdentityForUser,
   authenticatedUserId,

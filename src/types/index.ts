@@ -287,3 +287,10 @@ export interface MediaUploadTicket {
   signature: string;
   signedParameters: Record<string, string>;
 }
+
+export interface AccountIdentity {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl?: string;
+}

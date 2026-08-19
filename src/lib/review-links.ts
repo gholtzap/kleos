@@ -1,5 +1,5 @@
 import { isRecord, normalizeKleosRecord } from "./kleos";
-import type { ReviewBundle } from "./types";
+import type { ReviewBundle } from "../types";
 
 async function responseJson(response: Response): Promise<unknown> {
   if (!response.ok) throw new Error("Review link request failed.");

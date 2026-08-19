@@ -1,4 +1,4 @@
-import type { FeaturedProject } from "./types.js";
+import type { FeaturedProject } from "../types/index.js";
 import {
   sessionAuthorizationHeader,
   type SessionTokenGetter,

@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { clientNavigationTarget, interceptLinkClicks, navigate } from "./navigation";
-import { usePathname } from "./use-pathname";
+import { usePathname } from "../hooks/use-pathname";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;

@@ -6,7 +6,7 @@ import {
   newEntryId,
   validMonth,
   validYear,
-} from "../profile-sections";
+} from "../lib/profile-sections";
 import type {
   CertificationEntry,
   EducationEntry,

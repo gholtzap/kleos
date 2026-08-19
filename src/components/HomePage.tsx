@@ -1,22 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import type { SessionTokenGetter } from "../api-client";
+import type { SessionTokenGetter } from "../lib/api-client";
 import {
   createPost,
   deleteUnattachedUpload,
   getPostFeed,
   uploadPostFile,
   type UploadedPostFile,
-} from "../post-feed";
-import type { FeedPost } from "../types";
-import type { AccountIdentity } from "../types/profile";
-import "../app-surface.css";
+} from "../lib/post-feed";
+import type { AccountIdentity, FeedPost } from "../types";
+import "../styles/app-surface.css";
 import { DiscoveryRail } from "./DiscoveryRail";
 import { PostComposer, type ComposerPost } from "./PostComposer";
 import { PostList } from "./PostList";
 import { PostPlaceholderList } from "./PostPlaceholderList";
 import { Sidebar } from "./Sidebar";
-import { useAppSurface } from "./use-app-surface";
-import "./app-layout.css";
+import { useAppSurface } from "../hooks/use-app-surface";
+import "../styles/app-layout.css";
 
 interface HomePageProps {
   account: AccountIdentity;

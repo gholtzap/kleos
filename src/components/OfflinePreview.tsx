@@ -1,5 +1,5 @@
 import { HomePage } from "./HomePage";
-import { previewPosts } from "../post-data";
+import { previewPosts } from "../fixtures/post-data";
 import "./offline-preview.css";
 
 const PREVIEW_ACCOUNT = {

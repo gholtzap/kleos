@@ -4,7 +4,7 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { parse } from "node-html-parser";
 import ipaddr from "ipaddr.js";
-import type { LinkPreview } from "../src/types.js";
+import type { LinkPreview } from "../src/types/index.js";
 import { cloudinaryLinkPreviewImageUrl } from "./_media.js";
 
 const MAX_REDIRECTS = 3;

@@ -4,7 +4,7 @@ import {
   RepeatIcon,
   ShareNetworkIcon,
 } from "@phosphor-icons/react";
-import { profilePath } from "../lib";
+import { profilePath } from "../lib/lib";
 import type { FeedPost, PostMedia } from "../types";
 import "./post-list.css";
 

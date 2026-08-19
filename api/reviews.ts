@@ -1,8 +1,8 @@
 import {
   applyEvidenceReviewDecision,
   normalizeEvidence,
-} from "../src/kleos.js";
-import type { EvidenceReviewItem } from "../src/types.js";
+} from "../src/lib/kleos.js";
+import type { EvidenceReviewItem } from "../src/types/index.js";
 import {
   authenticatedUserId,
   enforceRateLimit,
