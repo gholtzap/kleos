@@ -1,8 +1,7 @@
 import { CheckCircleIcon, CircleIcon, PlanetIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { profilePath } from "../lib";
-import type { FeaturedProject, KleosRecord } from "../types";
-import type { AccountIdentity } from "../types/profile";
+import type { AccountIdentity, FeaturedProject, KleosRecord } from "../types";
 import "../app-surface.css";
 import "./app-layout.css";
 import { AppTopBar } from "./AppTopBar";

@@ -18,8 +18,7 @@ import {
   normalizeProfileHandle,
   profileHandle,
 } from "../src/profile-identity.js";
-import type { KleosRecord } from "../src/types.js";
-import type { AccountIdentity } from "../src/types/profile.js";
+import type { AccountIdentity, KleosRecord } from "../src/types/index.js";
 
 export { isRecord };
 

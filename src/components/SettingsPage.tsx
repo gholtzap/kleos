@@ -12,7 +12,7 @@ import {
   clearedConnectedSearch,
   settingsPath,
 } from "../lib";
-import type { AccountIdentity } from "../types/profile";
+import type { AccountIdentity } from "../types";
 import { SettingsView } from "./SettingsView";
 import { useAccountConnections } from "./use-account-connections";
 import { useAppSurface } from "./use-app-surface";

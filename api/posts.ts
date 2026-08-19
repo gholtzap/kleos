@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { normalizeFeedPost, normalizeLinkPreview, normalizeNewPost } from "../src/posts.js";
-import type { FeedPost, LinkPreview, PostAuthor, PostMedia, ResultPage } from "../src/types.js";
+import type { FeedPost, LinkPreview, PostAuthor, PostMedia, ResultPage } from "../src/types/index.js";
 import { decodeDescendingCursor, encodeDescendingCursor } from "./_cursor.js";
 import { linkPreviewForText } from "./_link-preview.js";
 import { verifiedPostMedia } from "./_media.js";

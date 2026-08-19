@@ -9,7 +9,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import type { AccountIdentity } from "../types/profile";
+import type { AccountIdentity } from "../types";
 import { profilePath, settingsPath } from "../lib";
 import "./sidebar.css";
 

@@ -7,8 +7,7 @@ import {
   uploadPostFile,
   type UploadedPostFile,
 } from "../post-feed";
-import type { FeedPost } from "../types";
-import type { AccountIdentity } from "../types/profile";
+import type { AccountIdentity, FeedPost } from "../types";
 import "../app-surface.css";
 import { DiscoveryRail } from "./DiscoveryRail";
 import { PostComposer, type ComposerPost } from "./PostComposer";

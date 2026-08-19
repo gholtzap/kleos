@@ -1,6 +1,6 @@
 import { SignOutIcon } from "@phosphor-icons/react";
 import type { AccountConnection, ConnectionProvider } from "../connections";
-import type { AccountIdentity } from "../types/profile";
+import type { AccountIdentity } from "../types";
 import "../app-surface.css";
 import "./app-layout.css";
 import { AppTopBar } from "./AppTopBar";

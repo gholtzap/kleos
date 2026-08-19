@@ -4,7 +4,7 @@ import type {
   CreatedReviewLink,
   ReviewBundle,
   ReviewLinkSummary,
-} from "../src/types.js";
+} from "../src/types/index.js";
 import {
   authenticatedUserId,
   enforceRateLimit,

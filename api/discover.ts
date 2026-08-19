@@ -5,7 +5,7 @@ import type {
   KleosRecord,
   Ownership,
   ResultPage,
-} from "../src/types.js";
+} from "../src/types/index.js";
 import {
   enforceRateLimit,
   first,

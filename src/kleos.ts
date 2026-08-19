@@ -20,7 +20,7 @@ import {
   otherExperienceEntryIsValid,
 } from "./profile-sections.js";
 import { normalizeProfileHandle } from "./profile-identity.js";
-import { ownershipLevels } from "./types.js";
+import { ownershipLevels } from "./types/index.js";
 import type {
   Claim,
   ClaimState,
@@ -34,7 +34,7 @@ import type {
   Person,
   Privacy,
   Profession,
-} from "./types.js";
+} from "./types/index.js";
 
 const professions: readonly Profession[] = [
   "Engineering",

@@ -7,7 +7,7 @@ import {
   postImageMimeTypes,
   postMediaKindForMimeType,
 } from "../src/posts.js";
-import type { MediaUploadTicket, NewPostMedia, PostMedia } from "../src/types.js";
+import type { MediaUploadTicket, NewPostMedia, PostMedia } from "../src/types/index.js";
 
 interface MediaConfiguration {
   apiKey: string;
