@@ -20,6 +20,7 @@ import {
   reviewKleosRecord,
 } from "./kleos";
 import type { FeaturedProject, KleosRecord } from "./types";
+import { defaultInboundPolicy } from "./inbound-policy";
 
 const apiRepo = {
   name: "kleos",
@@ -61,6 +62,7 @@ function sampleRecord(projects: FeaturedProject[]): KleosRecord {
     education: [],
     certifications: [],
     otherExperience: [],
+    inbound: defaultInboundPolicy(),
   };
 }
 

@@ -5,6 +5,7 @@ import { publicKleosRecord } from "../src/kleos";
 import type { KleosRecord } from "../src/types";
 import type { ApiRequest, ApiResponse } from "./_shared";
 import { TestResponse } from "./test-response";
+import { defaultInboundPolicy } from "../src/inbound-policy";
 
 const database = vi.hoisted(() => ({
   record: null as KleosRecord | null,
@@ -147,6 +148,7 @@ beforeEach(() => {
     education: [],
     certifications: [],
     otherExperience: [],
+    inbound: defaultInboundPolicy(),
   };
   database.rateCount = 1;
   database.saveAllowed = true;

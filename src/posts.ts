@@ -9,6 +9,7 @@ import type {
   PostMedia,
   ResultPage,
 } from "./types.js";
+import type { AccountIdentity } from "./types/profile.js";
 
 export const postMediaKinds = ["image", "video"] as const;
 export const postImageMimeTypes = [
@@ -109,7 +110,7 @@ export function normalizeFeedPost(value: unknown): FeedPost | null {
   ) {
     return null;
   }
-  const author = normalizePostAuthor(value.author);
+  const author = normalizeAccountIdentity(value.author);
   const replyCount = normalizedCount(value.replyCount);
   const repostCount = normalizedCount(value.repostCount);
   const likeCount = normalizedCount(value.likeCount);
@@ -150,7 +151,7 @@ function normalizedCount(value: unknown): number | null {
     : null;
 }
 
-function normalizePostAuthor(value: unknown): PostAuthor | null {
+export function normalizeAccountIdentity(value: unknown): AccountIdentity | null {
   if (
     !isRecord(value) ||
     typeof value.id !== "string" ||

@@ -1,3 +1,4 @@
+import { defaultInboundPolicy } from "./inbound-policy.js";
 import type { KleosRecord } from "./types.js";
 import type { AccountIdentity } from "./types/profile.js";
 
@@ -64,5 +65,6 @@ export function emptyProfileRecord(account: AccountIdentity): KleosRecord {
     education: [],
     certifications: [],
     otherExperience: [],
+    inbound: defaultInboundPolicy(),
   };
 }

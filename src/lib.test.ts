@@ -17,6 +17,7 @@ import {
 import { sharedRouteFromHash } from "./lib";
 import { accountHandle } from "./profile-identity";
 import { normalizeNewProfessionalRequest } from "./requests";
+import { defaultInboundPolicy } from "./inbound-policy";
 
 describe("Kleos domain fixtures", () => {
   it("keeps nested evidence and privacy context internally consistent", () => {
@@ -67,6 +68,7 @@ describe("Kleos domain fixtures", () => {
       education: [],
       certifications: [],
       otherExperience: [],
+      inbound: defaultInboundPolicy(),
     };
     const published = publicKleosRecord(record);
     const firstPublished = published.claims[0];
@@ -121,6 +123,7 @@ describe("Kleos domain fixtures", () => {
       education: [],
       certifications: [],
       otherExperience: [],
+      inbound: defaultInboundPolicy(),
     };
     const confirmed = initialClaims[0]?.evidence[0];
     expect(confirmed).toBeDefined();
@@ -237,6 +240,7 @@ describe("Kleos domain fixtures", () => {
       education: [],
       certifications: [],
       otherExperience: [],
+      inbound: defaultInboundPolicy(),
     };
     const reviewed = applyEvidenceReviewDecision(
       record,
@@ -312,6 +316,7 @@ describe("Kleos domain fixtures", () => {
       education: [],
       certifications: [],
       otherExperience: [],
+      inbound: defaultInboundPolicy(),
     };
     const projection = discoveryProjection(record);
     expect(projection.publicRecord.claims).toHaveLength(2);

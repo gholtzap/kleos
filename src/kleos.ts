@@ -19,6 +19,8 @@ import {
   normalizeOtherExperienceEntry,
   otherExperienceEntryIsValid,
 } from "./profile-sections.js";
+import { includesValue, isRecord, isStringArray } from "./guards.js";
+import { normalizeInboundPolicy } from "./inbound-policy.js";
 import { normalizeProfileHandle } from "./profile-identity.js";
 import { ownershipLevels } from "./types.js";
 import type {
@@ -60,24 +62,13 @@ const evidenceReviewStatuses: readonly EvidenceReviewStatus[] = [
   "Rejected",
 ];
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-export function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
 function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || typeof value === "string";
 }
 
-export function includesValue<T extends string>(
-  values: readonly T[],
-  value: unknown,
-): value is T {
-  return typeof value === "string" && values.some((item) => item === value);
-}
+// Re-exported so the many modules that reach for a guard through the record
+// module keep working, and so nothing has to depend on this module to get one.
+export { includesValue, isRecord, isStringArray };
 
 export function isOwnership(value: unknown): value is Ownership {
   return includesValue(ownershipLevels, value);
@@ -324,6 +315,7 @@ export function normalizeKleosRecord(value: unknown): KleosRecord | null {
     education,
     certifications,
     otherExperience,
+    inbound: normalizeInboundPolicy(value.inbound),
   };
 }
 
@@ -539,6 +531,8 @@ export function mergeOwnerKleosRecord(
     education: submitted.education,
     certifications: submitted.certifications,
     otherExperience: submitted.otherExperience,
+    // The member owns their own terms outright — nothing here is server-held.
+    inbound: submitted.inbound,
     claims: submitted.claims.map((claim) => {
       const existingClaim = existingClaims.get(claim.id);
       const reviewContextUnchanged =
