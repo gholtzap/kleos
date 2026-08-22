@@ -15,6 +15,7 @@ import {
   observed,
   parseBody,
   privateResponse,
+  rememberAccount,
   sendRateLimit,
   sql,
   type ApiRequest,
@@ -188,15 +189,7 @@ async function handler(request: ApiRequest, response: ApiResponse) {
     const postId = randomUUID();
     const linkPreviewJson = linkPreview ? JSON.stringify(linkPreview) : null;
     const queries = [
-      sql`
-        INSERT INTO folio_accounts (id, name, handle, avatar_url)
-        VALUES (${account.id}, ${account.name}, ${account.handle}, ${account.avatarUrl ?? null})
-        ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name,
-          handle = EXCLUDED.handle,
-          avatar_url = EXCLUDED.avatar_url,
-          updated_at = NOW()
-      `,
+      rememberAccount(account),
       sql`
         INSERT INTO folio_posts (id, owner_id, body, link_preview)
         VALUES (${postId}::UUID, ${userId}, ${input.body}, ${linkPreviewJson}::JSONB)

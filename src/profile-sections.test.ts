@@ -14,6 +14,7 @@ import {
   formatMonth,
   yearRange,
 } from "./profile-sections";
+import { defaultInboundPolicy } from "./inbound-policy";
 import type {
   CertificationEntry,
   EducationEntry,
@@ -66,6 +67,7 @@ function sampleRecord(overrides: Partial<KleosRecord> = {}): KleosRecord {
     education: [educationEntry],
     certifications: [certificationEntry],
     otherExperience: [otherEntry],
+    inbound: defaultInboundPolicy(),
     ...overrides,
   };
 }

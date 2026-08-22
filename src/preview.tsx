@@ -27,6 +27,7 @@ import {
 } from "./components/SocialHoverCards";
 import type { KleosRecord } from "./types";
 import "./component-preview.css";
+import { defaultInboundPolicy } from "./inbound-policy";
 
 const socialItems: readonly SocialHoverCardItem[] = [
   {
@@ -189,6 +190,7 @@ const previewRecord: KleosRecord = {
       period: "2020",
     },
   ],
+  inbound: defaultInboundPolicy(),
 };
 
 function noop() {

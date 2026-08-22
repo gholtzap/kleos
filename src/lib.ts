@@ -102,3 +102,41 @@ export function clearedConnectedSearch(search: string): string {
   const remaining = parameters.toString();
   return remaining ? `?${remaining}` : "";
 }
+
+/** Why dev fell back to the offline preview instead of real Clerk auth. */
+export type PreviewReason =
+  | "missing-key"
+  | "live-key-on-localhost"
+  | "clerk-unreachable";
+
+const localHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
+function isLocalHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return localHostnames.has(host) || host.endsWith(".localhost");
+}
+
+/**
+ * A Clerk production instance only answers for its own domain, so a pk_live_
+ * key on localhost never loads. That reads as a missing key unless we say so.
+ */
+export function previewReason(
+  publishableKey: string | undefined,
+  hostname: string,
+): PreviewReason {
+  if (!publishableKey?.trim()) return "missing-key";
+  return publishableKey.startsWith("pk_live_") && isLocalHostname(hostname)
+    ? "live-key-on-localhost"
+    : "clerk-unreachable";
+}
+
+export function previewBannerMessage(reason: PreviewReason): string {
+  switch (reason) {
+    case "missing-key":
+      return "Auth disabled locally — no VITE_CLERK_PUBLISHABLE_KEY is set. Add one to .env.local to sign in. Showing a static preview.";
+    case "live-key-on-localhost":
+      return "Auth disabled locally — VITE_CLERK_PUBLISHABLE_KEY holds a pk_live_ key, and Clerk production instances only answer for the production domain. Put a Development pk_test_ key in .env.local and restart the dev server. Showing a static preview.";
+    case "clerk-unreachable":
+      return "Auth disabled locally — VITE_CLERK_PUBLISHABLE_KEY is set, but Clerk did not load in time. Check your network and the Clerk dashboard. Showing a static preview.";
+  }
+}

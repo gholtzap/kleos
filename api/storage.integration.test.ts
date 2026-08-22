@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { initialClaims, currentPerson } from "../src/data";
 import type { ApiRequest } from "./_shared";
 import { TestResponse } from "./test-response";
+import { defaultInboundPolicy } from "../src/inbound-policy";
 
 const runDatabaseTests = process.env.RUN_KLEOS_DB_TESTS === "1";
 const ownerId = `folio-test-${randomUUID()}`;
@@ -91,6 +92,7 @@ describe.runIf(runDatabaseTests)("Kleos database integration", () => {
       education: [],
       certifications: [],
       otherExperience: [],
+      inbound: defaultInboundPolicy(),
     };
     expect(await saveKleosRecord(ownerId, record)).toBe(true);
     expect(await loadKleosRecord(ownerId)).toEqual(record);

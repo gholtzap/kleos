@@ -173,6 +173,29 @@ export function accountIdentityForUser(user: User): AccountIdentity {
   };
 }
 
+/**
+ * Makes sure an account row exists before anything references it.
+ *
+ * `folio_accounts` is not populated by signing up or by saving a profile — a
+ * row appears the first time someone posts. Every table that points at an
+ * account therefore has to put the row there itself, for both sides of a
+ * conversation, including a recipient who has never opened the app.
+ *
+ * Returns the query rather than awaiting it, so callers can hand it to
+ * `sql.transaction([...])` alongside the write that depends on it.
+ */
+export function rememberAccount(account: AccountIdentity) {
+  return sql`
+    INSERT INTO folio_accounts (id, name, handle, avatar_url)
+    VALUES (${account.id}, ${account.name}, ${account.handle}, ${account.avatarUrl ?? null})
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      handle = EXCLUDED.handle,
+      avatar_url = EXCLUDED.avatar_url,
+      updated_at = NOW()
+  `;
+}
+
 export async function loadKleosRecord(
   ownerId: string,
 ): Promise<KleosRecord | null> {

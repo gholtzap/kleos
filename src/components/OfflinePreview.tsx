@@ -1,4 +1,5 @@
 import { HomePage } from "./HomePage";
+import { previewBannerMessage, type PreviewReason } from "../lib";
 import { previewPosts } from "../post-data";
 import "./offline-preview.css";
 
@@ -8,12 +9,11 @@ const PREVIEW_ACCOUNT = {
   handle: "@preview",
 };
 
-export function OfflinePreview() {
+export function OfflinePreview({ reason }: { reason: PreviewReason }) {
   return (
     <>
       <div className="offline-preview__banner" role="status">
-        Auth disabled locally — set VITE_CLERK_PUBLISHABLE_KEY in .env.local to sign in. Showing a
-        static preview.
+        {previewBannerMessage(reason)}
       </div>
       <HomePage
         account={PREVIEW_ACCOUNT}
