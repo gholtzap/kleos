@@ -10,6 +10,7 @@ import { SettingsPage } from "./components/SettingsPage";
 import { forgetAppSurface } from "./components/use-app-surface";
 import {
   isSettingsPath,
+  previewReason,
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
@@ -24,6 +25,10 @@ const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Missing root element.");
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const previewCause = previewReason(
+  clerkPublishableKey,
+  window.location.hostname,
+);
 
 const root = createRoot(rootElement);
 
@@ -46,7 +51,7 @@ function ClerkApplication() {
 
   if (sharedRoute) return <App sharedRoute={sharedRoute} />;
 
-  if (timedOut && !clerkLoaded) return <OfflinePreview />;
+  if (timedOut && !clerkLoaded) return <OfflinePreview reason={previewCause} />;
 
   if (!clerkLoaded) {
     return <p className="kleos-message">Loading Kleos…</p>;
@@ -92,7 +97,7 @@ function ClerkApplication() {
 
 function RootApplication() {
   if (!clerkPublishableKey) {
-    if (import.meta.env.DEV) return <OfflinePreview />;
+    if (import.meta.env.DEV) return <OfflinePreview reason="missing-key" />;
     throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY.");
   }
 

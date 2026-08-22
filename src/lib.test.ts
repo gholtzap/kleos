@@ -14,7 +14,7 @@ import {
   publicKleosRecord,
   reviewKleosRecord,
 } from "./kleos";
-import { sharedRouteFromHash } from "./lib";
+import { previewBannerMessage, previewReason, sharedRouteFromHash } from "./lib";
 import { accountHandle } from "./profile-identity";
 import { normalizeNewProfessionalRequest } from "./requests";
 import { defaultInboundPolicy } from "./inbound-policy";
@@ -351,4 +351,41 @@ describe("Kleos domain fixtures", () => {
     ).toBeNull();
   });
 
+});
+
+describe("previewReason", () => {
+  it("names a missing key", () => {
+    expect(previewReason(undefined, "localhost")).toBe("missing-key");
+    expect(previewReason("   ", "localhost")).toBe("missing-key");
+  });
+
+  it("names a live key that localhost cannot use", () => {
+    expect(previewReason("pk_live_abc", "localhost")).toBe(
+      "live-key-on-localhost",
+    );
+    expect(previewReason("pk_live_abc", "app.localhost")).toBe(
+      "live-key-on-localhost",
+    );
+    expect(previewReason("pk_live_abc", "127.0.0.1")).toBe(
+      "live-key-on-localhost",
+    );
+  });
+
+  it("blames the network when the key suits the host", () => {
+    expect(previewReason("pk_live_abc", "kleos.bio")).toBe("clerk-unreachable");
+    expect(previewReason("pk_test_abc", "localhost")).toBe("clerk-unreachable");
+  });
+});
+
+describe("previewBannerMessage", () => {
+  it("points a live key at a development key", () => {
+    expect(previewBannerMessage("live-key-on-localhost")).toContain("pk_test_");
+  });
+
+  it("asks for the key only when one is missing", () => {
+    expect(previewBannerMessage("missing-key")).toContain(
+      "VITE_CLERK_PUBLISHABLE_KEY",
+    );
+    expect(previewBannerMessage("clerk-unreachable")).not.toContain("pk_test_");
+  });
 });
