@@ -153,7 +153,7 @@ describe("featuredReposForImport", () => {
     ];
     const featured = featuredReposForImport(repos);
     expect(featured).toHaveLength(6);
-    expect(featured[0].name).toBe("big");
+    expect(featured[0]?.name).toBe("big");
     expect(featured.map((item) => item.name)).not.toContain("fork");
     expect(featured.map((item) => item.name)).not.toContain("archived");
   });
@@ -179,7 +179,7 @@ describe("recordWithGithubImport", () => {
       "beta",
       "gamma",
     ]);
-    expect(record.projects[0].syncedAt).toBe("2026-08-24T00:00:00.000Z");
+    expect(record.projects[0]?.syncedAt).toBe("2026-08-24T00:00:00.000Z");
     // Languages fold in without duplicating expertise the member already has.
     expect(record.person.expertise).toEqual(["Rust", "python", "Swift"]);
   });

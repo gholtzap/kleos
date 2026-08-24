@@ -14,6 +14,7 @@ describe("Vercel routes", () => {
         { source: "/home", destination: "/index.html" },
         { source: "/p/:handle", destination: "/index.html" },
         { source: "/settings", destination: "/index.html" },
+        { source: "/welcome", destination: "/index.html" },
       ],
     });
   });

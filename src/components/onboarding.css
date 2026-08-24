@@ -1,0 +1,444 @@
+/*
+ * Onboarding is deliberately self-contained: every color and radius reads
+ * from this token block, so a redesign is a token swap, not a rewrite. It
+ * follows the light auth surface the member arrives from, not the app shell.
+ */
+.onboarding {
+  --onboarding-background: #f7f7f5;
+  --onboarding-surface: #ffffff;
+  --onboarding-border: #e5e3de;
+  --onboarding-text: #171717;
+  --onboarding-muted: #6d6d67;
+  --onboarding-accent: #111111;
+  --onboarding-accent-text: #ffffff;
+  --onboarding-danger: #b3261e;
+  --onboarding-chip: #f1f0ec;
+  --onboarding-radius: 12px;
+
+  min-height: 100dvh;
+  color: var(--onboarding-text);
+  background: var(--onboarding-background);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.onboarding__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100% - 48px, 720px);
+  margin: 0 auto;
+  padding: 28px 0 8px;
+}
+
+.onboarding__skip {
+  color: var(--onboarding-muted);
+  font-size: 14px;
+}
+
+.onboarding__skip:hover {
+  color: var(--onboarding-text);
+}
+
+.onboarding__start,
+.onboarding__review {
+  width: min(100% - 48px, 720px);
+  margin: 0 auto;
+  padding: 48px 0 96px;
+}
+
+.onboarding__start {
+  padding-top: 12vh;
+}
+
+.onboarding__start h1,
+.onboarding__review h1 {
+  margin: 0 0 10px;
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
+  font-weight: 780;
+  letter-spacing: -0.04em;
+}
+
+.onboarding__lede {
+  margin: 0 0 32px;
+  color: var(--onboarding-muted);
+  font-size: 1.05rem;
+}
+
+.onboarding__imports {
+  display: grid;
+  gap: 14px;
+}
+
+.onboarding__import {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 22px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: var(--onboarding-radius);
+  background: var(--onboarding-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.onboarding__import:hover:not(:disabled) {
+  border-color: var(--onboarding-text);
+  transform: translateY(-1px);
+}
+
+.onboarding__import:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.onboarding__import > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.onboarding__import strong {
+  font-size: 1.05rem;
+  font-weight: 720;
+}
+
+.onboarding__import small {
+  color: var(--onboarding-muted);
+  font-size: 0.85rem;
+}
+
+.onboarding__spin {
+  animation: onboarding-spin 800ms linear infinite;
+}
+
+@keyframes onboarding-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.onboarding__blank {
+  display: inline-block;
+  margin-top: 28px;
+  color: var(--onboarding-muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.onboarding__blank:hover {
+  color: var(--onboarding-text);
+}
+
+.onboarding__error {
+  margin: 16px 0 0;
+  color: var(--onboarding-danger);
+  font-size: 14px;
+}
+
+/* --- Review ------------------------------------------------------------- */
+
+.onboarding__review-header {
+  margin-bottom: 24px;
+}
+
+.onboarding__sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.onboarding__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--onboarding-chip);
+  color: var(--onboarding-muted);
+  font-size: 13px;
+}
+
+.onboarding__card {
+  margin-bottom: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: var(--onboarding-radius);
+  background: var(--onboarding-surface);
+}
+
+.onboarding__card h2 {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 740;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--onboarding-muted);
+}
+
+.onboarding__empty {
+  margin: 0 0 10px;
+  color: var(--onboarding-muted);
+  font-size: 14px;
+}
+
+.onboarding__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.onboarding__fields label,
+.onboarding__years label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 640;
+  color: var(--onboarding-muted);
+}
+
+.onboarding__field-wide {
+  grid-column: 1 / -1;
+}
+
+.onboarding__fields input,
+.onboarding__fields textarea,
+.onboarding__years input,
+.onboarding__add-skill input {
+  padding: 9px 11px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: 8px;
+  background: var(--onboarding-surface);
+  color: var(--onboarding-text);
+  font-size: 14.5px;
+}
+
+.onboarding__fields input:focus,
+.onboarding__fields textarea:focus,
+.onboarding__years input:focus,
+.onboarding__add-skill input:focus {
+  outline: none;
+  border-color: var(--onboarding-text);
+}
+
+.onboarding__fields textarea {
+  resize: vertical;
+}
+
+.onboarding__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 11px;
+  border-radius: 999px;
+  background: var(--onboarding-chip);
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+.onboarding__chips button,
+.onboarding__rows button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--onboarding-muted);
+  cursor: pointer;
+}
+
+.onboarding__chips button:hover,
+.onboarding__rows button:hover {
+  color: var(--onboarding-danger);
+  background: var(--onboarding-background);
+}
+
+.onboarding__add-skill {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.onboarding__add-skill input {
+  flex: 1;
+  max-width: 260px;
+}
+
+.onboarding__add-skill button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: 8px;
+  background: var(--onboarding-surface);
+  cursor: pointer;
+}
+
+.onboarding__add-skill button:hover {
+  border-color: var(--onboarding-text);
+}
+
+.onboarding__rows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding__rows li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: 8px;
+}
+
+.onboarding__rows li:hover {
+  background: var(--onboarding-background);
+}
+
+.onboarding__rows li + li {
+  border-top: 1px solid var(--onboarding-border);
+  border-radius: 0 0 8px 8px;
+}
+
+.onboarding__rows li > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.onboarding__rows strong {
+  font-weight: 720;
+}
+
+.onboarding__rows span {
+  color: var(--onboarding-text);
+  font-size: 14px;
+}
+
+.onboarding__rows small {
+  color: var(--onboarding-muted);
+  font-size: 13px;
+}
+
+.onboarding__years {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.onboarding__years input {
+  width: 76px;
+  padding: 6px 9px;
+}
+
+.onboarding__years small {
+  padding-bottom: 8px;
+}
+
+.onboarding__verified {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 640;
+}
+
+.onboarding__connect {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: 8px;
+  background: var(--onboarding-surface);
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.onboarding__connect:hover:not(:disabled) {
+  border-color: var(--onboarding-text);
+}
+
+.onboarding__connect:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.onboarding__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.onboarding__import-more {
+  padding: 12px 18px;
+  border: 1px solid var(--onboarding-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--onboarding-muted);
+  font-weight: 660;
+  cursor: pointer;
+}
+
+.onboarding__import-more:hover:not(:disabled) {
+  color: var(--onboarding-text);
+  border-color: var(--onboarding-text);
+}
+
+.onboarding__save {
+  padding: 12px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--onboarding-accent);
+  color: var(--onboarding-accent-text);
+  font-size: 1rem;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.onboarding__save:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.onboarding__save:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (max-width: 560px) {
+  .onboarding__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .onboarding__actions button {
+    width: 100%;
+  }
+}

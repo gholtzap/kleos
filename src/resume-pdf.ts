@@ -16,7 +16,8 @@ export async function resumeImportFromPdf(
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
-  const document = await pdfjs.getDocument({ data }).promise;
+  const task = pdfjs.getDocument({ data });
+  const document = await task.promise;
   try {
     const lines: ResumeLine[] = [];
     const pages = Math.min(document.numPages, MAX_RESUME_PAGES);
@@ -40,6 +41,6 @@ export async function resumeImportFromPdf(
     }
     return parseResumeLines(lines);
   } finally {
-    void document.destroy();
+    void task.destroy();
   }
 }

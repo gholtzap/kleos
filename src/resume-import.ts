@@ -179,7 +179,7 @@ function datesInText(text: string): ResumeDate[] {
   for (const match of text.matchAll(monthYearPattern)) {
     dates.push({
       year: Number(match[2]),
-      month: MONTH_NUMBERS[match[1].toUpperCase().replace(/\./g, "")],
+      month: MONTH_NUMBERS[(match[1] ?? "").toUpperCase().replace(/\./g, "")],
       index: match.index,
       length: match[0].length,
     });
@@ -222,12 +222,11 @@ interface DateRange {
  * still forms a range — a one-month engagement states itself that way.
  */
 function dateRangeInText(text: string): DateRange | null {
-  const dates = datesInText(text);
-  if (dates.length === 0) return null;
-  const start = dates[0];
+  const [start, second] = datesInText(text);
+  if (start === undefined) return null;
   const present = presentPattern.exec(text);
   const toPresent = present !== null && present.index > start.index;
-  const end = toPresent ? undefined : dates[1] ?? start;
+  const end = toPresent ? undefined : second ?? start;
   const lastIndex = toPresent
     ? present.index + present[0].length
     : end !== undefined
@@ -238,11 +237,11 @@ function dateRangeInText(text: string): DateRange | null {
 
 /** True when the text states a full range: two dates, or a date to present. */
 function statesFullRange(text: string): boolean {
-  const dates = datesInText(text);
-  if (dates.length >= 2) return true;
-  if (dates.length === 0) return false;
+  const [first, second] = datesInText(text);
+  if (first === undefined) return false;
+  if (second !== undefined) return true;
   const present = presentPattern.exec(text);
-  return present !== null && present.index > dates[0].index;
+  return present !== null && present.index > first.index;
 }
 
 function pad(month: number): string {
@@ -283,6 +282,7 @@ function splitTopLevel(text: string, separators: RegExp): string[] {
 function cleanJoin(segments: readonly string[]): string {
   return segments
     .join(" ")
+    .replace(/\(\s*\)/g, " ")
     .replace(/\s+/g, " ")
     .replace(/^[\s,;|·–—-]+|[\s,;|·–—-]+$/g, "")
     .trim();
@@ -346,7 +346,8 @@ function websiteFromText(rawText: string): string | undefined {
       continue;
     }
     if (emailPattern.test(candidate)) continue;
-    if (!candidate.startsWith("http") && !WEBSITE_SUFFIXES.has(match[1].toLowerCase())) {
+    const suffix = (match[1] ?? "").toLowerCase();
+    if (!candidate.startsWith("http") && !WEBSITE_SUFFIXES.has(suffix)) {
       continue;
     }
     return candidate.startsWith("http") ? candidate : `https://${candidate}`;
@@ -463,37 +464,43 @@ function headerForAnchor(
   previousEnd: number,
   isAnchor: (index: number) => boolean,
 ): EntryHeader {
-  const anchorSegments = lines[anchor].text.split("\t");
+  const anchorLine = lines[anchor];
+  if (anchorLine === undefined) {
+    return { title: "", organization: "", consumed: [anchor] };
+  }
+  const anchorSegments = anchorLine.text.split("\t");
   const range = dateRangeInText(anchorSegments.at(-1) ?? "");
   const anchorRest = range
     ? [
         ...anchorSegments.slice(0, -1),
         withoutRange(anchorSegments.at(-1) ?? "", range),
       ].join("\t")
-    : lines[anchor].text;
+    : anchorLine.text;
   const anchorParts = splitHeaderSegments(anchorRest);
 
-  let partner: number | null = null;
-  const below = anchor + 1;
+  let partner: { index: number; line: ResumeLine } | null = null;
+  const belowLine = lines[anchor + 1];
   if (
-    below < nextAnchor &&
-    !isBulletLine(lines[below].text) &&
-    !isAnchor(below) &&
-    headerish(lines[below])
+    anchor + 1 < nextAnchor &&
+    belowLine !== undefined &&
+    !isBulletLine(belowLine.text) &&
+    !isAnchor(anchor + 1) &&
+    headerish(belowLine)
   ) {
-    partner = below;
+    partner = { index: anchor + 1, line: belowLine };
   } else {
-    const above = anchor - 1;
+    const aboveLine = lines[anchor - 1];
     if (
-      above > previousEnd &&
-      !isBulletLine(lines[above].text) &&
-      !isAnchor(above) &&
-      (lines[above].text.includes("\t") ||
-        (lines[above].text.length <= 80 &&
-          (orgSignal.test(lines[above].text) ||
-            titleSignal.test(lines[above].text))))
+      anchor - 1 > previousEnd &&
+      aboveLine !== undefined &&
+      !isBulletLine(aboveLine.text) &&
+      !isAnchor(anchor - 1) &&
+      (aboveLine.text.includes("\t") ||
+        (aboveLine.text.length <= 80 &&
+          (orgSignal.test(aboveLine.text) ||
+            titleSignal.test(aboveLine.text))))
     ) {
-      partner = above;
+      partner = { index: anchor - 1, line: aboveLine };
     }
   }
 
@@ -502,7 +509,7 @@ function headerForAnchor(
     const body = anchorParts.body;
     const atSplit = /^(.+?)\s+(?:at|@)\s+(.+)$/.exec(body);
     const parts = atSplit
-      ? [atSplit[1], atSplit[2]]
+      ? [atSplit[1] ?? "", atSplit[2] ?? ""]
       : splitTopLevel(body, /[,|]/);
     return {
       title: (parts[0] ?? body).slice(0, 200),
@@ -512,7 +519,7 @@ function headerForAnchor(
     };
   }
 
-  const partnerParts = splitHeaderSegments(lines[partner].text);
+  const partnerParts = splitHeaderSegments(partner.line.text);
   const anchorIsTitle =
     titleSignal.test(anchorParts.body) === titleSignal.test(partnerParts.body)
       ? // Neither or both read as a title: the dated line is the title, the
@@ -526,7 +533,7 @@ function headerForAnchor(
     title: title.slice(0, 200),
     organization: organization.slice(0, 200),
     location: partnerParts.location ?? anchorParts.location,
-    consumed: [anchor, partner],
+    consumed: [anchor, partner.index],
   };
 }
 
@@ -540,10 +547,11 @@ function highlightsFromLines(lines: readonly ResumeLine[]): string[] {
   for (const line of lines) {
     const text = line.text.replace(/\t/g, " ").trim();
     if (text.length === 0) continue;
-    if (isBulletLine(line.text) || highlights.length === 0) {
+    const open = highlights.length - 1;
+    if (isBulletLine(line.text) || open < 0) {
       highlights.push(stripBullet(text));
     } else {
-      highlights[highlights.length - 1] += ` ${text}`;
+      highlights[open] += ` ${text}`;
     }
   }
   return highlights
@@ -582,9 +590,11 @@ function experienceFromLines(
       anchor,
       nextAnchor,
       previousEnd,
-      (index) => anchorFlags[index],
+      (index) => anchorFlags[index] === true,
     );
-    const range = dateRangeInText(lines[anchor].text.split("\t").at(-1) ?? "");
+    const range = dateRangeInText(
+      lines[anchor]?.text.split("\t").at(-1) ?? "",
+    );
     if (range !== null) headers.push({ ...header, range });
     previousEnd = Math.max(anchor, ...header.consumed);
   }
@@ -592,10 +602,8 @@ function experienceFromLines(
   const entries: ExperienceEntry[] = [];
   for (const [position, header] of headers.entries()) {
     const contentStart = Math.max(...header.consumed) + 1;
-    const contentEnd =
-      position + 1 < headers.length
-        ? Math.min(...headers[position + 1].consumed)
-        : lines.length;
+    const next = headers[position + 1];
+    const contentEnd = next ? Math.min(...next.consumed) : lines.length;
     const title = header.title.trim();
     const organization = header.organization.trim();
     if (title.length === 0 && organization.length === 0) continue;
@@ -645,7 +653,7 @@ function educationFromLines(lines: readonly ResumeLine[]): {
       !educationDetailPattern.test(text) &&
       (schoolSignal.test(text) || degreeSignal.test(text));
     if (startsEntry || blocks.length === 0) blocks.push([line]);
-    else blocks[blocks.length - 1].push(line);
+    else blocks.at(-1)?.push(line);
   }
 
   const entries: EducationEntry[] = [];
@@ -673,10 +681,9 @@ function educationFromLines(lines: readonly ResumeLine[]): {
         : Math.max(startYear, dates[1]?.year ?? startYear);
     entries.push({
       id: newEntryId(),
-      school: (school ?? cleanJoin([block[0].text.split("\t")[0]])).slice(
-        0,
-        200,
-      ),
+      school: (
+        school ?? cleanJoin([block[0]?.text.split("\t")[0] ?? ""])
+      ).slice(0, 200),
       degree: cleanJoin(degreeSegments).slice(0, 200) || "—",
       // A missing year stays empty for the review step to fill; the record
       // cannot be saved with it, and inventing an enrollment year would put
@@ -741,7 +748,7 @@ function looseEntriesFromLines(lines: readonly ResumeLine[]): LooseEntry[] {
       const header = cleanJoin([
         (range && segments.length === 1
           ? withoutRange(line.text, range)
-          : segments.slice(0, -1).join(" ") || segments[0]
+          : segments.slice(0, -1).join(" ") || segments[0] || ""
         ).replace(linkMarkerPattern, ""),
       ]);
       entries.push({
@@ -754,7 +761,7 @@ function looseEntriesFromLines(lines: readonly ResumeLine[]): LooseEntry[] {
       });
       bulletOpen = false;
     } else {
-      entries[entries.length - 1].content.push(line);
+      entries.at(-1)?.content.push(line);
       bulletOpen = true;
     }
   }
@@ -769,8 +776,8 @@ function detailFromContent(content: readonly ResumeLine[]): string | undefined {
     if (joined.length > 500) break;
     detail = joined;
   }
-  if (detail.length === 0 && highlights.length > 0) {
-    detail = highlights[0].slice(0, 500);
+  if (detail.length === 0) {
+    detail = (highlights[0] ?? "").slice(0, 500);
   }
   return detail.length > 0 ? detail : undefined;
 }
@@ -798,8 +805,9 @@ function certificationsFromLines(
   for (const line of lines) {
     const text = stripBullet(line.text).replace(/\t/g, "  ");
     const dates = datesInText(text);
-    if (dates.length === 0) continue;
-    const issued = dates[0].year;
+    const firstDate = dates[0];
+    if (firstDate === undefined) continue;
+    const issued = firstDate.year;
     const expires = /\b(?:expires?|valid (?:through|until))\b/i.test(text)
       ? dates.at(-1)?.year
       : dates[1]?.year;
@@ -818,10 +826,11 @@ function certificationsFromLines(
     const cleaned = parts
       .map((part) => cleanJoin([part]))
       .filter((part) => part.length > 0);
-    if (cleaned.length === 0) continue;
+    const name = cleaned[0];
+    if (name === undefined) continue;
     entries.push({
       id: newEntryId(),
-      name: cleaned[0].slice(0, 200),
+      name: name.slice(0, 200),
       issuer: cleanJoin(cleaned.slice(1)).slice(0, 200) || "—",
       issued: String(issued),
       expires:
@@ -851,7 +860,7 @@ function splitSections(lines: readonly ResumeLine[]): {
     } else if (sections.length === 0) {
       intro.push(line);
     } else {
-      sections[sections.length - 1].lines.push(line);
+      sections.at(-1)?.lines.push(line);
     }
   }
   return { intro, sections };

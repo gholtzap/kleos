@@ -35,7 +35,7 @@ describe("linesFromTextItems", () => {
       ],
       1,
     );
-    expect(lines[0].text).toBe("Software Engineer\tMay 2024 – Present");
+    expect(lines[0]?.text).toBe("Software Engineer\tMay 2024 – Present");
   });
 
   it("joins kerning-split fragments without a space", () => {
@@ -43,8 +43,8 @@ describe("linesFromTextItems", () => {
       [item("1 km", 28, 700, 40), item("2", 68.2, 703.6, 4, 7)],
       1,
     );
-    expect(lines[0].text).toBe("1 km2");
-    expect(lines[0].height).toBe(10);
+    expect(lines[0]?.text).toBe("1 km2");
+    expect(lines[0]?.height).toBe(10);
   });
 
   it("keeps a superscript on its line without merging neighbors", () => {
@@ -72,7 +72,7 @@ describe("linesFromTextItems", () => {
       ],
       1,
     );
-    expect(lines[0].text).toBe("Languages\tPython, Rust");
+    expect(lines[0]?.text).toBe("Languages\tPython, Rust");
   });
 
   it("reports the tallest fragment as the line height", () => {

@@ -77,8 +77,8 @@ describe("parseResumeLines", () => {
       start: "2026-05",
       end: undefined,
     });
-    expect(founder.highlights).toHaveLength(2);
-    expect(founder.highlights[0]).toBe(
+    expect(founder?.highlights).toHaveLength(2);
+    expect(founder?.highlights[0]).toBe(
       "Built and scaled Nimbus to $90K ARR and 40+ paying users. Nimbus is a memory layer that pulls decisions and context buried across many tools into one searchable graph database for AI agents",
     );
     expect(intern).toMatchObject({
@@ -88,7 +88,7 @@ describe("parseResumeLines", () => {
       start: "2025-06",
       end: "2025-08",
     });
-    expect(intern.highlights).toHaveLength(2);
+    expect(intern?.highlights).toHaveLength(2);
   });
 
   it("parses organization-first experience entries", () => {

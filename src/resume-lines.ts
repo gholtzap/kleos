@@ -50,8 +50,9 @@ export function linesFromTextItems(
 
   const groups: ResumeTextItem[][] = [];
   for (const fragment of fragments) {
-    const group = groups[groups.length - 1];
-    if (group && group[0].y - fragment.y <= LINE_TOLERANCE) {
+    const group = groups.at(-1);
+    const anchor = group?.[0];
+    if (group && anchor && anchor.y - fragment.y <= LINE_TOLERANCE) {
       group.push(fragment);
     } else {
       groups.push([fragment]);
