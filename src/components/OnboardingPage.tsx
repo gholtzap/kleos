@@ -9,13 +9,21 @@ import {
 } from "../lib";
 import { navigate } from "../navigation";
 import {
+  normalizeOnboardingDraft,
+  onboardingDraftProblem,
   recordWithGithubImport,
   recordWithResumeImport,
 } from "../onboarding";
-import { validYear } from "../profile-sections";
 import { resumeImportIsEmpty, type ResumeImport } from "../resume-import";
 import { MAX_RESUME_BYTES, resumeImportFromPdf } from "../resume-pdf";
-import type { EducationEntry, KleosRecord, Person } from "../types";
+import type {
+  CertificationEntry,
+  EducationEntry,
+  ExperienceEntry,
+  KleosRecord,
+  OtherExperienceEntry,
+  Person,
+} from "../types";
 import type { AccountIdentity } from "../types/profile";
 import {
   OnboardingView,
@@ -172,10 +180,40 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
     }));
   }
 
+  function patchExperience(id: string, updates: Partial<ExperienceEntry>) {
+    patchDraft((current) => ({
+      ...current,
+      experience: current.experience.map((entry) =>
+        entry.id === id ? { ...entry, ...updates } : entry,
+      ),
+    }));
+  }
+
   function patchEducation(id: string, updates: Partial<EducationEntry>) {
     patchDraft((current) => ({
       ...current,
       education: current.education.map((entry) =>
+        entry.id === id ? { ...entry, ...updates } : entry,
+      ),
+    }));
+  }
+
+  function patchCertification(
+    id: string,
+    updates: Partial<CertificationEntry>,
+  ) {
+    patchDraft((current) => ({
+      ...current,
+      certifications: current.certifications.map((entry) =>
+        entry.id === id ? { ...entry, ...updates } : entry,
+      ),
+    }));
+  }
+
+  function patchOther(id: string, updates: Partial<OtherExperienceEntry>) {
+    patchDraft((current) => ({
+      ...current,
+      otherExperience: current.otherExperience.map((entry) =>
         entry.id === id ? { ...entry, ...updates } : entry,
       ),
     }));
@@ -212,33 +250,15 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
     }));
   }
 
-  function educationProblem(record: KleosRecord): string {
-    for (const entry of record.education) {
-      if (!validYear(entry.start)) {
-        return `Add the starting year for ${entry.school}.`;
-      }
-      if (
-        entry.end !== undefined &&
-        (!validYear(entry.end) || entry.end < entry.start)
-      ) {
-        return `Check the years for ${entry.school}.`;
-      }
-    }
-    return "";
-  }
-
   async function saveDraft() {
     if (draft === null) return;
-    if (draft.person.name.trim().length === 0) {
-      setSaveBlocker("Add your name before saving.");
-      return;
-    }
-    const problem = educationProblem(draft);
-    if (problem) {
+    const normalized = normalizeOnboardingDraft(draft);
+    const problem = onboardingDraftProblem(normalized);
+    if (problem !== null) {
       setSaveBlocker(problem);
       return;
     }
-    if (await profile.save(draft)) {
+    if (await profile.save(normalized)) {
       navigate(profilePath(account.handle));
     }
   }
@@ -254,7 +274,10 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
         onAddSkill={addSkill}
         onImportGithub={() => void importFromGithub()}
         onImportResume={() => fileInputRef.current?.click()}
+        onPatchCertification={patchCertification}
         onPatchEducation={patchEducation}
+        onPatchExperience={patchExperience}
+        onPatchOther={patchOther}
         onPatchPerson={patchPerson}
         onRemoveEntry={removeEntry}
         onRemoveProject={removeProject}

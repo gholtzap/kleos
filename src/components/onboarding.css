@@ -210,8 +210,7 @@
   gap: 14px;
 }
 
-.onboarding__fields label,
-.onboarding__years label {
+.onboarding__fields label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -226,7 +225,6 @@
 
 .onboarding__fields input,
 .onboarding__fields textarea,
-.onboarding__years input,
 .onboarding__add-skill input {
   padding: 9px 11px;
   border: 1px solid var(--onboarding-border);
@@ -238,7 +236,6 @@
 
 .onboarding__fields input:focus,
 .onboarding__fields textarea:focus,
-.onboarding__years input:focus,
 .onboarding__add-skill input:focus {
   outline: none;
   border-color: var(--onboarding-text);
@@ -282,9 +279,14 @@
 }
 
 .onboarding__chips button:hover,
-.onboarding__rows button:hover {
+.onboarding__rows button:hover:not(:disabled) {
   color: var(--onboarding-danger);
   background: var(--onboarding-background);
+}
+
+.onboarding__rows button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .onboarding__add-skill {
@@ -321,14 +323,12 @@
 }
 
 .onboarding__rows li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
   padding: 12px 10px;
   border-radius: 8px;
 }
 
-.onboarding__rows li:hover {
+.onboarding__rows li:hover,
+.onboarding__row--open {
   background: var(--onboarding-background);
 }
 
@@ -337,11 +337,35 @@
   border-radius: 0 0 8px 8px;
 }
 
-.onboarding__rows li > div {
+.onboarding__row-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.onboarding__row-summary {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 3px;
+}
+
+.onboarding__editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--onboarding-border);
+}
+
+.onboarding__editor .onboarding__fields input,
+.onboarding__editor .onboarding__fields textarea {
+  background: var(--onboarding-surface);
+}
+
+.onboarding__hint {
+  align-self: end;
+  padding-bottom: 9px;
+  color: var(--onboarding-muted);
+  font-size: 12.5px;
 }
 
 .onboarding__rows strong {
@@ -356,22 +380,6 @@
 .onboarding__rows small {
   color: var(--onboarding-muted);
   font-size: 13px;
-}
-
-.onboarding__years {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.onboarding__years input {
-  width: 76px;
-  padding: 6px 9px;
-}
-
-.onboarding__years small {
-  padding-bottom: 8px;
 }
 
 .onboarding__verified {

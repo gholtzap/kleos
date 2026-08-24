@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   featuredReposForImport,
+  normalizeOnboardingDraft,
+  onboardingDraftProblem,
   recordWithGithubImport,
   recordWithResumeImport,
 } from "./onboarding.js";
@@ -182,5 +184,110 @@ describe("recordWithGithubImport", () => {
     expect(record.projects[0]?.syncedAt).toBe("2026-08-24T00:00:00.000Z");
     // Languages fold in without duplicating expertise the member already has.
     expect(record.person.expertise).toEqual(["Rust", "python", "Swift"]);
+  });
+});
+
+describe("normalizeOnboardingDraft", () => {
+  it("tidies what typing leaves behind", () => {
+    const record = emptyProfileRecord(account);
+    record.person.name = "  Jordan Reyes ";
+    record.person.website = "jordanreyes.dev";
+    record.experience = [
+      {
+        id: "e1",
+        title: " Engineer ",
+        organization: "Nimbus",
+        employmentType: "  ",
+        location: "",
+        start: "2024-01",
+        end: undefined,
+        highlights: ["  Shipped it  ", "", "   "],
+      },
+    ];
+    record.otherExperience = [
+      { id: "o1", title: "Talk", detail: "  ", period: " 2024 " },
+    ];
+    const normalized = normalizeOnboardingDraft(record);
+    expect(normalized.person.name).toBe("Jordan Reyes");
+    expect(normalized.person.initials).toBe("JR");
+    expect(normalized.person.website).toBe("https://jordanreyes.dev");
+    expect(normalized.experience[0]).toMatchObject({
+      title: "Engineer",
+      employmentType: undefined,
+      location: undefined,
+      highlights: ["Shipped it"],
+    });
+    expect(normalized.otherExperience[0]).toMatchObject({
+      detail: undefined,
+      period: "2024",
+    });
+  });
+});
+
+describe("onboardingDraftProblem", () => {
+  function draft(): ReturnType<typeof emptyProfileRecord> {
+    return emptyProfileRecord(account);
+  }
+
+  it("accepts a clean draft", () => {
+    expect(onboardingDraftProblem(draft())).toBeNull();
+  });
+
+  it("names what blocks the save", () => {
+    const nameless = draft();
+    nameless.person.name = "";
+    expect(onboardingDraftProblem(nameless)).toBe(
+      "Add your name before saving.",
+    );
+
+    const badSite = draft();
+    badSite.person.website = "https://";
+    expect(onboardingDraftProblem(badSite)).toContain("full link");
+
+    const badMonth = draft();
+    badMonth.experience = [
+      {
+        id: "e1",
+        title: "Engineer",
+        organization: "Nimbus",
+        start: "2024",
+        end: undefined,
+        highlights: [],
+      },
+    ];
+    expect(onboardingDraftProblem(badMonth)).toBe(
+      "Give Engineer a start like 2024-06.",
+    );
+
+    const reversed = draft();
+    reversed.experience = [
+      {
+        id: "e1",
+        title: "Engineer",
+        organization: "Nimbus",
+        start: "2024-06",
+        end: "2024-01",
+        highlights: [],
+      },
+    ];
+    expect(onboardingDraftProblem(reversed)).toBe(
+      "Check the dates for Engineer.",
+    );
+
+    const yearless = draft();
+    yearless.education = [
+      { id: "ed1", school: "Falls City College", degree: "B.A.", start: "", end: undefined },
+    ];
+    expect(onboardingDraftProblem(yearless)).toBe(
+      "Add the starting year for Falls City College.",
+    );
+
+    const periodless = draft();
+    periodless.otherExperience = [
+      { id: "o1", title: "Talk", detail: undefined, period: "" },
+    ];
+    expect(onboardingDraftProblem(periodless)).toBe(
+      "Add when Talk happened — a year is enough.",
+    );
   });
 });

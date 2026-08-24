@@ -56,7 +56,10 @@ function viewProps(
     onImportResume: () => {},
     onImportGithub: () => {},
     onPatchPerson: () => {},
+    onPatchExperience: () => {},
     onPatchEducation: () => {},
+    onPatchCertification: () => {},
+    onPatchOther: () => {},
     onRemoveEntry: () => {},
     onRemoveSkill: () => {},
     onAddSkill: () => {},
@@ -92,6 +95,38 @@ describe("OnboardingView", () => {
     );
     if (!button) throw new Error(`Missing button: ${text}`);
     return button;
+  }
+
+  function fieldByLabel(
+    container: HTMLElement,
+    label: string,
+  ): HTMLInputElement | HTMLTextAreaElement {
+    const field = [
+      ...container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        "input, textarea",
+      ),
+    ].find((candidate) =>
+      candidate.closest("label")?.textContent?.includes(label),
+    );
+    if (!field) throw new Error(`Missing field: ${label}`);
+    return field;
+  }
+
+  /** Types into a controlled field the way React sees real input. */
+  function typeInto(
+    field: HTMLInputElement | HTMLTextAreaElement,
+    value: string,
+  ) {
+    act(() => {
+      const setter = Object.getOwnPropertyDescriptor(
+        field instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      setter?.call(field, value);
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   }
 
   it("leads with both imports and starts them on click", () => {
@@ -142,22 +177,60 @@ describe("OnboardingView", () => {
     );
     expect(onRemoveSkill).toHaveBeenCalledWith("Rust");
 
-    const startYear = [
-      ...container.querySelectorAll<HTMLInputElement>("input"),
-    ].find((input) => input.closest("label")?.textContent?.includes("Start year"));
-    if (!startYear) throw new Error("Missing start year input.");
-    act(() => {
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      setter?.call(startYear, "2019x");
-      startYear.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    typeInto(fieldByLabel(container, "Start year"), "2019x");
     expect(onPatchEducation).toHaveBeenCalledWith("edu-1", { start: "2019" });
 
     act(() => buttonByText(container, "Save your profile").click());
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("opens every field of an experience entry for editing", () => {
+    const onPatchExperience = vi.fn();
+    const container = render(
+      viewProps({ draft: reviewDraft(), onPatchExperience }),
+    );
+
+    // Collapsed rows summarize; the fields appear once the entry is opened.
+    expect(container.querySelector('[aria-label="Edit Firmware Engineer"]'))
+      .toBeDefined();
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>(
+          '[aria-label="Edit Firmware Engineer"]',
+        )
+        ?.click(),
+    );
+
+    typeInto(fieldByLabel(container, "Organization"), "Evergreen Labs");
+    expect(onPatchExperience).toHaveBeenCalledWith("exp-1", {
+      organization: "Evergreen Labs",
+    });
+
+    typeInto(
+      fieldByLabel(container, "Highlights"),
+      "Shipped the motor control loop\nCut boot time in half",
+    );
+    expect(onPatchExperience).toHaveBeenCalledWith("exp-1", {
+      highlights: ["Shipped the motor control loop", "Cut boot time in half"],
+    });
+
+    typeInto(fieldByLabel(container, "End"), "2024-03");
+    expect(onPatchExperience).toHaveBeenCalledWith("exp-1", {
+      end: "2024-03",
+    });
+  });
+
+  it("keeps an education entry without years open until they are added", () => {
+    const container = render(viewProps({ draft: reviewDraft() }));
+    // No click needed: the dateless entry's editor is already showing.
+    expect(fieldByLabel(container, "School").value).toBe("Falls City College");
+    expect(container.textContent).toContain(
+      "Your resume did not state the years",
+    );
+    const pencil = container.querySelector<HTMLButtonElement>(
+      '[aria-label="Edit Falls City College"]',
+    );
+    expect(pencil?.disabled).toBe(true);
   });
 
   it("prompts to verify a GitHub handle the resume mentioned", () => {
