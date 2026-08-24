@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseResumeLines } from "./resume-import.js";
+import { parseResumeLines, resumeImportIsEmpty } from "./resume-import.js";
 import type { ResumeLine } from "./resume-lines.js";
 
 /** Body lines at height 10; the name is tallest; headers sit in between. */
@@ -287,5 +287,17 @@ describe("parseResumeLines", () => {
       experience: [],
       education: [],
     });
+  });
+});
+
+describe("resumeImportIsEmpty", () => {
+  it("reports an import with no substance", () => {
+    expect(resumeImportIsEmpty(parseResumeLines([]))).toBe(true);
+    expect(
+      resumeImportIsEmpty(
+        parseResumeLines(lines([["Sam Chen", 17], "sam@fastmail.com"])),
+      ),
+    ).toBe(true);
+    expect(resumeImportIsEmpty(parseResumeLines(atsResume))).toBe(false);
   });
 });

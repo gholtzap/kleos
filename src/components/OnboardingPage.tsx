@@ -13,7 +13,7 @@ import {
   recordWithResumeImport,
 } from "../onboarding";
 import { validYear } from "../profile-sections";
-import type { ResumeImport } from "../resume-import";
+import { resumeImportIsEmpty, type ResumeImport } from "../resume-import";
 import { MAX_RESUME_BYTES, resumeImportFromPdf } from "../resume-pdf";
 import type { EducationEntry, KleosRecord, Person } from "../types";
 import type { AccountIdentity } from "../types/profile";
@@ -71,6 +71,12 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
     setParsingResume(true);
     try {
       const imported = await resumeImportFromPdf(await file.arrayBuffer());
+      if (resumeImportIsEmpty(imported)) {
+        setImportError(
+          "Kleos could not find profile details in that PDF. A text-based, single-column resume works best — scanned images cannot be read.",
+        );
+        return;
+      }
       applyResumeImport(imported, file.name);
     } catch {
       setImportError(

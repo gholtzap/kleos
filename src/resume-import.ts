@@ -44,6 +44,23 @@ export interface ResumeImport {
 
 const MAX_LIST_VALUES = 50;
 
+/**
+ * True when parsing found none of a resume's substance — the text was not
+ * there (a scanned image, an empty file) or not shaped like a resume. The
+ * import screen reports that instead of opening an empty review.
+ */
+export function resumeImportIsEmpty(imported: ResumeImport): boolean {
+  return (
+    imported.experience.length === 0 &&
+    imported.education.length === 0 &&
+    imported.expertise.length === 0 &&
+    imported.certifications.length === 0 &&
+    imported.otherExperience.length === 0 &&
+    imported.summary.length === 0 &&
+    imported.role.length === 0
+  );
+}
+
 type SectionKind =
   | "summary"
   | "experience"
