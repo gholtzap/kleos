@@ -18,8 +18,27 @@
   min-height: 100dvh;
   color: var(--onboarding-text);
   background: var(--onboarding-background);
+  font-family: "Manrope Variable", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.45;
+}
+
+/* Self-contained resets, so the screen never leans on page-level styles. */
+.onboarding *,
+.onboarding *::before,
+.onboarding *::after {
+  box-sizing: border-box;
+}
+
+.onboarding :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.onboarding :where(button, input, textarea) {
+  color: inherit;
+  font: inherit;
 }
 
 .onboarding__top {

@@ -10,6 +10,7 @@ import "./app-surface.css";
 import { accountConnections } from "./connections";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
+import { OnboardingView } from "./components/OnboardingView";
 import { GitHubActivity } from "./components/GithubGraph";
 import {
   certificationRows,
@@ -223,11 +224,62 @@ const previewConnections = accountConnections([
 
 const previewNow = new Date();
 
+const onboardingHandlers = {
+  onImportResume: noop,
+  onImportGithub: noop,
+  onPatchPerson: noop,
+  onPatchEducation: noop,
+  onRemoveEntry: noop,
+  onRemoveSkill: noop,
+  onAddSkill: noop,
+  onRemoveProject: noop,
+  onSave: noop,
+} as const;
+
+const onboardingDraft: KleosRecord = {
+  ...previewRecord,
+  person: {
+    ...previewRecord.person,
+    summary: "",
+    expertise: ["Rust", "TypeScript", "Postgres", "Kubernetes", "Go"],
+  },
+};
+
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing root element.");
 
 createRoot(root).render(
   <main className="component-preview">
+    <section aria-label="Onboarding start" id="onboarding-start">
+      <OnboardingView
+        {...onboardingHandlers}
+        connectingGithub={false}
+        draft={null}
+        error=""
+        firstName="Fake"
+        importingGithub={false}
+        parsingResume={false}
+        ready
+        resumeFileName=""
+        resumeGithub=""
+        saving={false}
+      />
+    </section>
+    <section aria-label="Onboarding review" id="onboarding-review">
+      <OnboardingView
+        {...onboardingHandlers}
+        connectingGithub={false}
+        draft={onboardingDraft}
+        error=""
+        firstName="Fake"
+        importingGithub={false}
+        parsingResume={false}
+        ready
+        resumeFileName="Fake_Person_Resume.pdf"
+        resumeGithub="fakeperson"
+        saving={false}
+      />
+    </section>
     <section className="social-cards-preview" aria-label="Social hover cards">
       <div className="social-cards-preview__stage">
         <SocialHoverCards defaultValue="message" items={socialItems} />
