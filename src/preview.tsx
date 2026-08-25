@@ -5,12 +5,21 @@ import {
   HouseIcon,
   UserIcon,
 } from "@phosphor-icons/react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { createRoot } from "react-dom/client";
 import "./app-surface.css";
 import { accountConnections } from "./connections";
+import {
+  normalizeOnboardingDraft,
+  onboardingDraftProblem,
+  recordWithResumeImport,
+} from "./onboarding";
+import { emptyProfileRecord } from "./profile-identity";
+import { resumeImportFromFile } from "./resume-pdf";
 import { Experience } from "./components/Experience";
 import { FeaturedProjects } from "./components/FeaturedProjects";
 import { OnboardingView } from "./components/OnboardingView";
+import { useOnboardingDraft } from "./components/use-onboarding-draft";
 import { GitHubActivity } from "./components/GithubGraph";
 import {
   certificationRows,
@@ -224,6 +233,95 @@ const previewConnections = accountConnections([
 
 const previewNow = new Date();
 
+/**
+ * The onboarding resume flow against a real PDF, no sign-in or API needed:
+ * the same parser, merge, draft editing, and save validation the app runs —
+ * only the save itself goes nowhere.
+ */
+function ResumeImportTester() {
+  const [message, setMessage] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [resumeGithub, setResumeGithub] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const store = useOnboardingDraft(() => setMessage(""));
+
+  async function importResume(file: File) {
+    setMessage("");
+    setParsing(true);
+    const result = await resumeImportFromFile(file);
+    setParsing(false);
+    if (result.problem !== undefined) {
+      setMessage(result.problem);
+      return;
+    }
+    store.applyImport((current) =>
+      recordWithResumeImport(
+        current ??
+          emptyProfileRecord({ id: "preview-tester", name: "", handle: "@preview" }),
+        result.imported,
+      ),
+    );
+    setFileName(file.name);
+    setResumeGithub(result.imported.githubUsername ?? "");
+  }
+
+  function onResumeChosen(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void importResume(file);
+  }
+
+  function checkSave() {
+    if (store.draft === null) return;
+    const problem = onboardingDraftProblem(normalizeOnboardingDraft(store.draft));
+    setMessage(
+      problem ??
+        "This draft would save cleanly. The tester stops here — nothing is stored.",
+    );
+  }
+
+  return (
+    <>
+      <OnboardingView
+        connectingGithub={false}
+        draft={store.draft}
+        error={message}
+        firstName=""
+        importingGithub={false}
+        onAddSkill={store.addSkill}
+        onImportGithub={() =>
+          setMessage(
+            "The GitHub import needs the signed-in app — this tester covers the resume side.",
+          )
+        }
+        onImportResume={() => fileInputRef.current?.click()}
+        onPatchCertification={store.patchCertification}
+        onPatchEducation={store.patchEducation}
+        onPatchExperience={store.patchExperience}
+        onPatchOther={store.patchOther}
+        onPatchPerson={store.patchPerson}
+        onRemoveEntry={store.removeEntry}
+        onRemoveProject={store.removeProject}
+        onRemoveSkill={store.removeSkill}
+        onSave={checkSave}
+        parsingResume={parsing}
+        ready
+        resumeFileName={fileName}
+        resumeGithub={resumeGithub}
+        saving={false}
+      />
+      <input
+        accept="application/pdf,.pdf"
+        hidden
+        onChange={onResumeChosen}
+        ref={fileInputRef}
+        type="file"
+      />
+    </>
+  );
+}
+
 const onboardingHandlers = {
   onImportResume: noop,
   onImportGithub: noop,
@@ -253,20 +351,8 @@ if (!root) throw new Error("Missing root element.");
 
 createRoot(root).render(
   <main className="component-preview">
-    <section aria-label="Onboarding start" id="onboarding-start">
-      <OnboardingView
-        {...onboardingHandlers}
-        connectingGithub={false}
-        draft={null}
-        error=""
-        firstName="Fake"
-        importingGithub={false}
-        parsingResume={false}
-        ready
-        resumeFileName=""
-        resumeGithub=""
-        saving={false}
-      />
+    <section aria-label="Onboarding resume tester" id="onboarding-start">
+      <ResumeImportTester />
     </section>
     <section aria-label="Onboarding review" id="onboarding-review">
       <OnboardingView

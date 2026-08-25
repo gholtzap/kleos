@@ -14,22 +14,11 @@ import {
   recordWithGithubImport,
   recordWithResumeImport,
 } from "../onboarding";
-import { resumeImportIsEmpty, type ResumeImport } from "../resume-import";
-import { MAX_RESUME_BYTES, resumeImportFromPdf } from "../resume-pdf";
-import type {
-  CertificationEntry,
-  EducationEntry,
-  ExperienceEntry,
-  KleosRecord,
-  OtherExperienceEntry,
-  Person,
-} from "../types";
+import { resumeImportFromFile } from "../resume-pdf";
 import type { AccountIdentity } from "../types/profile";
-import {
-  OnboardingView,
-  type OnboardingEntrySection,
-} from "./OnboardingView";
+import { OnboardingView } from "./OnboardingView";
 import { useAccountConnections } from "./use-account-connections";
+import { useOnboardingDraft } from "./use-onboarding-draft";
 import { useProfileRecord } from "./use-profile-record";
 
 interface OnboardingPageProps {
@@ -49,7 +38,6 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
   const github = connections.connectionFor("github");
   const verifiedGithub = github.verified ? github.username : undefined;
 
-  const [draft, setDraft] = useState<KleosRecord | null>(null);
   const [resumeFileName, setResumeFileName] = useState("");
   const [resumeGithub, setResumeGithub] = useState("");
   const [parsingResume, setParsingResume] = useState(false);
@@ -60,39 +48,25 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
     connectedProviderFromSearch(window.location.search),
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const store = useOnboardingDraft(() => setSaveBlocker(""));
 
   const { base, loaded, saving, saveError } = profile;
-
-  function applyResumeImport(imported: ResumeImport, fileName: string) {
-    setDraft((current) => recordWithResumeImport(current ?? base, imported));
-    setResumeFileName(fileName);
-    setResumeGithub(imported.githubUsername ?? "");
-  }
+  const { draft } = store;
 
   async function importResume(file: File) {
     setImportError("");
-    setSaveBlocker("");
-    if (file.size > MAX_RESUME_BYTES) {
-      setImportError("That PDF is over 10 MB. Export a smaller copy.");
+    setParsingResume(true);
+    const result = await resumeImportFromFile(file);
+    setParsingResume(false);
+    if (result.problem !== undefined) {
+      setImportError(result.problem);
       return;
     }
-    setParsingResume(true);
-    try {
-      const imported = await resumeImportFromPdf(await file.arrayBuffer());
-      if (resumeImportIsEmpty(imported)) {
-        setImportError(
-          "Kleos could not find profile details in that PDF. A text-based, single-column resume works best — scanned images cannot be read.",
-        );
-        return;
-      }
-      applyResumeImport(imported, file.name);
-    } catch {
-      setImportError(
-        "Could not read that file. Export your resume as a PDF and try again.",
-      );
-    } finally {
-      setParsingResume(false);
-    }
+    store.applyImport((current) =>
+      recordWithResumeImport(current ?? base, result.imported),
+    );
+    setResumeFileName(file.name);
+    setResumeGithub(result.imported.githubUsername ?? "");
   }
 
   function onResumeChosen(event: ChangeEvent<HTMLInputElement>) {
@@ -104,10 +78,9 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
   async function importGithubRepos(username: string) {
     setImportingGithub(true);
     setImportError("");
-    setSaveBlocker("");
     try {
       const repos = await fetchGithubRepos(getToken);
-      setDraft((current) =>
+      store.applyImport((current) =>
         recordWithGithubImport(
           current ?? base,
           username,
@@ -161,95 +134,6 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, returnedProvider, verifiedGithub]);
 
-  function patchDraft(patch: (current: KleosRecord) => KleosRecord) {
-    setSaveBlocker("");
-    setDraft((current) => (current === null ? current : patch(current)));
-  }
-
-  function patchPerson(updates: Partial<Person>) {
-    patchDraft((current) => ({
-      ...current,
-      person: { ...current.person, ...updates },
-    }));
-  }
-
-  function removeEntry(section: OnboardingEntrySection, id: string) {
-    patchDraft((current) => ({
-      ...current,
-      [section]: current[section].filter((entry) => entry.id !== id),
-    }));
-  }
-
-  function patchExperience(id: string, updates: Partial<ExperienceEntry>) {
-    patchDraft((current) => ({
-      ...current,
-      experience: current.experience.map((entry) =>
-        entry.id === id ? { ...entry, ...updates } : entry,
-      ),
-    }));
-  }
-
-  function patchEducation(id: string, updates: Partial<EducationEntry>) {
-    patchDraft((current) => ({
-      ...current,
-      education: current.education.map((entry) =>
-        entry.id === id ? { ...entry, ...updates } : entry,
-      ),
-    }));
-  }
-
-  function patchCertification(
-    id: string,
-    updates: Partial<CertificationEntry>,
-  ) {
-    patchDraft((current) => ({
-      ...current,
-      certifications: current.certifications.map((entry) =>
-        entry.id === id ? { ...entry, ...updates } : entry,
-      ),
-    }));
-  }
-
-  function patchOther(id: string, updates: Partial<OtherExperienceEntry>) {
-    patchDraft((current) => ({
-      ...current,
-      otherExperience: current.otherExperience.map((entry) =>
-        entry.id === id ? { ...entry, ...updates } : entry,
-      ),
-    }));
-  }
-
-  function removeSkill(value: string) {
-    patchDraft((current) => ({
-      ...current,
-      person: {
-        ...current.person,
-        expertise: current.person.expertise.filter((skill) => skill !== value),
-      },
-    }));
-  }
-
-  function addSkill(value: string) {
-    patchDraft((current) => ({
-      ...current,
-      person: {
-        ...current.person,
-        expertise: current.person.expertise.some(
-          (skill) => skill.toLowerCase() === value.toLowerCase(),
-        )
-          ? current.person.expertise
-          : [...current.person.expertise, value],
-      },
-    }));
-  }
-
-  function removeProject(id: string) {
-    patchDraft((current) => ({
-      ...current,
-      projects: current.projects.filter((project) => project.id !== id),
-    }));
-  }
-
   async function saveDraft() {
     if (draft === null) return;
     const normalized = normalizeOnboardingDraft(draft);
@@ -271,17 +155,17 @@ export function OnboardingPage({ account }: OnboardingPageProps) {
         error={importError || saveBlocker || saveError}
         firstName={account.name.trim().split(/\s+/)[0] ?? ""}
         importingGithub={importingGithub}
-        onAddSkill={addSkill}
+        onAddSkill={store.addSkill}
         onImportGithub={() => void importFromGithub()}
         onImportResume={() => fileInputRef.current?.click()}
-        onPatchCertification={patchCertification}
-        onPatchEducation={patchEducation}
-        onPatchExperience={patchExperience}
-        onPatchOther={patchOther}
-        onPatchPerson={patchPerson}
-        onRemoveEntry={removeEntry}
-        onRemoveProject={removeProject}
-        onRemoveSkill={removeSkill}
+        onPatchCertification={store.patchCertification}
+        onPatchEducation={store.patchEducation}
+        onPatchExperience={store.patchExperience}
+        onPatchOther={store.patchOther}
+        onPatchPerson={store.patchPerson}
+        onRemoveEntry={store.removeEntry}
+        onRemoveProject={store.removeProject}
+        onRemoveSkill={store.removeSkill}
         onSave={() => void saveDraft()}
         parsingResume={parsingResume}
         ready={loaded}
