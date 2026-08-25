@@ -4,6 +4,7 @@ import {
   clearedConnectedSearch,
   connectedProviderFromSearch,
   isSettingsPath,
+  isWelcomePath,
   profileHandleFromPath,
   profilePath,
   profilePathMatchesAccount,
@@ -48,6 +49,14 @@ describe("Signed-in routes", () => {
     expect(isSettingsPath("/settings/connections")).toBe(false);
     expect(isSettingsPath("/p/ada")).toBe(false);
     expect(sharedRouteFromPath("/settings")).toBeNull();
+  });
+
+  it("recognizes the onboarding URL and nothing near it", () => {
+    expect(isWelcomePath("/welcome")).toBe(true);
+    expect(isWelcomePath("/welcome/")).toBe(true);
+    expect(isWelcomePath("/welcome/back")).toBe(false);
+    expect(isWelcomePath("/home")).toBe(false);
+    expect(sharedRouteFromPath("/welcome")).toBeNull();
   });
 });
 

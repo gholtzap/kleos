@@ -10,10 +10,12 @@ import { SettingsPage } from "./components/SettingsPage";
 import { forgetAppSurface } from "./components/use-app-surface";
 import {
   isSettingsPath,
+  isWelcomePath,
   profilePathMatchesAccount,
   sharedRouteFromHash,
   sharedRouteFromPath,
 } from "./lib";
+import { OnboardingPage } from "./components/OnboardingPage";
 import { interceptLinkClicks } from "./navigation";
 import { accountHandle } from "./profile-identity";
 import { useLocationHash } from "./use-location-hash";
@@ -80,6 +82,7 @@ function ClerkApplication() {
   }
 
   if (account) {
+    if (isWelcomePath(pathname)) return <OnboardingPage account={account} />;
     return isSettingsPath(pathname) ? (
       <SettingsPage account={account} />
     ) : (

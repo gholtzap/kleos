@@ -1,6 +1,6 @@
 import { SignIn, SignUp } from "@clerk/react";
 import { useEffect, useState, type ComponentProps } from "react";
-import { authPageFromPath, type SharedRoute } from "./lib";
+import { authPageFromPath, welcomePath, type SharedRoute } from "./lib";
 import { getPublicProfile, getPublicProfileByHandle } from "./public-profile";
 import { getReviewBundle } from "./review-links";
 import { githubRepoUrl } from "./github";
@@ -37,9 +37,19 @@ export default function App({ sharedRoute }: { sharedRoute?: SharedRoute }) {
       <main className="kleos-auth-shell">
         <a className="kleos-wordmark" href="/">Kleos</a>
         {authPage === "sign-in" ? (
-          <SignIn appearance={clerkAppearance} routing="path" path="/sign-in" />
+          <SignIn
+            appearance={clerkAppearance}
+            routing="path"
+            path="/sign-in"
+            signUpForceRedirectUrl={welcomePath}
+          />
         ) : (
-          <SignUp appearance={clerkAppearance} routing="path" path="/sign-up" />
+          <SignUp
+            appearance={clerkAppearance}
+            routing="path"
+            path="/sign-up"
+            forceRedirectUrl={welcomePath}
+          />
         )}
       </main>
     );

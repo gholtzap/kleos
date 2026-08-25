@@ -29,6 +29,10 @@
     {
       "source": "/settings",
       "destination": "/index.html"
+    },
+    {
+      "source": "/welcome",
+      "destination": "/index.html"
     }
   ]
 }

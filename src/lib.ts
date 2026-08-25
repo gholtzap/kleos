@@ -9,6 +9,7 @@ export type SharedRoute =
   | { kind: "review"; reviewToken: string };
 
 export const settingsPath = "/settings";
+export const welcomePath = "/welcome";
 
 /** Names the provider an OAuth flow just returned from. */
 const connectedParameter = "connected";
@@ -57,6 +58,11 @@ export function signedInPageFromPath(pathname: string): SignedInPage {
 /** Settings belongs to the signed-in member, so it is never a shared route. */
 export function isSettingsPath(pathname: string): boolean {
   return pathname.replace(/\/+$/, "") === settingsPath;
+}
+
+/** Onboarding belongs to the signed-in member, so it is never a shared route. */
+export function isWelcomePath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === welcomePath;
 }
 
 export function profileHandleFromPath(pathname: string): string | null {
