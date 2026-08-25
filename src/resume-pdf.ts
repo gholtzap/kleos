@@ -30,7 +30,7 @@ export async function resumeImportFromFile(
     if (resumeImportIsEmpty(imported)) {
       return {
         problem:
-          "Kleos could not find profile details in that PDF. A text-based, single-column resume works best — scanned images cannot be read.",
+          "Kleos could not find profile details in that PDF. A text-based, single-column resume works best. Scanned images cannot be read.",
       };
     }
     return { imported };

@@ -225,7 +225,7 @@ export function onboardingDraftProblem(record: KleosRecord): string | null {
     const label = entry.title || "your other experience";
     if (entry.title.length === 0) return "Give each other-experience entry a title.";
     if (entry.period.length === 0) {
-      return `Add when ${label} happened — a year is enough.`;
+      return `Add when ${label} happened. A year is enough.`;
     }
     if (!otherExperienceEntryIsValid(entry)) {
       return `Check the details for ${label}.`;

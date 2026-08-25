@@ -182,8 +182,8 @@ export function OnboardingView({
         <main className="onboarding__start">
           <h1>Welcome to Kleos{firstName ? `, ${firstName}` : ""}.</h1>
           <p className="onboarding__lede">
-            Your profile is built from work you have already done. Import it —
-            no retyping.
+            Import your resume or connect GitHub to fill in most of your
+            profile automatically.
           </p>
 
           <div className="onboarding__imports">
@@ -269,7 +269,7 @@ export function OnboardingView({
         <header className="onboarding__review-header">
           <h1>Here is what your imports found.</h1>
           <p className="onboarding__lede">
-            Everything below is editable — open an entry to change any field,
+            Everything below is editable. Open an entry to change any field,
             remove what you do not want, and save. Nothing is published until
             you do.
           </p>
@@ -351,7 +351,7 @@ export function OnboardingView({
           <h2>Skills</h2>
           {draft.person.expertise.length === 0 ? (
             <p className="onboarding__empty">
-              No skills imported yet — add the ones that matter.
+              No skills imported yet. Add the ones that matter.
             </p>
           ) : null}
           <ul className="onboarding__chips">
@@ -586,7 +586,7 @@ export function OnboardingView({
                       <span className="onboarding__hint">
                         {validYear(entry.start)
                           ? "Leave the end empty while you are still enrolled."
-                          : "Your resume did not state the years — add the start."}
+                          : "Your resume did not state the years. Add the start."}
                       </span>
                     </div>
                   }
@@ -797,7 +797,7 @@ export function OnboardingView({
             <>
               <p className="onboarding__empty">
                 {resumeGithub
-                  ? `Your resume lists github.com/${resumeGithub} — connect to verify it and feature your best repositories.`
+                  ? `Your resume lists github.com/${resumeGithub}. Connect to verify it and feature your best repositories.`
                   : "Connect your GitHub account to verify your handle and feature your best repositories."}
               </p>
               <button

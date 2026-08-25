@@ -287,7 +287,7 @@ describe("onboardingDraftProblem", () => {
       { id: "o1", title: "Talk", detail: undefined, period: "" },
     ];
     expect(onboardingDraftProblem(periodless)).toBe(
-      "Add when Talk happened — a year is enough.",
+      "Add when Talk happened. A year is enough.",
     );
   });
 });

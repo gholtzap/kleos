@@ -277,7 +277,7 @@ function ResumeImportTester() {
     const problem = onboardingDraftProblem(normalizeOnboardingDraft(store.draft));
     setMessage(
       problem ??
-        "This draft would save cleanly. The tester stops here — nothing is stored.",
+        "This draft would save cleanly. The tester stops here and stores nothing.",
     );
   }
 
@@ -292,7 +292,7 @@ function ResumeImportTester() {
         onAddSkill={store.addSkill}
         onImportGithub={() =>
           setMessage(
-            "The GitHub import needs the signed-in app — this tester covers the resume side.",
+            "The GitHub import needs the signed-in app. This tester covers the resume side.",
           )
         }
         onImportResume={() => fileInputRef.current?.click()}
