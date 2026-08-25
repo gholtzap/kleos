@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseResumeLines, resumeImportIsEmpty } from "./resume-import.js";
-import type { ResumeLine } from "./resume-lines.js";
+import { linesFromTextItems, type ResumeLine } from "./resume-lines.js";
 
 /** Body lines at height 10; the name is tallest; headers sit in between. */
 function lines(
@@ -272,7 +272,10 @@ describe("parseResumeLines", () => {
 
   it("routes unknown all-caps headings into other experience", () => {
     const unknown = parseResumeLines(
-      lines([["VENTURES", 12], "Farmers market stand\tSummers 2019 – 2021"]),
+      lines([
+        ["SIDE VENTURES", 12],
+        "Farmers market stand\tSummers 2019 – 2021",
+      ]),
     );
     expect(unknown.otherExperience).toHaveLength(1);
   });
@@ -287,6 +290,197 @@ describe("parseResumeLines", () => {
       experience: [],
       education: [],
     });
+  });
+});
+
+describe("parseResumeLines on looser layouts", () => {
+  it("reads entries whose dates stand on their own line", () => {
+    const stacked = parseResumeLines(
+      lines([
+        ["EXPERIENCE", 12],
+        "Software Engineer",
+        "Evergreen Robotics, Inc.",
+        "January 2020 – Present",
+        "• Shipped the motor control loop",
+        "Data Intern",
+        "Harborview Health",
+        "Jun 2018 – Aug 2018",
+        "• Cleaned the intake reports",
+      ]),
+    );
+    expect(stacked.experience).toEqual([
+      expect.objectContaining({
+        title: "Software Engineer",
+        organization: "Evergreen Robotics, Inc.",
+        start: "2020-01",
+        end: undefined,
+        highlights: ["Shipped the motor control loop"],
+      }),
+      expect.objectContaining({
+        title: "Data Intern",
+        organization: "Harborview Health",
+        start: "2018-06",
+        end: "2018-08",
+        highlights: ["Cleaned the intake reports"],
+      }),
+    ]);
+  });
+
+  it("reads a single header line above a standalone date", () => {
+    const single = parseResumeLines(
+      lines([
+        ["EXPERIENCE", 12],
+        "Data Analyst at Harborview Health",
+        "Jun 2021 – Dec 2022",
+        "• Automated the weekly reporting pipeline",
+      ]),
+    );
+    expect(single.experience).toEqual([
+      expect.objectContaining({
+        title: "Data Analyst",
+        organization: "Harborview Health",
+        start: "2021-06",
+        end: "2022-12",
+      }),
+    ]);
+  });
+
+  it("reads seasons and apostrophe years as dates", () => {
+    const seasonal = parseResumeLines(
+      lines([
+        ["EXPERIENCE", 12],
+        "Research Assistant\tSummer 2024",
+        "Marine Biology Lab",
+        "• Collected samples",
+        "Barista\tMay '22 – Aug '23",
+        "Corner Coffee",
+        "• Poured espresso",
+      ]),
+    );
+    expect(seasonal.experience).toEqual([
+      expect.objectContaining({
+        title: "Research Assistant",
+        organization: "Marine Biology Lab",
+        start: "2024-06",
+        end: "2024-06",
+      }),
+      expect.objectContaining({
+        title: "Barista",
+        organization: "Corner Coffee",
+        start: "2022-05",
+        end: "2023-08",
+      }),
+    ]);
+  });
+
+  it("recognizes a reworded heading set in larger type", () => {
+    const reworded = parseResumeLines(
+      lines([
+        ["Career History", 13],
+        "Staff Engineer\tJan 2019 – Present",
+        "Nimbus",
+        "• Kept the lights on",
+      ]),
+    );
+    expect(reworded.experience).toHaveLength(1);
+    expect(reworded.experience[0]?.title).toBe("Staff Engineer");
+  });
+
+  it("reads identity details from a contact section", () => {
+    const sidebar = parseResumeLines(
+      lines([
+        ["CONTACT", 12],
+        "jordan.reyes@example.com",
+        "Portland, OR",
+        "github.com/jordanreyes",
+        "jordanreyes.dev",
+        ["EXPERIENCE", 12],
+        "Engineer\tJan 2020 – Present",
+        "Nimbus",
+        "• Built things",
+      ]),
+    );
+    expect(sidebar.email).toBe("jordan.reyes@example.com");
+    expect(sidebar.location).toBe("Portland, OR");
+    expect(sidebar.githubUsername).toBe("jordanreyes");
+    expect(sidebar.website).toBe("https://jordanreyes.dev");
+  });
+
+  it("drops category labels that stand alone above a skill list", () => {
+    const labeled = parseResumeLines(
+      lines([
+        ["SKILLS", 12],
+        "Languages",
+        "Python, Rust",
+        "Frameworks",
+        "React",
+      ]),
+    );
+    expect(labeled.expertise).toEqual(["Python", "Rust", "React"]);
+  });
+
+  it("reads a whole two-column page, sidebar and main", () => {
+    const sidebar = [
+      "CONTACT",
+      "jordan@example.com",
+      "Portland, OR",
+      "SKILLS",
+      "Python",
+      "Rust",
+      "Go",
+      "SQL",
+      "Docker",
+      "Figma",
+    ].map((text, index) => ({
+      str: text,
+      x: 30,
+      y: 700 - index * 20,
+      width: 120,
+      height: 10,
+    }));
+    const main = [
+      { str: "EXPERIENCE", x: 220, y: 700, width: 90, height: 10 },
+      { str: "Firmware Engineer", x: 220, y: 680, width: 120, height: 10 },
+      { str: "Jan 2023 – Mar 2024", x: 470, y: 680, width: 110, height: 10 },
+      { str: "Evergreen Robotics, Inc.", x: 220, y: 660, width: 160, height: 10 },
+      ...Array.from({ length: 6 }, (_, index) => ({
+        str: `• Did the thing number ${index}`,
+        x: 220,
+        y: 640 - index * 20,
+        width: 300,
+        height: 10,
+      })),
+    ];
+    const imported = parseResumeLines(
+      linesFromTextItems(
+        [
+          { str: "Jordan Reyes", x: 200, y: 760, width: 180, height: 16 },
+          ...sidebar,
+          ...main,
+        ],
+        1,
+      ),
+    );
+    expect(imported.name).toBe("Jordan Reyes");
+    expect(imported.email).toBe("jordan@example.com");
+    expect(imported.location).toBe("Portland, OR");
+    expect(imported.expertise).toEqual([
+      "Python",
+      "Rust",
+      "Go",
+      "SQL",
+      "Docker",
+      "Figma",
+    ]);
+    expect(imported.experience).toEqual([
+      expect.objectContaining({
+        title: "Firmware Engineer",
+        organization: "Evergreen Robotics, Inc.",
+        start: "2023-01",
+        end: "2024-03",
+      }),
+    ]);
+    expect(imported.experience[0]?.highlights).toHaveLength(6);
   });
 });
 

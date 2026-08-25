@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { linesFromTextItems, type ResumeTextItem } from "./resume-lines.js";
+import {
+  columnGutter,
+  linesFromTextItems,
+  type ResumeTextItem,
+} from "./resume-lines.js";
 
 function item(
   str: string,
@@ -81,5 +85,79 @@ describe("linesFromTextItems", () => {
       2,
     );
     expect(lines[0]).toMatchObject({ height: 17.2, page: 2 });
+  });
+});
+
+/** A sidebar-and-main page: sidebar ends by x=170, the main column starts at 220. */
+function twoColumnItems(): ResumeTextItem[] {
+  const sidebar = [
+    "CONTACT",
+    "jordan@example.com",
+    "Portland, OR",
+    "SKILLS",
+    "Python",
+    "Rust",
+    "Go",
+    "SQL",
+    "Docker",
+    "Figma",
+  ].map((text, index) => item(text, 30, 700 - index * 20, 120));
+  const main = [
+    item("EXPERIENCE", 220, 700, 90),
+    item("Firmware Engineer", 220, 680, 120),
+    item("Jan 2023 – Mar 2024", 470, 680, 110),
+    item("Evergreen Robotics, Inc.", 220, 660, 160),
+    ...Array.from({ length: 6 }, (_, index) =>
+      item(`• Did the thing number ${index}`, 220, 640 - index * 20, 300),
+    ),
+  ];
+  return [item("Jordan Reyes", 200, 760, 180, 16), ...sidebar, ...main];
+}
+
+describe("columnGutter", () => {
+  it("finds the gutter of a genuine two-column page", () => {
+    expect(columnGutter(twoColumnItems())).toBe(220);
+  });
+
+  it("sees no columns when body lines run through the middle", () => {
+    const items = [
+      ...Array.from({ length: 12 }, (_, index) =>
+        item(`• A bullet that runs across the whole page ${index}`, 28, 700 - index * 30, 550),
+      ),
+      ...Array.from({ length: 12 }, (_, index) =>
+        item("Jun 2024", 480, 690 - index * 30, 60),
+      ),
+    ];
+    expect(columnGutter(items)).toBeNull();
+  });
+});
+
+describe("two-column pages", () => {
+  it("reads the page column by column, not row by row", () => {
+    const texts = linesFromTextItems(twoColumnItems(), 1).map(
+      (line) => line.text,
+    );
+    expect(texts).toEqual([
+      "Jordan Reyes",
+      "CONTACT",
+      "jordan@example.com",
+      "Portland, OR",
+      "SKILLS",
+      "Python",
+      "Rust",
+      "Go",
+      "SQL",
+      "Docker",
+      "Figma",
+      "EXPERIENCE",
+      "Firmware Engineer\tJan 2023 – Mar 2024",
+      "Evergreen Robotics, Inc.",
+      "• Did the thing number 0",
+      "• Did the thing number 1",
+      "• Did the thing number 2",
+      "• Did the thing number 3",
+      "• Did the thing number 4",
+      "• Did the thing number 5",
+    ]);
   });
 });

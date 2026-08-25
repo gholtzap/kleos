@@ -69,6 +69,7 @@ type SectionKind =
   | "projects"
   | "certifications"
   | "interests"
+  | "contact"
   | "other"
   | "ignored";
 
@@ -99,6 +100,13 @@ const SECTION_KINDS: Record<string, SectionKind> = {
   "CORE COMPETENCIES": "skills",
   TECHNOLOGIES: "skills",
   "TOOLS & TECHNOLOGIES": "skills",
+  LANGUAGES: "skills",
+  "PROGRAMMING LANGUAGES": "skills",
+  FRAMEWORKS: "skills",
+  "FRAMEWORKS & LIBRARIES": "skills",
+  TOOLS: "skills",
+  "TOOLS & PLATFORMS": "skills",
+  DATABASES: "skills",
   PROJECTS: "projects",
   "PERSONAL PROJECTS": "projects",
   "SELECTED PROJECTS": "projects",
@@ -122,17 +130,38 @@ const SECTION_KINDS: Record<string, SectionKind> = {
   RESEARCH: "other",
   INTERESTS: "interests",
   HOBBIES: "interests",
+  CONTACT: "contact",
+  "CONTACT ME": "contact",
+  "CONTACT INFORMATION": "contact",
+  "CONTACT DETAILS": "contact",
   REFERENCES: "ignored",
 };
 
-/** A header key the vocabulary misses but the suffix identifies. */
-const SECTION_SUFFIXES: readonly [string, SectionKind][] = [
-  ["EXPERIENCE", "experience"],
-  ["SKILLS", "skills"],
-  ["PROJECTS", "projects"],
+/**
+ * A word the vocabulary misses but that still names a section, for resumes
+ * with their own header phrasing ("Career History", "Technical Expertise").
+ * Only header-shaped lines are matched against these.
+ */
+const SECTION_KEYWORDS: readonly [RegExp, SectionKind][] = [
+  [
+    /AWARD|HONOR|VOLUNTEER|LEADERSHIP|ACTIVIT|PUBLICATION|INVOLVEMENT/,
+    "other",
+  ],
+  [/EXPERIENCE|EMPLOYMENT|CAREER|WORK HISTORY/, "experience"],
+  [/EDUCATION|ACADEMIC/, "education"],
+  [/SKILL|COMPETENC|TECHNOLOG|EXPERTISE|TECH STACK/, "skills"],
+  [/PROJECT/, "projects"],
+  [/CERTIF|LICENS/, "certifications"],
+  [/SUMMARY|OBJECTIVE|PROFILE/, "summary"],
+  [/CONTACT/, "contact"],
+  [/INTEREST|HOBB/, "interests"],
+  [/REFERENCE/, "ignored"],
 ];
 
-function sectionKindForHeader(line: ResumeLine): SectionKind | null {
+function sectionKindForHeader(
+  line: ResumeLine,
+  bodyHeight: number,
+): SectionKind | null {
   const text = line.text.replace(/\t/g, " ").trim().replace(/:$/, "");
   if (text.length === 0 || text.length > 40) return null;
   const key = text
@@ -142,16 +171,28 @@ function sectionKindForHeader(line: ResumeLine): SectionKind | null {
     .trim();
   const known = SECTION_KINDS[key];
   if (known) return known;
-  const suffix = SECTION_SUFFIXES.find(([name]) => key.endsWith(name));
-  if (suffix) return suffix[1];
-  // An unrecognized short all-caps line still reads as a section heading;
-  // its content lands in "other" rather than corrupting a known section.
+
   const letters = key.replace(/[^A-Z]/g, "");
-  return letters.length >= 3 &&
+  const allCaps =
+    letters.length >= 3 &&
     !line.text.includes("\t") &&
-    text === text.toUpperCase()
-    ? "other"
-    : null;
+    text === text.toUpperCase();
+  // A short line in a visibly larger type reads as a heading even in
+  // lowercase — but only a section keyword confirms it, so an entry title
+  // that happens to be set larger stays content.
+  const headerShaped =
+    allCaps ||
+    (line.height >= bodyHeight * 1.15 &&
+      !line.text.includes("\t") &&
+      key.split(" ").length <= 4);
+  if (!headerShaped) return null;
+  const keyword = SECTION_KEYWORDS.find(([pattern]) => pattern.test(key));
+  if (keyword) return keyword[1];
+  // An unrecognized all-caps phrase still reads as a section heading, and its
+  // content lands in "other" rather than corrupting a known section — but
+  // only a multi-word one: a lone all-caps word is as likely a technology in
+  // a skills list ("SQL", "AWS") as a heading.
+  return allCaps && key.split(" ").length >= 2 ? "other" : null;
 }
 
 const BULLET_PATTERN = /^\s*[•●○◦▪▸‣∙·*]\s*|^\s*[–—-]\s+/;
@@ -180,6 +221,21 @@ const monthYearPattern = new RegExp(
   `\\b(${MONTH_WORD})\\.?,?\\s+((?:19|20)\\d{2})\\b`,
   "gi",
 );
+/** "May '24" — the apostrophe year some designed resumes use. */
+const monthShortYearPattern = new RegExp(
+  `\\b(${MONTH_WORD})\\.?,?\\s+['’](\\d{2})\\b`,
+  "gi",
+);
+/** Seasons anchor to a representative month, stated in SEASON_MONTHS. */
+const SEASON_MONTHS: Record<string, number> = {
+  SPRING: 3,
+  SUMMER: 6,
+  FALL: 9,
+  AUTUMN: 9,
+  WINTER: 12,
+};
+const seasonYearPattern =
+  /\b(Spring|Summer|Fall|Autumn|Winter)\s+((?:19|20)\d{2})\b/gi;
 const numericMonthPattern = /\b(0?[1-9]|1[0-2])\s*\/\s*((?:19|20)\d{2})\b/g;
 const yearPattern = /\b(?:19|20)\d{2}\b/g;
 const presentPattern = /\b(?:present|current|now|ongoing|today)\b/i;
@@ -201,7 +257,28 @@ function datesInText(text: string): ResumeDate[] {
       length: match[0].length,
     });
   }
+  for (const match of text.matchAll(monthShortYearPattern)) {
+    dates.push({
+      year: 2000 + Number(match[2]),
+      month: MONTH_NUMBERS[(match[1] ?? "").toUpperCase().replace(/\./g, "")],
+      index: match.index,
+      length: match[0].length,
+    });
+  }
+  for (const match of text.matchAll(seasonYearPattern)) {
+    dates.push({
+      year: Number(match[2]),
+      month: SEASON_MONTHS[(match[1] ?? "").toUpperCase()],
+      index: match.index,
+      length: match[0].length,
+    });
+  }
   for (const match of text.matchAll(numericMonthPattern)) {
+    const claimed = dates.some(
+      (date) =>
+        match.index >= date.index && match.index < date.index + date.length,
+    );
+    if (claimed) continue;
     dates.push({
       year: Number(match[2]),
       month: Number(match[1]),
@@ -259,6 +336,17 @@ function statesFullRange(text: string): boolean {
   if (second !== undefined) return true;
   const present = presentPattern.exec(text);
   return present !== null && present.index > first.index;
+}
+
+/**
+ * Whether a right-column segment reads as an entry's dates: a full range, or
+ * a single month and year — the way a one-month engagement is written. A bare
+ * year alone is not enough; too much other text states years.
+ */
+function statesDateColumn(text: string): boolean {
+  if (statesFullRange(text)) return true;
+  const dates = datesInText(text);
+  return dates.length === 1 && dates[0]?.month !== undefined;
 }
 
 function pad(month: number): string {
@@ -439,6 +527,43 @@ function contactFromIntro(lines: readonly ResumeLine[]): ContactDetails {
   return details;
 }
 
+/**
+ * Reads a CONTACT section — usually a sidebar — for the identity signals the
+ * intro would otherwise carry. Locations here often stand alone on a line.
+ */
+function contactSignalsFromLines(lines: readonly ResumeLine[]): {
+  email?: string;
+  githubUsername?: string;
+  website?: string;
+  location?: string;
+} {
+  const signals: {
+    email?: string;
+    githubUsername?: string;
+    website?: string;
+    location?: string;
+  } = {};
+  for (const line of lines) {
+    const text = line.text.replace(/\t/g, " | ").trim();
+    signals.email ??= emailPattern.exec(text)?.[0];
+    const github = githubPattern.exec(text)?.[1];
+    if (github !== undefined) {
+      signals.githubUsername ??= normalizeGithubAccount(github) ?? undefined;
+    }
+    signals.website ??= websiteFromText(text);
+    if (signals.location === undefined) {
+      const location = splitTopLevel(text, /[|•·]/).find(
+        (segment) =>
+          !emailPattern.test(segment) &&
+          !phonePattern.test(segment) &&
+          isLocationText(segment),
+      );
+      if (location !== undefined) signals.location = location.slice(0, 300);
+    }
+  }
+  return signals;
+}
+
 // --- Experience ------------------------------------------------------------
 
 const titleSignal =
@@ -469,7 +594,13 @@ function splitHeaderSegments(text: string): {
   location?: string;
 } {
   const segments = text.split("\t");
-  const location = segments.filter(isLocationText).at(-1);
+  // "Company, Inc." fits the City-ST shape; the organization signal keeps it
+  // in the body.
+  const location = segments
+    .filter(
+      (segment) => isLocationText(segment) && !orgSignal.test(segment),
+    )
+    .at(-1);
   const body = cleanJoin(segments.filter((segment) => segment !== location));
   return { body, location };
 }
@@ -494,6 +625,16 @@ function headerForAnchor(
       ].join("\t")
     : anchorLine.text;
   const anchorParts = splitHeaderSegments(anchorRest);
+
+  if (anchorParts.body.length === 0) {
+    return headerAboveDateLine(
+      lines,
+      anchor,
+      previousEnd,
+      isAnchor,
+      anchorParts.location,
+    );
+  }
 
   let partner: { index: number; line: ResumeLine } | null = null;
   const belowLine = lines[anchor + 1];
@@ -555,6 +696,83 @@ function headerForAnchor(
 }
 
 /**
+ * The header for an entry whose anchor line is only a date — a layout that
+ * stacks title and organization on their own lines above the dates. Reads up
+ * to two such lines; wrapped bullet prose does not qualify, because it runs
+ * long or starts mid-sentence in lowercase.
+ */
+function headerAboveDateLine(
+  lines: readonly ResumeLine[],
+  anchor: number,
+  previousEnd: number,
+  isAnchor: (index: number) => boolean,
+  location: string | undefined,
+): EntryHeader {
+  const usable = (index: number): ResumeLine | null => {
+    const line = lines[index];
+    return line !== undefined &&
+      index > previousEnd &&
+      !isBulletLine(line.text) &&
+      !isAnchor(index) &&
+      line.text.replace(/\t/g, " ").length <= 80 &&
+      !/^[a-z]/.test(line.text) &&
+      !statesFullRange(line.text)
+      ? line
+      : null;
+  };
+
+  const nearer = usable(anchor - 1);
+  if (nearer === null) {
+    return { title: "", organization: "", location, consumed: [anchor] };
+  }
+  const nearerParts = splitHeaderSegments(nearer.text);
+  const farther = usable(anchor - 2);
+
+  if (farther === null) {
+    // One header line: "Title, Organization", "Title at Organization", or an
+    // organization with its location.
+    const atSplit = /^(.+?)\s+(?:at|@)\s+(.+)$/.exec(nearerParts.body);
+    const [first = nearerParts.body, tail = ""] = atSplit
+      ? [atSplit[1], atSplit[2]]
+      : nearerParts.body.split(/,\s*(.+)/, 2);
+    let title = first.trim();
+    let organization = tail.trim();
+    let headerLocation = nearerParts.location ?? location;
+    if (isLocationText(organization) && !orgSignal.test(organization)) {
+      headerLocation ??= organization;
+      organization = "";
+      if (!titleSignal.test(title) && orgSignal.test(title)) {
+        organization = title;
+        title = "";
+      }
+    }
+    return {
+      title: title.slice(0, 200),
+      organization: organization.slice(0, 200),
+      location: headerLocation,
+      consumed: [anchor, anchor - 1],
+    };
+  }
+
+  const fartherParts = splitHeaderSegments(farther.text);
+  // The upper line is the title unless the signals say otherwise — stacked
+  // headers usually lead with it.
+  const fartherIsTitle =
+    titleSignal.test(fartherParts.body) === titleSignal.test(nearerParts.body)
+      ? true
+      : titleSignal.test(fartherParts.body);
+  const [title, organization] = fartherIsTitle
+    ? [fartherParts.body, nearerParts.body]
+    : [nearerParts.body, fartherParts.body];
+  return {
+    title: title.slice(0, 200),
+    organization: organization.slice(0, 200),
+    location: nearerParts.location ?? fartherParts.location ?? location,
+    consumed: [anchor, anchor - 1, anchor - 2],
+  };
+}
+
+/**
  * Collects bullet lines into highlights. A non-bullet line continues the
  * previous highlight — it is a wrapped line of the same sentence — and prose
  * without any bullet becomes a single description highlight.
@@ -584,12 +802,18 @@ function experienceFromLines(
     if (isBulletLine(line.text)) return false;
     const segments = line.text.split("\t");
     if (segments.length > 1) {
-      return statesFullRange(segments.at(-1) ?? "");
+      return statesDateColumn(segments.at(-1) ?? "");
     }
-    // Without columns, only a range that closes the line reads as a header.
     const range = dateRangeInText(line.text);
+    if (range === null) return false;
+    // A line that is nothing but its dates anchors an entry whose header
+    // stands above it.
+    const rest = withoutRange(line.text, range).trim();
+    if (rest.length <= 2) {
+      return statesFullRange(line.text) || range.start.month !== undefined;
+    }
+    // Otherwise only a range that closes the line reads as a header.
     return (
-      range !== null &&
       statesFullRange(line.text) &&
       range.index + range.length >= line.text.trimEnd().length - 1
     );
@@ -717,6 +941,14 @@ function educationFromLines(lines: readonly ResumeLine[]): {
 
 // --- Skills ----------------------------------------------------------------
 
+/**
+ * A category label some resumes set on its own line above the list it names.
+ * Alone on a line it carries no skill, so it is dropped rather than imported
+ * as one.
+ */
+const skillCategoryPattern =
+  /^(?:programming |technical |computer |soft |core )?(?:languages?|frameworks?|libraries|tools?|technologies|databases?|cloud|platforms?|skills?|other|miscellaneous|devops|testing|design|frontend|backend|infrastructure)$/i;
+
 function skillsFromLines(lines: readonly ResumeLine[]): string[] {
   const values: string[] = [];
   for (const line of lines) {
@@ -729,7 +961,11 @@ function skillsFromLines(lines: readonly ResumeLine[]): string[] {
       const colon = text.indexOf(":");
       content = colon > 0 && colon <= 30 ? text.slice(colon + 1) : text;
     }
-    values.push(...splitTopLevel(content, /[,;•|]/));
+    values.push(
+      ...splitTopLevel(content, /[,;•|]/).filter(
+        (value) => !skillCategoryPattern.test(value),
+      ),
+    );
   }
   return values;
 }
@@ -868,10 +1104,12 @@ function splitSections(lines: readonly ResumeLine[]): {
   intro: ResumeLine[];
   sections: Section[];
 } {
+  const heights = lines.map((line) => line.height).sort((a, b) => a - b);
+  const bodyHeight = heights[Math.floor(heights.length / 2)] ?? 0;
   const intro: ResumeLine[] = [];
   const sections: Section[] = [];
   for (const line of lines) {
-    const kind = sectionKindForHeader(line);
+    const kind = sectionKindForHeader(line, bodyHeight);
     if (kind !== null) {
       sections.push({ kind, lines: [] });
     } else if (sections.length === 0) {
@@ -941,6 +1179,14 @@ export function parseResumeLines(lines: readonly ResumeLine[]): ResumeImport {
           splitTopLevel(stripBullet(line.text).replace(/\t/g, " "), /[,;•|]/),
         ),
       );
+    } else if (section.kind === "contact") {
+      const signals = contactSignalsFromLines(section.lines);
+      imported.email ??= signals.email;
+      imported.githubUsername ??= signals.githubUsername;
+      imported.website ??= signals.website;
+      if (imported.location.length === 0 && signals.location !== undefined) {
+        imported.location = signals.location;
+      }
     }
   }
 
